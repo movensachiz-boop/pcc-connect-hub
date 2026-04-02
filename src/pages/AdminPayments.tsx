@@ -1,7 +1,11 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Download } from "lucide-react";
+import { generateReceipt } from "@/lib/generateReceipt";
+import { useToast } from "@/hooks/use-toast";
 
 const payments = [
   { id: "TXN-0501", student: "James Mwangi", reg: "PCC-2025-001", amount: "$450", method: "Bank Transfer", date: "2025-03-28", status: "Confirmed" },
@@ -11,7 +15,22 @@ const payments = [
   { id: "TXN-0505", student: "David Omondi", reg: "PCC-2025-033", amount: "$150", method: "Cash", date: "2025-03-24", status: "Confirmed" },
 ];
 
-const AdminPayments = () => (
+const AdminPayments = () => {
+  const { toast } = useToast();
+
+  const handleDownloadReceipt = (p: typeof payments[0]) => {
+    generateReceipt({
+      receiptNo: p.id,
+      studentName: p.student,
+      regNo: p.reg,
+      date: p.date,
+      amount: p.amount,
+      method: p.method,
+    });
+    toast({ title: "Receipt Downloaded", description: `${p.id} receipt has been saved.` });
+  };
+
+  return (
   <DashboardLayout role="admin">
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
@@ -28,6 +47,7 @@ const AdminPayments = () => (
                 <TableHead>Method</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -42,6 +62,13 @@ const AdminPayments = () => (
                   <TableCell>
                     <Badge className={p.status === "Confirmed" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>{p.status}</Badge>
                   </TableCell>
+                  <TableCell>
+                    {p.status === "Confirmed" && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
+                        <Download size={16} />
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -50,6 +77,7 @@ const AdminPayments = () => (
       </Card>
     </div>
   </DashboardLayout>
-);
+  );
+};
 
 export default AdminPayments;

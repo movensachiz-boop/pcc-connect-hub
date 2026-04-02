@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download } from "lucide-react";
+import { generateReceipt } from "@/lib/generateReceipt";
+import { useToast } from "@/hooks/use-toast";
 
 const payments = [
   { id: "RCP-001", date: "2025-01-15", amount: "$450.00", method: "Bank Transfer", status: "Paid" },
@@ -11,7 +13,22 @@ const payments = [
   { id: "RCP-003", date: "2025-06-01", amount: "$450.00", method: "Card", status: "Pending" },
 ];
 
-const StudentPayments = () => (
+const StudentPayments = () => {
+  const { toast } = useToast();
+
+  const handleDownloadReceipt = (p: typeof payments[0]) => {
+    generateReceipt({
+      receiptNo: p.id,
+      studentName: "Student",
+      regNo: "PCC-2025-XXX",
+      date: p.date,
+      amount: p.amount,
+      method: p.method,
+    });
+    toast({ title: "Receipt Downloaded", description: `${p.id} receipt has been saved.` });
+  };
+
+  return (
   <DashboardLayout role="student">
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">My Payments</h2>
@@ -39,7 +56,7 @@ const StudentPayments = () => (
                   <TableCell>
                     <Badge className={p.status === "Paid" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>{p.status}</Badge>
                   </TableCell>
-                  <TableCell>{p.status === "Paid" && <Button variant="ghost" size="icon"><Download size={16} /></Button>}</TableCell>
+                  <TableCell>{p.status === "Paid" && <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}><Download size={16} /></Button>}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -48,6 +65,7 @@ const StudentPayments = () => (
       </Card>
     </div>
   </DashboardLayout>
-);
+  );
+};
 
 export default StudentPayments;
