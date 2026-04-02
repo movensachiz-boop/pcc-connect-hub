@@ -450,6 +450,13 @@ const AdminStudents = () => {
               className="hidden"
               onChange={handleFileSelect}
             />
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
           </div>
         </div>
 
