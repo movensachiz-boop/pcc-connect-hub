@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search } from "lucide-react";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye } from "lucide-react";
 import { generateReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ interface PaymentRow {
   description: string | null;
   paynow_reference: string | null;
   phone: string | null;
+  deposit_slip_url: string | null;
   studentName?: string;
   regNo?: string;
 }
@@ -52,6 +53,7 @@ const AdminPayments = () => {
   const [manualMethod, setManualMethod] = useState("");
   const [manualRef, setManualRef] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchPayments();
@@ -106,6 +108,7 @@ const AdminPayments = () => {
   const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSlipFile(file);
 
     setScanning(true);
     setSlipDialogOpen(false);
@@ -153,6 +156,25 @@ const AdminPayments = () => {
     }
 
     setSaving(true);
+    let depositSlipUrl: string | null = null;
+
+    // Upload deposit slip image to storage
+    if (slipFile) {
+      const fileName = `${Date.now()}-${slipFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("deposit-slips")
+        .upload(fileName, slipFile);
+
+      if (uploadError) {
+        console.error("Slip upload error:", uploadError);
+      } else {
+        const { data: urlData } = supabase.storage
+          .from("deposit-slips")
+          .getPublicUrl(uploadData.path);
+        depositSlipUrl = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase.from("payments").insert({
       student_profile_id: selectedStudentId,
       amount: parseFloat(manualAmount),
@@ -160,14 +182,16 @@ const AdminPayments = () => {
       status: "confirmed",
       paynow_reference: manualRef || null,
       description: "Deposit slip payment",
+      deposit_slip_url: depositSlipUrl,
     });
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Payment Recorded", description: "The payment has been saved successfully." });
+      toast({ title: "Payment Recorded", description: "Payment saved with deposit slip attached." });
       setConfirmDialogOpen(false);
       setScannedData(null);
+      setSlipFile(null);
       setSelectedStudentId("");
       setManualAmount("");
       setManualMethod("");
@@ -242,7 +266,14 @@ const AdminPayments = () => {
                           {p.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-1">
+                        {p.deposit_slip_url && (
+                          <Button variant="ghost" size="icon" asChild>
+                            <a href={p.deposit_slip_url} target="_blank" rel="noopener noreferrer" title="View Deposit Slip">
+                              <Eye size={16} />
+                            </a>
+                          </Button>
+                        )}
                         {p.status === "confirmed" && (
                           <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
                             <Download size={16} />
