@@ -19,6 +19,7 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
+          deposit_slip_url: string | null
           description: string | null
           id: string
           method: string
@@ -34,6 +35,7 @@ export type Database = {
           amount: number
           created_at?: string
           currency?: string
+          deposit_slip_url?: string | null
           description?: string | null
           id?: string
           method: string
@@ -49,6 +51,7 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
+          deposit_slip_url?: string | null
           description?: string | null
           id?: string
           method?: string
