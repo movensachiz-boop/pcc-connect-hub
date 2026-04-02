@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface ReceiptData {
   receiptNo: string;
@@ -11,25 +12,15 @@ interface ReceiptData {
 }
 
 export const generateReceipt = async (data: ReceiptData) => {
-  const doc = new jsPDF({ unit: "mm", format: [210, 148] }); // A5 landscape-ish
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
 
   const pw = 210;
-  const primary = [0, 51, 102] as [number, number, number];
-  const gold = [196, 164, 105] as [number, number, number];
+  const margin = 20;
+  const primary: [number, number, number] = [0, 51, 102];
+  const blue: [number, number, number] = [41, 128, 185];
+  let y = 15;
 
-  // Border
-  doc.setDrawColor(...primary);
-  doc.setLineWidth(1.5);
-  doc.rect(5, 5, pw - 10, 138);
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(0.5);
-  doc.rect(7, 7, pw - 14, 134);
-
-  // Header background
-  doc.setFillColor(...primary);
-  doc.rect(7, 7, pw - 14, 28, "F");
-
-  // Add logo
+  // ── Logo centered at top ──
   try {
     const logoModule = await import("@/assets/pcc-logo.png");
     const logoUrl = logoModule.default;
@@ -40,84 +31,158 @@ export const generateReceipt = async (data: ReceiptData) => {
       img.onerror = () => reject();
       img.src = logoUrl;
     });
-    doc.addImage(img, "JPEG", 15, 9, 20, 20);
+    doc.addImage(img, "JPEG", pw / 2 - 12, y, 24, 24);
+    y += 28;
   } catch {
-    // Logo failed to load, continue without it
+    y += 5;
   }
 
-  // School name (shifted right to accommodate logo)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
+  // ── Blue contact bar ──
+  doc.setFillColor(...blue);
+  doc.rect(0, y, pw, 10, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
-  doc.text("Progress Christian Centre", pw / 2 + 10, 18, { align: "center" });
+  doc.text("PROGRESS CHRISTIAN CENTRE  |  info@pcc.ac.zw  |  +263 XXX XXX XXX", pw / 2, y + 6.5, { align: "center" });
+  y += 18;
 
-  doc.setFontSize(11);
-  doc.setTextColor(...gold);
-  doc.text("OFFICIAL PAYMENT RECEIPT", pw / 2 + 10, 28, { align: "center" });
+  // ── Title ──
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(30, 30, 30);
+  doc.text("School Fees Receipt", pw / 2, y, { align: "center" });
+  y += 12;
 
-  // Gold line
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(0.8);
-  doc.line(20, 38, pw - 20, 38);
-
-  // Receipt info row
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  doc.text(`Receipt No: ${data.receiptNo}`, 15, 46);
-  doc.text(`Date: ${data.date}`, pw - 15, 46, { align: "right" });
-
-  // Details table
-  const startY = 55;
-  const labelX = 20;
-  const valueX = 75;
-  const rows = [
-    ["Student Name", data.studentName],
-    ["Reg. Number", data.regNo],
-    ["Amount Paid", data.amount],
-    ["Payment Method", data.method],
-    ["Description", data.description || "School Fees"],
-  ];
-
-  rows.forEach(([label, value], i) => {
-    const y = startY + i * 12;
-    // Zebra stripe
-    if (i % 2 === 0) {
-      doc.setFillColor(245, 245, 250);
-      doc.rect(15, y - 5, pw - 30, 12, "F");
-    }
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(...primary);
-    doc.text(label, labelX, y);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(51, 51, 51);
-    doc.text(value, valueX, y);
+  // ── Invoice & Student Details (two-column table) ──
+  const midX = margin + (pw - 2 * margin) / 2;
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    tableWidth: pw - 2 * margin,
+    head: [["Receipt Details", "Student Information"]],
+    body: [
+      [`Receipt No.: ${data.receiptNo}`, `Student Name: ${data.studentName}`],
+      [`Receipt Date: ${data.date}`, `Reg. Number: ${data.regNo}`],
+      [`Payment Method: ${data.method}`, `Status: PAID`],
+    ],
+    headStyles: {
+      fillColor: [255, 255, 255],
+      textColor: [...blue],
+      fontStyle: "italic",
+      fontSize: 10,
+      lineWidth: 0,
+    },
+    bodyStyles: {
+      fontSize: 9.5,
+      textColor: [30, 30, 30],
+      cellPadding: 4,
+    },
+    columnStyles: {
+      0: { cellWidth: (pw - 2 * margin) / 2 },
+      1: { cellWidth: (pw - 2 * margin) / 2, fontStyle: "bold" },
+    },
+    theme: "grid",
+    styles: {
+      lineColor: [200, 200, 200],
+      lineWidth: 0.3,
+    },
   });
 
-  // Stamp area
-  const stampY = startY + rows.length * 12 + 8;
-  doc.setDrawColor(...gold);
-  doc.setLineWidth(1);
-  doc.circle(pw - 40, stampY + 5, 12);
-  doc.setFontSize(7);
-  doc.setTextColor(...gold);
-  doc.setFont("helvetica", "bold");
-  doc.text("PAID", pw - 40, stampY + 4, { align: "center" });
-  doc.setFontSize(5);
-  doc.text("VERIFIED", pw - 40, stampY + 8, { align: "center" });
+  // @ts-ignore
+  y = doc.lastAutoTable.finalY + 10;
 
-  // Signature line
+  // ── Services breakdown table ──
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    tableWidth: pw - 2 * margin,
+    head: [["Description of Services", "Subtotal"]],
+    body: [
+      ["Tuition Fee", data.amount],
+    ],
+    foot: [
+      [{ content: "Total Amount Paid", styles: { fontStyle: "bold" } }, { content: data.amount, styles: { fontStyle: "bold", fontSize: 12 } }],
+    ],
+    headStyles: {
+      fillColor: [255, 255, 255],
+      textColor: [...blue],
+      fontStyle: "italic",
+      fontSize: 10,
+      lineWidth: 0,
+    },
+    bodyStyles: {
+      fontSize: 10,
+      textColor: [30, 30, 30],
+      cellPadding: 5,
+    },
+    footStyles: {
+      fillColor: [240, 245, 250],
+      textColor: [...primary],
+      fontSize: 10,
+    },
+    columnStyles: {
+      0: { cellWidth: (pw - 2 * margin) * 0.65 },
+      1: { cellWidth: (pw - 2 * margin) * 0.35, halign: "right" },
+    },
+    theme: "grid",
+    styles: {
+      lineColor: [200, 200, 200],
+      lineWidth: 0.3,
+    },
+  });
+
+  // @ts-ignore
+  y = doc.lastAutoTable.finalY + 12;
+
+  // ── Payment Information ──
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  doc.text("Payment Information:", margin, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Payment was received via ${data.method}. Please retain this receipt for your records.`, margin, y);
+  y += 12;
+
+  // ── Terms and Conditions ──
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(30, 30, 30);
+  doc.text("Terms and Conditions:", margin, y);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text("Fees are due at the beginning of each term. Late payments may incur additional charges.", margin, y);
+  y += 5;
+  doc.text("For any questions, please contact the school bursar at Progress Christian Centre.", margin, y);
+  y += 15;
+
+  // ── Signature line ──
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.3);
-  doc.line(20, stampY + 10, 80, stampY + 10);
+  doc.line(margin, y, margin + 60, y);
   doc.setFontSize(8);
   doc.setTextColor(128, 128, 128);
-  doc.text("Authorized Signature", 50, stampY + 15, { align: "center" });
+  doc.text("Authorized Signature", margin + 30, y + 5, { align: "center" });
 
-  // Footer
+  // ── PAID stamp ──
+  doc.setDrawColor(...blue);
+  doc.setLineWidth(1.5);
+  doc.circle(pw - margin - 20, y - 5, 14);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...blue);
+  doc.text("PAID", pw - margin - 20, y - 6, { align: "center" });
+  doc.setFontSize(6);
+  doc.text("VERIFIED", pw - margin - 20, y, { align: "center" });
+
+  // ── Footer ──
   doc.setFontSize(7);
   doc.setTextColor(150, 150, 150);
-  doc.text("This is a computer-generated receipt. No signature required for amounts below $500.", pw / 2, 136, { align: "center" });
+  doc.text("This is a computer-generated receipt from Progress Christian Centre.", pw / 2, 285, { align: "center" });
 
   doc.save(`Receipt_${data.receiptNo}.pdf`);
 };
