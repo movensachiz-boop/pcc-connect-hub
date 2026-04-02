@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
       headers: {
         "Authorization": `Bearer ${ZAVU_API_KEY}`,
         "Content-Type": "application/json",
+        "Zavu-Sender": "Progress Christian Centre",
       },
       body: JSON.stringify({
         to: guardianPhone,
