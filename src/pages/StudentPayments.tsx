@@ -65,6 +65,7 @@ const StudentPayments = () => {
       </Card>
     </div>
   </DashboardLayout>
-);
+  );
+};
 
 export default StudentPayments;

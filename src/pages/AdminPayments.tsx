@@ -77,6 +77,7 @@ const AdminPayments = () => {
       </Card>
     </div>
   </DashboardLayout>
-);
+  );
+};
 
 export default AdminPayments;
