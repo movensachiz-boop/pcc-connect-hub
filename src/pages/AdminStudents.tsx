@@ -119,10 +119,32 @@ const AdminStudents = () => {
         return;
       }
 
-      toast({
-        title: "Student Pre-Registered",
-        description: `${firstName} ${lastName} registered as ${regNumber}.`,
-      });
+      // Send notification to guardian if phone is provided
+      if (guardianPhone.trim()) {
+        try {
+          await supabase.functions.invoke("send-notification", {
+            body: {
+              guardianPhone: guardianPhone.trim(),
+              studentName: `${firstName.trim()} ${lastName.trim()}`,
+              registrationNumber: regNumber,
+            },
+          });
+          toast({
+            title: "Student Pre-Registered & Notified",
+            description: `${firstName} ${lastName} registered as ${regNumber}. Guardian notified via SMS/WhatsApp.`,
+          });
+        } catch {
+          toast({
+            title: "Student Pre-Registered",
+            description: `${firstName} ${lastName} registered as ${regNumber}. Guardian notification failed.`,
+          });
+        }
+      } else {
+        toast({
+          title: "Student Pre-Registered",
+          description: `${firstName} ${lastName} registered as ${regNumber}.`,
+        });
+      }
 
       setFirstName("");
       setLastName("");
