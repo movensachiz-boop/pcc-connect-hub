@@ -62,6 +62,13 @@ const AdminPayments = () => {
                   <TableCell>
                     <Badge className={p.status === "Confirmed" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>{p.status}</Badge>
                   </TableCell>
+                  <TableCell>
+                    {p.status === "Confirmed" && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
+                        <Download size={16} />
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
