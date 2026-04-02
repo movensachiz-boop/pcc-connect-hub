@@ -17,6 +17,7 @@ export type Database = {
       profiles: {
         Row: {
           balance: number
+          claimed: boolean
           created_at: string
           first_name: string
           form: string | null
@@ -28,10 +29,11 @@ export type Database = {
           status: string
           stream: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           balance?: number
+          claimed?: boolean
           created_at?: string
           first_name: string
           form?: string | null
@@ -43,10 +45,11 @@ export type Database = {
           status?: string
           stream?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           balance?: number
+          claimed?: boolean
           created_at?: string
           first_name?: string
           form?: string | null
@@ -58,7 +61,7 @@ export type Database = {
           status?: string
           stream?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
