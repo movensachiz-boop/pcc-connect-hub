@@ -64,6 +64,7 @@ const AdminStudents = () => {
   const [scanning, setScanning] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [extractedStudents, setExtractedStudents] = useState<ExtractedStudent[]>([]);
+  const [sendingNotification, setSendingNotification] = useState<string | null>(null);
   const [bulkRegistering, setBulkRegistering] = useState(false);
 
   const generateRegNumber = (offset = 0) => {
