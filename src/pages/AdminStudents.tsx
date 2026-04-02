@@ -436,11 +436,24 @@ const AdminStudents = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>${s.balance}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1"
+                          disabled={sendingNotification === s.id || !s.guardian_phone}
+                          onClick={() => handleSendNotification(s)}
+                          title={s.guardian_phone ? `Send to ${s.guardian_phone}` : "No phone number"}
+                        >
+                          {sendingNotification === s.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                          Notify
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         No students found.
                       </TableCell>
                     </TableRow>
