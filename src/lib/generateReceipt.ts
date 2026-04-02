@@ -10,7 +10,7 @@ interface ReceiptData {
   description?: string;
 }
 
-export const generateReceipt = (data: ReceiptData) => {
+export const generateReceipt = async (data: ReceiptData) => {
   const doc = new jsPDF({ unit: "mm", format: [210, 148] }); // A5 landscape-ish
 
   const pw = 210;
@@ -29,15 +29,31 @@ export const generateReceipt = (data: ReceiptData) => {
   doc.setFillColor(...primary);
   doc.rect(7, 7, pw - 14, 28, "F");
 
-  // School name
+  // Add logo
+  try {
+    const logoModule = await import("@/assets/pcc-logo.png");
+    const logoUrl = logoModule.default;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = logoUrl;
+    });
+    doc.addImage(img, "JPEG", 15, 9, 20, 20);
+  } catch {
+    // Logo failed to load, continue without it
+  }
+
+  // School name (shifted right to accommodate logo)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
-  doc.text("Progress Christian Centre", pw / 2, 18, { align: "center" });
+  doc.text("Progress Christian Centre", pw / 2 + 10, 18, { align: "center" });
 
   doc.setFontSize(11);
   doc.setTextColor(...gold);
-  doc.text("OFFICIAL PAYMENT RECEIPT", pw / 2, 28, { align: "center" });
+  doc.text("OFFICIAL PAYMENT RECEIPT", pw / 2 + 10, 28, { align: "center" });
 
   // Gold line
   doc.setDrawColor(...gold);
