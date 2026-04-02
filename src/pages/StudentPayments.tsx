@@ -56,7 +56,7 @@ const StudentPayments = () => {
                   <TableCell>
                     <Badge className={p.status === "Paid" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>{p.status}</Badge>
                   </TableCell>
-                  <TableCell>{p.status === "Paid" && <Button variant="ghost" size="icon"><Download size={16} /></Button>}</TableCell>
+                  <TableCell>{p.status === "Paid" && <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}><Download size={16} /></Button>}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
