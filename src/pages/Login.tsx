@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import pccLogo from "@/assets/pcc-logo.png";
 
 const Login = () => {
@@ -13,18 +14,42 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    // Demo login routing
-    if (regNumber.startsWith("ADM")) {
-      navigate("/admin");
-    } else if (regNumber.startsWith("PCC")) {
-      navigate("/student");
-    } else {
-      setError("Invalid registration number or password.");
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("student-login", {
+        body: { registrationNumber: regNumber.trim(), password },
+      });
+
+      if (fnError || data?.error) {
+        setError(data?.error || "Login failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Set the session from the edge function response
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      // Navigate based on role
+      if (data.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/student");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,12 +94,12 @@ const Login = () => {
               </div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full gap-2">
-              <LogIn size={18} />
-              Sign In
+            <Button type="submit" className="w-full gap-2" disabled={loading}>
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
             <p className="text-xs text-center text-muted-foreground mt-4">
-              Use <strong>ADM-001</strong> for admin or <strong>PCC-2025-001</strong> for student demo
+              Contact your administrator if you forgot your password.
             </p>
           </form>
         </CardContent>
