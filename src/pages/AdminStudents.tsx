@@ -371,6 +371,24 @@ const AdminStudents = () => {
             <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
               <Camera size={16} /> Scan List
             </Button>
+            <Button variant="outline" className="gap-2" onClick={async () => {
+              const year = new Date().getFullYear().toString();
+              const ids = filtered.map(s => ({
+                name: `${s.first_name} ${s.last_name}`,
+                regNumber: s.registration_number,
+                form: s.form || "—",
+                stream: s.stream || "—",
+                year,
+              }));
+              if (ids.length === 0) {
+                toast({ title: "No Students", description: "No students to generate IDs for.", variant: "destructive" });
+                return;
+              }
+              await generateBulkStudentIDs(ids);
+              toast({ title: "IDs Generated", description: `${ids.length} student ID card(s) saved as PDF.` });
+            }}>
+              <CreditCard size={16} /> Generate All IDs
+            </Button>
             <Button className="gap-2" onClick={() => setOpen(true)}>
               <UserPlus size={16} /> Register Student
             </Button>
