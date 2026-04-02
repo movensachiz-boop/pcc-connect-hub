@@ -1,7 +1,11 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Download } from "lucide-react";
+import { generateReceipt } from "@/lib/generateReceipt";
+import { useToast } from "@/hooks/use-toast";
 
 const payments = [
   { id: "TXN-0501", student: "James Mwangi", reg: "PCC-2025-001", amount: "$450", method: "Bank Transfer", date: "2025-03-28", status: "Confirmed" },
