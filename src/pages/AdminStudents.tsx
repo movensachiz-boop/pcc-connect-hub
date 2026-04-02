@@ -21,6 +21,7 @@ interface Student {
   stream: string | null;
   status: string;
   balance: number;
+  claimed: boolean;
 }
 
 const AdminStudents = () => {
@@ -39,7 +40,6 @@ const AdminStudents = () => {
   const [stream, setStream] = useState("");
   const [guardianName, setGuardianName] = useState("");
   const [guardianPhone, setGuardianPhone] = useState("");
-  const [initialPassword, setInitialPassword] = useState("");
 
   // Reset password form
   const [resetRegNumber, setResetRegNumber] = useState("");
@@ -73,13 +73,8 @@ const AdminStudents = () => {
   }, []);
 
   const handleRegister = async () => {
-    if (!firstName.trim() || !lastName.trim() || !form || !stream || !initialPassword) {
-      toast({ title: "Missing Fields", description: "Please fill in all required fields including the initial password.", variant: "destructive" });
-      return;
-    }
-
-    if (initialPassword.length < 6) {
-      toast({ title: "Weak Password", description: "Password must be at least 6 characters.", variant: "destructive" });
+    if (!firstName.trim() || !lastName.trim() || !form || !stream) {
+      toast({ title: "Missing Fields", description: "Please fill in all required fields.", variant: "destructive" });
       return;
     }
 
@@ -97,7 +92,6 @@ const AdminStudents = () => {
           guardianName: guardianName.trim(),
           guardianPhone: guardianPhone.trim(),
           registrationNumber: regNumber,
-          initialPassword,
         },
       });
 
@@ -107,18 +101,16 @@ const AdminStudents = () => {
       }
 
       toast({
-        title: "Student Registered",
-        description: `${firstName} ${lastName} registered as ${regNumber}. Initial password has been set.`,
+        title: "Student Pre-Registered",
+        description: `${firstName} ${lastName} registered as ${regNumber}. They can now set up their account using this number.`,
       });
 
-      // Reset form
       setFirstName("");
       setLastName("");
       setForm("");
       setStream("");
       setGuardianName("");
       setGuardianPhone("");
-      setInitialPassword("");
       setOpen(false);
       fetchStudents();
     } catch {
@@ -214,6 +206,7 @@ const AdminStudents = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Form</TableHead>
                     <TableHead>Stream</TableHead>
+                    <TableHead>Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Balance</TableHead>
                   </TableRow>
@@ -226,6 +219,11 @@ const AdminStudents = () => {
                       <TableCell>{s.form || "—"}</TableCell>
                       <TableCell>{s.stream || "—"}</TableCell>
                       <TableCell>
+                        <Badge variant={s.claimed ? "default" : "outline"} className={s.claimed ? "bg-success text-success-foreground" : ""}>
+                          {s.claimed ? "Active" : "Pending"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         <Badge className={s.status === "Active" ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
                           {s.status}
                         </Badge>
@@ -235,7 +233,7 @@ const AdminStudents = () => {
                   ))}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No students found.
                       </TableCell>
                     </TableRow>
@@ -251,7 +249,7 @@ const AdminStudents = () => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Register New Student</DialogTitle>
+            <DialogTitle>Pre-Register New Student</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
@@ -289,15 +287,6 @@ const AdminStudents = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Initial Password *</Label>
-              <Input
-                type="password"
-                value={initialPassword}
-                onChange={(e) => setInitialPassword(e.target.value)}
-                placeholder="Set initial password (min 6 chars)"
-              />
-            </div>
-            <div className="space-y-2">
               <Label>Guardian Name</Label>
               <Input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} placeholder="Parent/Guardian name" />
             </div>
@@ -308,6 +297,7 @@ const AdminStudents = () => {
             <div className="rounded-md bg-secondary p-3">
               <p className="text-xs text-muted-foreground">Registration number will be auto-generated:</p>
               <p className="text-sm font-semibold text-primary">{generateRegNumber()}</p>
+              <p className="text-xs text-muted-foreground mt-1">Share this number with the student so they can set up their account.</p>
             </div>
           </div>
           <DialogFooter>
