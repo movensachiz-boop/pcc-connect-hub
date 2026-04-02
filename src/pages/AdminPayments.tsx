@@ -266,7 +266,14 @@ const AdminPayments = () => {
                           {p.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-1">
+                        {p.deposit_slip_url && (
+                          <Button variant="ghost" size="icon" asChild>
+                            <a href={p.deposit_slip_url} target="_blank" rel="noopener noreferrer" title="View Deposit Slip">
+                              <Eye size={16} />
+                            </a>
+                          </Button>
+                        )}
                         {p.status === "confirmed" && (
                           <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
                             <Download size={16} />
