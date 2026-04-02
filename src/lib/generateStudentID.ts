@@ -6,6 +6,7 @@ interface StudentIDData {
   form: string;
   stream: string;
   year: string;
+  photoUrl?: string;
 }
 
 export const generateStudentID = async (student: StudentIDData) => {
@@ -56,13 +57,34 @@ export const generateStudentID = async (student: StudentIDData) => {
   doc.setTextColor(...gold);
   doc.text("STUDENT IDENTIFICATION CARD", 50, 12, { align: "center" });
 
-  // Photo placeholder
-  doc.setDrawColor(200, 200, 200);
-  doc.setFillColor(240, 240, 245);
-  doc.roundedRect(5, 17, 16, 20, 1, 1, "FD");
-  doc.setFontSize(4.5);
-  doc.setTextColor(160, 160, 160);
-  doc.text("PHOTO", 13, 28, { align: "center" });
+  // Photo
+  if (student.photoUrl) {
+    try {
+      const photoImg = new Image();
+      photoImg.crossOrigin = "anonymous";
+      await new Promise<void>((resolve, reject) => {
+        photoImg.onload = () => resolve();
+        photoImg.onerror = () => reject();
+        photoImg.src = student.photoUrl!;
+      });
+      doc.addImage(photoImg, "JPEG", 5, 17, 16, 20);
+    } catch {
+      // fallback placeholder
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(240, 240, 245);
+      doc.roundedRect(5, 17, 16, 20, 1, 1, "FD");
+      doc.setFontSize(4.5);
+      doc.setTextColor(160, 160, 160);
+      doc.text("PHOTO", 13, 28, { align: "center" });
+    }
+  } else {
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(240, 240, 245);
+    doc.roundedRect(5, 17, 16, 20, 1, 1, "FD");
+    doc.setFontSize(4.5);
+    doc.setTextColor(160, 160, 160);
+    doc.text("PHOTO", 13, 28, { align: "center" });
+  }
 
   // Student details
   const detailX = 25;
@@ -174,13 +196,33 @@ export const generateBulkStudentIDs = async (students: StudentIDData[]) => {
     doc.setTextColor(...gold);
     doc.text("STUDENT IDENTIFICATION CARD", x + cardW / 2 + 5, y + 12, { align: "center" });
 
-    // Photo placeholder
-    doc.setDrawColor(200, 200, 200);
-    doc.setFillColor(240, 240, 245);
-    doc.roundedRect(x + 5, y + 17, 16, 20, 1, 1, "FD");
-    doc.setFontSize(4.5);
-    doc.setTextColor(160, 160, 160);
-    doc.text("PHOTO", x + 13, y + 28, { align: "center" });
+    // Photo
+    if (s.photoUrl) {
+      try {
+        const photoImg = new Image();
+        photoImg.crossOrigin = "anonymous";
+        await new Promise<void>((resolve, reject) => {
+          photoImg.onload = () => resolve();
+          photoImg.onerror = () => reject();
+          photoImg.src = s.photoUrl!;
+        });
+        doc.addImage(photoImg, "JPEG", x + 5, y + 17, 16, 20);
+      } catch {
+        doc.setDrawColor(200, 200, 200);
+        doc.setFillColor(240, 240, 245);
+        doc.roundedRect(x + 5, y + 17, 16, 20, 1, 1, "FD");
+        doc.setFontSize(4.5);
+        doc.setTextColor(160, 160, 160);
+        doc.text("PHOTO", x + 13, y + 28, { align: "center" });
+      }
+    } else {
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(240, 240, 245);
+      doc.roundedRect(x + 5, y + 17, 16, 20, 1, 1, "FD");
+      doc.setFontSize(4.5);
+      doc.setTextColor(160, 160, 160);
+      doc.text("PHOTO", x + 13, y + 28, { align: "center" });
+    }
 
     // Details
     const dx = x + 25;
