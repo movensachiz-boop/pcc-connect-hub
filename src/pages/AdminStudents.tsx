@@ -456,17 +456,37 @@ const AdminStudents = () => {
                       </TableCell>
                       <TableCell>${s.balance}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          disabled={sendingNotification === s.id || !s.guardian_phone}
-                          onClick={() => handleSendNotification(s)}
-                          title={s.guardian_phone ? `Send to ${s.guardian_phone}` : "No phone number"}
-                        >
-                          {sendingNotification === s.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                          Notify
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
+                            disabled={sendingNotification === s.id || !s.guardian_phone}
+                            onClick={() => handleSendNotification(s)}
+                            title={s.guardian_phone ? `Send to ${s.guardian_phone}` : "No phone number"}
+                          >
+                            {sendingNotification === s.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                            Notify
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
+                            onClick={async () => {
+                              await generateStudentID({
+                                name: `${s.first_name} ${s.last_name}`,
+                                regNumber: s.registration_number,
+                                form: s.form || "—",
+                                stream: s.stream || "—",
+                                year: new Date().getFullYear().toString(),
+                              });
+                              toast({ title: "ID Generated", description: `ID card for ${s.first_name} saved.` });
+                            }}
+                            title="Generate Student ID Card"
+                          >
+                            <CreditCard size={14} /> ID
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
