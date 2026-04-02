@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          method: string
+          paynow_reference: string | null
+          phone: string | null
+          poll_url: string | null
+          receipt_number: string | null
+          status: string
+          student_profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          method: string
+          paynow_reference?: string | null
+          phone?: string | null
+          poll_url?: string | null
+          receipt_number?: string | null
+          status?: string
+          student_profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          method?: string
+          paynow_reference?: string | null
+          phone?: string | null
+          poll_url?: string | null
+          receipt_number?: string | null
+          status?: string
+          student_profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           balance: number
