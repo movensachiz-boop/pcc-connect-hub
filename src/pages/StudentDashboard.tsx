@@ -1,10 +1,12 @@
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, CreditCard, AlertTriangle, Bell, Download } from "lucide-react";
+import { DollarSign, CreditCard, AlertTriangle, Bell, Download, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const payments = [
   { id: "RCP-001", date: "2025-01-15", amount: "$450.00", method: "Bank Transfer", status: "Paid" },
@@ -18,13 +20,34 @@ const announcements = [
   { title: "Sports Day – April 5th", date: "Mar 20, 2025", priority: "low" },
 ];
 
-const StudentDashboard = () => (
-  <DashboardLayout role="student">
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Welcome, James Mwangi</h2>
-        <p className="text-muted-foreground">Reg: PCC-2025-001 · Form 4 · Science Stream</p>
-      </div>
+const StudentDashboard = () => {
+  const [profile, setProfile] = useState<{ first_name: string; last_name: string; registration_number: string; form: string | null; stream: string | null; balance: number } | null>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, registration_number, form, stream, balance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) setProfile(data);
+    };
+    loadProfile();
+  }, []);
+
+  return (
+    <DashboardLayout role="student">
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">
+            Welcome, {profile ? `${profile.first_name} ${profile.last_name}` : "..."}
+          </h2>
+          <p className="text-muted-foreground">
+            Reg: {profile?.registration_number || "..."} · Form {profile?.form || "—"} · {profile?.stream || "—"} Stream
+          </p>
+        </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Fees" value="$1,350" icon={DollarSign} variant="primary" />
@@ -94,7 +117,9 @@ const StudentDashboard = () => (
         </Card>
       </div>
     </div>
-  </DashboardLayout>
-);
+      </div>
+    </DashboardLayout>
+  );
+};
 
 export default StudentDashboard;
