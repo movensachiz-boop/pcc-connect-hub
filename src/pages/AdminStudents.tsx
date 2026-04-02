@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,6 +23,8 @@ interface Student {
   status: string;
   balance: number;
   claimed: boolean;
+  guardian_phone: string | null;
+  guardian_name: string | null;
 }
 
 interface ExtractedStudent {
@@ -62,6 +64,7 @@ const AdminStudents = () => {
   const [scanning, setScanning] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [extractedStudents, setExtractedStudents] = useState<ExtractedStudent[]>([]);
+  const [sendingNotification, setSendingNotification] = useState<string | null>(null);
   const [bulkRegistering, setBulkRegistering] = useState(false);
 
   const generateRegNumber = (offset = 0) => {
@@ -195,6 +198,32 @@ const AdminStudents = () => {
       toast({ title: "Error", description: "Failed to reset password.", variant: "destructive" });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSendNotification = async (student: Student) => {
+    if (!student.guardian_phone) {
+      toast({ title: "No Phone Number", description: "This student has no guardian phone number on file.", variant: "destructive" });
+      return;
+    }
+    setSendingNotification(student.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-notification", {
+        body: {
+          guardianPhone: student.guardian_phone,
+          studentName: `${student.first_name} ${student.last_name}`,
+          registrationNumber: student.registration_number,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: "Notification Failed", description: data?.error || data?.details?.message || "Could not send message.", variant: "destructive" });
+      } else {
+        toast({ title: "Notification Sent", description: `Message sent to ${student.guardian_phone} for ${student.first_name} ${student.last_name}.` });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to send notification.", variant: "destructive" });
+    } finally {
+      setSendingNotification(null);
     }
   };
 
@@ -386,6 +415,7 @@ const AdminStudents = () => {
                     <TableHead>Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Balance</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -406,11 +436,24 @@ const AdminStudents = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>${s.balance}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1"
+                          disabled={sendingNotification === s.id || !s.guardian_phone}
+                          onClick={() => handleSendNotification(s)}
+                          title={s.guardian_phone ? `Send to ${s.guardian_phone}` : "No phone number"}
+                        >
+                          {sendingNotification === s.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                          Notify
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         No students found.
                       </TableCell>
                     </TableRow>
