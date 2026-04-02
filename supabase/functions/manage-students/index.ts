@@ -55,34 +55,31 @@ Deno.serve(async (req) => {
     const { action, ...payload } = await req.json();
 
     if (action === "create_student") {
-      const { firstName, lastName, form, stream, guardianName, guardianPhone, registrationNumber, initialPassword } = payload;
+      const { firstName, lastName, form, stream, guardianName, guardianPhone, registrationNumber } = payload;
 
-      if (!firstName || !lastName || !registrationNumber || !initialPassword) {
+      if (!firstName || !lastName || !registrationNumber) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Create auth user with registration number as email (using a fake email pattern)
-      const email = `${registrationNumber.toLowerCase()}@pcc.local`;
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: initialPassword,
-        email_confirm: true,
-        user_metadata: { registration_number: registrationNumber, first_name: firstName, last_name: lastName },
-      });
+      // Check if registration number already exists
+      const { data: existing } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("registration_number", registrationNumber)
+        .maybeSingle();
 
-      if (createError) {
-        return new Response(JSON.stringify({ error: createError.message }), {
+      if (existing) {
+        return new Response(JSON.stringify({ error: "Registration number already exists" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Create profile
-      const { error: profileError } = await supabaseAdmin.from("profiles").insert({
-        user_id: newUser.user.id,
+      // Create profile WITHOUT auth user - student will claim later
+      const { data: profile, error: profileError } = await supabaseAdmin.from("profiles").insert({
         registration_number: registrationNumber,
         first_name: firstName,
         last_name: lastName,
@@ -90,27 +87,20 @@ Deno.serve(async (req) => {
         stream: stream || null,
         guardian_name: guardianName || null,
         guardian_phone: guardianPhone || null,
-      });
+        claimed: false,
+      }).select().single();
 
       if (profileError) {
-        // Cleanup: delete the auth user if profile creation fails
-        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
         return new Response(JSON.stringify({ error: profileError.message }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Assign student role
-      await supabaseAdmin.from("user_roles").insert({
-        user_id: newUser.user.id,
-        role: "student",
-      });
-
       return new Response(JSON.stringify({
         success: true,
         student: {
-          id: newUser.user.id,
+          id: profile.id,
           registrationNumber,
           name: `${firstName} ${lastName}`,
           form,
@@ -138,8 +128,8 @@ Deno.serve(async (req) => {
         .eq("registration_number", registrationNumber)
         .maybeSingle();
 
-      if (!profile) {
-        return new Response(JSON.stringify({ error: "Student not found" }), {
+      if (!profile || !profile.user_id) {
+        return new Response(JSON.stringify({ error: "Student not found or account not yet set up" }), {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
