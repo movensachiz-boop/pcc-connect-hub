@@ -13,7 +13,22 @@ const payments = [
   { id: "RCP-003", date: "2025-06-01", amount: "$450.00", method: "Card", status: "Pending" },
 ];
 
-const StudentPayments = () => (
+const StudentPayments = () => {
+  const { toast } = useToast();
+
+  const handleDownloadReceipt = (p: typeof payments[0]) => {
+    generateReceipt({
+      receiptNo: p.id,
+      studentName: "Student",
+      regNo: "PCC-2025-XXX",
+      date: p.date,
+      amount: p.amount,
+      method: p.method,
+    });
+    toast({ title: "Receipt Downloaded", description: `${p.id} receipt has been saved.` });
+  };
+
+  return (
   <DashboardLayout role="student">
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">My Payments</h2>
