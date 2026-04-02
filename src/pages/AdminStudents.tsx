@@ -291,6 +291,20 @@ const AdminStudents = () => {
           failed++;
         } else {
           registered++;
+          // Send notification if guardian phone exists
+          if (s.guardian_phone) {
+            try {
+              await supabase.functions.invoke("send-notification", {
+                body: {
+                  guardianPhone: s.guardian_phone,
+                  studentName: `${s.first_name.trim()} ${s.last_name.trim()}`,
+                  registrationNumber: regNumber,
+                },
+              });
+            } catch {
+              // Notification failed but registration succeeded
+            }
+          }
         }
       } catch {
         failed++;
