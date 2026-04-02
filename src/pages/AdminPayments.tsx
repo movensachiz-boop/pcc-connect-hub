@@ -25,6 +25,7 @@ interface PaymentRow {
   description: string | null;
   paynow_reference: string | null;
   phone: string | null;
+  deposit_slip_url: string | null;
   studentName?: string;
   regNo?: string;
 }
