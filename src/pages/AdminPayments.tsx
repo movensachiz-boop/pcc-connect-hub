@@ -1,82 +1,374 @@
+import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search } from "lucide-react";
 import { generateReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-const payments = [
-  { id: "TXN-0501", student: "James Mwangi", reg: "PCC-2025-001", amount: "$450", method: "Bank Transfer", date: "2025-03-28", status: "Confirmed" },
-  { id: "TXN-0502", student: "Grace Otieno", reg: "PCC-2025-042", amount: "$200", method: "Mobile Money", date: "2025-03-27", status: "Confirmed" },
-  { id: "TXN-0503", student: "Peter Kamau", reg: "PCC-2025-015", amount: "$500", method: "Card", date: "2025-03-26", status: "Confirmed" },
-  { id: "TXN-0504", student: "Faith Njeri", reg: "PCC-2025-088", amount: "$450", method: "Mobile Money", date: "2025-03-25", status: "Pending" },
-  { id: "TXN-0505", student: "David Omondi", reg: "PCC-2025-033", amount: "$150", method: "Cash", date: "2025-03-24", status: "Confirmed" },
-];
+interface PaymentRow {
+  id: string;
+  student_profile_id: string;
+  amount: number;
+  method: string;
+  status: string;
+  receipt_number: string | null;
+  created_at: string;
+  currency: string;
+  description: string | null;
+  paynow_reference: string | null;
+  phone: string | null;
+  studentName?: string;
+  regNo?: string;
+}
+
+interface StudentProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  registration_number: string;
+}
 
 const AdminPayments = () => {
   const { toast } = useToast();
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [slipDialogOpen, setSlipDialogOpen] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scannedData, setScannedData] = useState<any>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [manualAmount, setManualAmount] = useState("");
+  const [manualMethod, setManualMethod] = useState("");
+  const [manualRef, setManualRef] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDownloadReceipt = (p: typeof payments[0]) => {
-    generateReceipt({
-      receiptNo: p.id,
-      studentName: p.student,
-      regNo: p.reg,
-      date: p.date,
-      amount: p.amount,
-      method: p.method,
-    });
-    toast({ title: "Receipt Downloaded", description: `${p.id} receipt has been saved.` });
+  useEffect(() => {
+    fetchPayments();
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number").order("first_name");
+    if (data) setStudents(data);
   };
 
+  const fetchPayments = async () => {
+    setLoading(true);
+    const { data: paymentData } = await supabase
+      .from("payments")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (paymentData) {
+      const profileIds = [...new Set(paymentData.map(p => p.student_profile_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, registration_number")
+        .in("id", profileIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const enriched = paymentData.map(p => {
+        const prof = profileMap.get(p.student_profile_id);
+        return {
+          ...p,
+          studentName: prof ? `${prof.first_name} ${prof.last_name}` : "Unknown",
+          regNo: prof?.registration_number || "N/A",
+        };
+      });
+      setPayments(enriched);
+    }
+    setLoading(false);
+  };
+
+  const handleDownloadReceipt = (p: PaymentRow) => {
+    generateReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 12),
+      studentName: p.studentName || "Unknown",
+      regNo: p.regNo || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount}`,
+      method: p.method,
+    });
+    toast({ title: "Receipt Downloaded" });
+  };
+
+  const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setScanning(true);
+    setSlipDialogOpen(false);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const resp = await supabase.functions.invoke("extract-payment", {
+          body: { imageBase64: base64 },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+
+        if (resp.error) throw new Error(resp.error.message || "Scan failed");
+
+        const payment = resp.data?.payment;
+        if (payment) {
+          setScannedData(payment);
+          setManualAmount(payment.amount || "");
+          setManualMethod(payment.method || "Bank Deposit");
+          setManualRef(payment.reference_number || "");
+          // Try to match student by name
+          const name = (payment.depositor_name || "").toLowerCase();
+          const match = students.find(s =>
+            name.includes(s.first_name.toLowerCase()) || name.includes(s.last_name.toLowerCase())
+          );
+          if (match) setSelectedStudentId(match.id);
+          setConfirmDialogOpen(true);
+        }
+      } catch (err: any) {
+        toast({ title: "Scan Failed", description: err.message, variant: "destructive" });
+      } finally {
+        setScanning(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSavePayment = async () => {
+    if (!selectedStudentId || !manualAmount) {
+      toast({ title: "Missing Info", description: "Select a student and enter amount.", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from("payments").insert({
+      student_profile_id: selectedStudentId,
+      amount: parseFloat(manualAmount),
+      method: manualMethod || "Bank Deposit",
+      status: "confirmed",
+      paynow_reference: manualRef || null,
+      description: "Deposit slip payment",
+    });
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Payment Recorded", description: "The payment has been saved successfully." });
+      setConfirmDialogOpen(false);
+      setScannedData(null);
+      setSelectedStudentId("");
+      setManualAmount("");
+      setManualMethod("");
+      setManualRef("");
+      fetchPayments();
+    }
+    setSaving(false);
+  };
+
+  const filteredStudents = students.filter(s =>
+    studentSearch === "" ||
+    `${s.first_name} ${s.last_name} ${s.registration_number}`.toLowerCase().includes(studentSearch.toLowerCase())
+  );
+
   return (
-  <DashboardLayout role="admin">
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
-      <Card className="shadow-card">
-        <CardHeader className="pb-2"><CardTitle className="text-base">All Transactions</CardTitle></CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-secondary">
-                <TableHead>Transaction</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Reg No.</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.id}</TableCell>
-                  <TableCell>{p.student}</TableCell>
-                  <TableCell>{p.reg}</TableCell>
-                  <TableCell>{p.amount}</TableCell>
-                  <TableCell>{p.method}</TableCell>
-                  <TableCell>{p.date}</TableCell>
-                  <TableCell>
-                    <Badge className={p.status === "Confirmed" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>{p.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {p.status === "Confirmed" && (
-                      <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
-                        <Download size={16} />
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  </DashboardLayout>
+    <DashboardLayout role="admin">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
+          <div className="flex gap-2">
+            <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
+              <Camera size={16} /> Scan Deposit Slip
+            </Button>
+          </div>
+        </div>
+
+        {scanning && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="flex items-center gap-3 py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="text-sm font-medium">Scanning deposit slip with AI...</span>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">All Transactions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : payments.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">No payments recorded yet.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary">
+                    <TableHead>Receipt #</TableHead>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Reg No.</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">{p.receipt_number || p.id.slice(0, 8)}</TableCell>
+                      <TableCell>{p.studentName}</TableCell>
+                      <TableCell>{p.regNo}</TableCell>
+                      <TableCell>${p.amount}</TableCell>
+                      <TableCell>{p.method}</TableCell>
+                      <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge className={p.status === "confirmed" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>
+                          {p.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {p.status === "confirmed" && (
+                          <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
+                            <Download size={16} />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Upload Slip Dialog */}
+      <Dialog open={slipDialogOpen} onOpenChange={setSlipDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scan Deposit Slip</DialogTitle>
+            <DialogDescription>
+              Take a photo or upload an image of the deposit slip. AI will extract the payment details automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div
+              className="flex h-40 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 transition-colors hover:border-primary/50 hover:bg-muted/50"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium text-muted-foreground">Click to upload or take photo</p>
+              <p className="text-xs text-muted-foreground/70">JPG, PNG supported</p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleSlipUpload}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Scanned Payment Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-success" /> Payment Details Extracted
+            </DialogTitle>
+            <DialogDescription>
+              Review and confirm the details below. Select the correct student then save.
+            </DialogDescription>
+          </DialogHeader>
+
+          {scannedData && (
+            <div className="space-y-4">
+              {scannedData.depositor_name && (
+                <div className="rounded-md bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Depositor on slip</p>
+                  <p className="font-medium">{scannedData.depositor_name}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Select Student *</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search student..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                  <SelectTrigger><SelectValue placeholder="Choose student" /></SelectTrigger>
+                  <SelectContent>
+                    {filteredStudents.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.first_name} {s.last_name} ({s.registration_number})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Amount ($) *</Label>
+                  <Input value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} type="number" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Method</Label>
+                  <Select value={manualMethod} onValueChange={setManualMethod}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank Deposit">Bank Deposit</SelectItem>
+                      <SelectItem value="EcoCash">EcoCash</SelectItem>
+                      <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Reference Number</Label>
+                <Input value={manualRef} onChange={(e) => setManualRef(e.target.value)} placeholder="e.g. DEP-123456" />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSavePayment} disabled={saving}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </DashboardLayout>
   );
 };
 
