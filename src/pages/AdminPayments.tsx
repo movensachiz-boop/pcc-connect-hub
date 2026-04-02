@@ -52,6 +52,7 @@ const AdminPayments = () => {
   const [manualMethod, setManualMethod] = useState("");
   const [manualRef, setManualRef] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchPayments();
