@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import SetupAccount from "./pages/SetupAccount";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentPayments from "./pages/StudentPayments";
 import StudentTimetable from "./pages/StudentTimetable";
