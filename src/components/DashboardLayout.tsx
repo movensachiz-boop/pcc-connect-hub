@@ -69,7 +69,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             Navigation
           </p>
           {links.map((link, i) => {
-            const active = location.pathname === link.path;
+            const active = location.pathname === link.path || (link.path !== '/admin' && link.path !== '/student' && location.pathname.startsWith(link.path));
             return (
               <button
                 key={link.path}
