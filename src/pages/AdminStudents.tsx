@@ -23,6 +23,8 @@ interface Student {
   status: string;
   balance: number;
   claimed: boolean;
+  guardian_phone: string | null;
+  guardian_name: string | null;
 }
 
 interface ExtractedStudent {
