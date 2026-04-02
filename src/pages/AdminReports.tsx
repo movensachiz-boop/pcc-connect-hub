@@ -1,74 +1,164 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
-const feeCollectionCSV = `Form,Students,Total Fees,Collected,Outstanding,Collection Rate
-Form 1,220,$99000,$85000,$14000,85.9%
-Form 2,210,$94500,$82000,$12500,86.8%
-Form 3,200,$90000,$85000,$5000,94.4%
-Form 4,215,$96750,$93000,$3750,96.1%
-Form 5,195,$87750,$72000,$15750,82.1%
-Form 6,207,$93150,$83000,$10150,89.1%
-Total,1247,$561150,$500000,$61150,89.1%`;
+interface ReportDef {
+  name: string;
+  type: string;
+  date: string;
+  headers: string[];
+  rows: string[][];
+  filename: string;
+}
 
-const outstandingCSV = `Reg No,Student Name,Form,Total Fees,Paid,Outstanding,Status
-PCC-2025-042,Grace Otieno,2,$4500,$3800,$700,Partially Paid
-PCC-2025-033,David Omondi,3,$4500,$3300,$1200,Partially Paid
-PCC-2025-001,James Mwangi,4,$4500,$4050,$450,Partially Paid
-PCC-2025-088,Faith Njeri,1,$4500,$4050,$450,Partially Paid
-PCC-2025-071,John Kiplagat,4,$4500,$4200,$300,Partially Paid
-PCC-2025-099,Sarah Achieng,2,$4500,$4350,$150,Partially Paid`;
+const reports: ReportDef[] = [
+  {
+    name: "Term 1 Fee Collection Summary",
+    type: "Financial",
+    date: "2025-03-30",
+    filename: "fee_collection_summary",
+    headers: ["Form", "Students", "Total Fees", "Collected", "Outstanding", "Collection Rate"],
+    rows: [
+      ["Form 1", "220", "$99,000", "$85,000", "$14,000", "85.9%"],
+      ["Form 2", "210", "$94,500", "$82,000", "$12,500", "86.8%"],
+      ["Form 3", "200", "$90,000", "$85,000", "$5,000", "94.4%"],
+      ["Form 4", "215", "$96,750", "$93,000", "$3,750", "96.1%"],
+      ["Form 5", "195", "$87,750", "$72,000", "$15,750", "82.1%"],
+      ["Form 6", "207", "$93,150", "$83,000", "$10,150", "89.1%"],
+      ["Total", "1,247", "$561,150", "$500,000", "$61,150", "89.1%"],
+    ],
+  },
+  {
+    name: "Outstanding Balances by Form",
+    type: "Financial",
+    date: "2025-03-28",
+    filename: "outstanding_balances",
+    headers: ["Reg No", "Student Name", "Form", "Total Fees", "Paid", "Outstanding", "Status"],
+    rows: [
+      ["PCC-2025-042", "Grace Otieno", "2", "$4,500", "$3,800", "$700", "Partially Paid"],
+      ["PCC-2025-033", "David Omondi", "3", "$4,500", "$3,300", "$1,200", "Partially Paid"],
+      ["PCC-2025-001", "James Mwangi", "4", "$4,500", "$4,050", "$450", "Partially Paid"],
+      ["PCC-2025-088", "Faith Njeri", "1", "$4,500", "$4,050", "$450", "Partially Paid"],
+      ["PCC-2025-071", "John Kiplagat", "4", "$4,500", "$4,200", "$300", "Partially Paid"],
+      ["PCC-2025-099", "Sarah Achieng", "2", "$4,500", "$4,350", "$150", "Partially Paid"],
+    ],
+  },
+  {
+    name: "Payment Method Analysis",
+    type: "Analytics",
+    date: "2025-03-25",
+    filename: "payment_method_analysis",
+    headers: ["Payment Method", "Transactions", "Total Amount", "Percentage"],
+    rows: [
+      ["Bank Transfer", "156", "$225,000", "45%"],
+      ["Mobile Money", "122", "$175,000", "35%"],
+      ["Card Payment", "52", "$75,000", "15%"],
+      ["Cash", "18", "$25,000", "5%"],
+      ["Total", "348", "$500,000", "100%"],
+    ],
+  },
+  {
+    name: "Student Enrollment Report",
+    type: "Academic",
+    date: "2025-03-20",
+    filename: "student_enrollment",
+    headers: ["Form", "Male", "Female", "Total", "Science", "Arts", "Commerce"],
+    rows: [
+      ["Form 1", "115", "105", "220", "80", "85", "55"],
+      ["Form 2", "108", "102", "210", "75", "80", "55"],
+      ["Form 3", "105", "95", "200", "70", "78", "52"],
+      ["Form 4", "112", "103", "215", "82", "75", "58"],
+      ["Form 5", "100", "95", "195", "68", "72", "55"],
+      ["Form 6", "110", "97", "207", "76", "78", "53"],
+      ["Total", "650", "597", "1,247", "451", "468", "328"],
+    ],
+  },
+];
 
-const paymentMethodCSV = `Payment Method,Transactions,Total Amount,Percentage
-Bank Transfer,156,$225000,45%
-Mobile Money,122,$175000,35%
-Card Payment,52,$75000,15%
-Cash,18,$25000,5%
-Total,348,$500000,100%`;
+const toCsv = (r: ReportDef) =>
+  [r.headers.join(","), ...r.rows.map((row) => row.join(","))].join("\n");
 
-const enrollmentCSV = `Form,Male,Female,Total,Science,Arts,Commerce
-Form 1,115,105,220,80,85,55
-Form 2,108,102,210,75,80,55
-Form 3,105,95,200,70,78,52
-Form 4,112,103,215,82,75,58
-Form 5,100,95,195,68,72,55
-Form 6,110,97,207,76,78,53
-Total,650,597,1247,451,468,328`;
-
-const reportData: Record<string, { csv: string; filename: string }> = {
-  "Term 1 Fee Collection Summary": { csv: feeCollectionCSV, filename: "fee_collection_summary.csv" },
-  "Outstanding Balances by Form": { csv: outstandingCSV, filename: "outstanding_balances.csv" },
-  "Payment Method Analysis": { csv: paymentMethodCSV, filename: "payment_method_analysis.csv" },
-  "Student Enrollment Report": { csv: enrollmentCSV, filename: "student_enrollment.csv" },
+const downloadBlob = (content: string, filename: string, mime: string) => {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };
 
-const reports = [
-  { name: "Term 1 Fee Collection Summary", type: "Financial", date: "2025-03-30" },
-  { name: "Outstanding Balances by Form", type: "Financial", date: "2025-03-28" },
-  { name: "Payment Method Analysis", type: "Analytics", date: "2025-03-25" },
-  { name: "Student Enrollment Report", type: "Academic", date: "2025-03-20" },
-];
+const generatePdf = (r: ReportDef) => {
+  const doc = new jsPDF();
+
+  // Header
+  doc.setFontSize(18);
+  doc.setTextColor(0, 51, 102); // primary blue
+  doc.text("Pioneer Christian College", 105, 20, { align: "center" });
+
+  doc.setFontSize(12);
+  doc.setTextColor(51, 51, 51);
+  doc.text(r.name, 105, 30, { align: "center" });
+
+  doc.setFontSize(9);
+  doc.setTextColor(128, 128, 128);
+  doc.text(`${r.type} Report · Generated: ${r.date}`, 105, 37, { align: "center" });
+
+  doc.setDrawColor(0, 51, 102);
+  doc.setLineWidth(0.5);
+  doc.line(14, 42, 196, 42);
+
+  // Table
+  autoTable(doc, {
+    startY: 48,
+    head: [r.headers],
+    body: r.rows,
+    theme: "grid",
+    headStyles: {
+      fillColor: [0, 51, 102],
+      textColor: 255,
+      fontStyle: "bold",
+      fontSize: 9,
+    },
+    bodyStyles: { fontSize: 9, textColor: [51, 51, 51] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    margin: { left: 14, right: 14 },
+  });
+
+  // Footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(
+      `Pioneer Christian College · Page ${i} of ${pageCount}`,
+      105,
+      doc.internal.pageSize.height - 10,
+      { align: "center" }
+    );
+  }
+
+  doc.save(`${r.filename}.pdf`);
+};
 
 const AdminReports = () => {
   const { toast } = useToast();
 
-  const handleDownload = (reportName: string) => {
-    const data = reportData[reportName];
-    if (!data) return;
+  const handleCSV = (r: ReportDef) => {
+    downloadBlob(toCsv(r), `${r.filename}.csv`, "text/csv;charset=utf-8;");
+    toast({ title: "CSV Downloaded", description: `${r.filename}.csv has been saved.` });
+  };
 
-    const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = data.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast({ title: "Report Downloaded", description: `${data.filename} has been saved.` });
+  const handlePDF = (r: ReportDef) => {
+    generatePdf(r);
+    toast({ title: "PDF Downloaded", description: `${r.filename}.pdf has been saved.` });
   };
 
   return (
@@ -79,14 +169,21 @@ const AdminReports = () => {
           {reports.map((r, i) => (
             <Card key={i} className="shadow-card hover:shadow-card-hover transition-shadow">
               <CardContent className="flex items-center gap-4 p-5">
-                <div className="p-3 rounded-lg bg-primary/10 text-primary"><FileText size={22} /></div>
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">{r.name}</p>
+                <div className="p-3 rounded-lg bg-primary/10 text-primary">
+                  <FileText size={22} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{r.name}</p>
                   <p className="text-xs text-muted-foreground">{r.type} · {r.date}</p>
                 </div>
-                <Button variant="outline" size="icon" onClick={() => handleDownload(r.name)}>
-                  <Download size={16} />
-                </Button>
+                <div className="flex gap-1.5">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleCSV(r)}>
+                    <Download size={14} /> CSV
+                  </Button>
+                  <Button size="sm" className="gap-1.5" onClick={() => handlePDF(r)}>
+                    <FileDown size={14} /> PDF
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
