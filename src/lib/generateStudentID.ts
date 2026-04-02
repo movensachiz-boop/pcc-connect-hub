@@ -154,50 +154,49 @@ export const generateBulkStudentIDs = async (students: StudentIDData[]) => {
 
     // Top navy band
     doc.setFillColor(...primary);
-    doc.rect(x, y, cardW, 18, "F");
+    doc.rect(x, y, cardW, 14, "F");
 
     // Gold line
     doc.setFillColor(...gold);
-    doc.rect(x, y + 18, cardW, 1.5, "F");
+    doc.rect(x, y + 14, cardW, 1, "F");
 
     // Logo
     if (logoImg) {
-      doc.addImage(logoImg, "JPEG", x + 3, y + 2, 14, 14);
+      doc.addImage(logoImg, "JPEG", x + 3, y + 1.5, 11, 11);
     }
 
     // School name
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(255, 255, 255);
-    doc.text("PROGRESS CHRISTIAN", x + cardW / 2 + 5, y + 7, { align: "center" });
-    doc.text("CENTRE", x + cardW / 2 + 5, y + 12, { align: "center" });
-    doc.setFontSize(5.5);
+    doc.text("PROGRESS CHRISTIAN CENTRE", x + cardW / 2 + 5, y + 6, { align: "center" });
+    doc.setFontSize(5);
     doc.setTextColor(...gold);
-    doc.text("STUDENT IDENTIFICATION CARD", x + cardW / 2 + 5, y + 16.5, { align: "center" });
+    doc.text("STUDENT IDENTIFICATION CARD", x + cardW / 2 + 5, y + 12, { align: "center" });
 
     // Photo placeholder
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(240, 240, 245);
-    doc.roundedRect(x + 5, y + 22, 18, 22, 1, 1, "FD");
-    doc.setFontSize(5);
+    doc.roundedRect(x + 5, y + 17, 16, 20, 1, 1, "FD");
+    doc.setFontSize(4.5);
     doc.setTextColor(160, 160, 160);
-    doc.text("PHOTO", x + 14, y + 34, { align: "center" });
+    doc.text("PHOTO", x + 13, y + 28, { align: "center" });
 
     // Details
-    const dx = x + 27;
-    let dy = y + 24;
+    const dx = x + 25;
+    let dy = y + 19;
 
     const addField = (label: string, value: string) => {
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(5.5);
+      doc.setFontSize(5);
       doc.setTextColor(120, 120, 120);
       doc.text(label, dx, dy);
-      dy += 3.5;
+      dy += 3;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor(30, 30, 30);
       doc.text(value, dx, dy);
-      dy += 5;
+      dy += 4.5;
     };
 
     addField("FULL NAME", s.name);
@@ -206,18 +205,18 @@ export const generateBulkStudentIDs = async (students: StudentIDData[]) => {
 
     // Year badge
     doc.setFillColor(...blue);
-    doc.roundedRect(x + 65, y + 38, 17, 7, 1, 1, "F");
+    doc.roundedRect(x + 65, y + 34, 17, 6, 1, 1, "F");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(255, 255, 255);
-    doc.text(s.year, x + 73.5, y + 43, { align: "center" });
+    doc.text(s.year, x + 73.5, y + 38.5, { align: "center" });
 
     // Bottom bar
     doc.setFillColor(...primary);
-    doc.rect(x, y + cardH - 4, cardW, 4, "F");
-    doc.setFontSize(4.5);
+    doc.rect(x, y + cardH - 3.5, cardW, 3.5, "F");
+    doc.setFontSize(4);
     doc.setTextColor(200, 200, 210);
-    doc.text("Property of Progress Christian Centre", x + cardW / 2, y + cardH - 1.2, { align: "center" });
+    doc.text("Property of Progress Christian Centre", x + cardW / 2, y + cardH - 1, { align: "center" });
   }
 
   doc.save(`Student_IDs_${new Date().getFullYear()}.pdf`);
