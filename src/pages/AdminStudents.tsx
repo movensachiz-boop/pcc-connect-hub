@@ -201,6 +201,32 @@ const AdminStudents = () => {
     }
   };
 
+  const handleSendNotification = async (student: Student) => {
+    if (!student.guardian_phone) {
+      toast({ title: "No Phone Number", description: "This student has no guardian phone number on file.", variant: "destructive" });
+      return;
+    }
+    setSendingNotification(student.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-notification", {
+        body: {
+          guardianPhone: student.guardian_phone,
+          studentName: `${student.first_name} ${student.last_name}`,
+          registrationNumber: student.registration_number,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: "Notification Failed", description: data?.error || data?.details?.message || "Could not send message.", variant: "destructive" });
+      } else {
+        toast({ title: "Notification Sent", description: `Message sent to ${student.guardian_phone} for ${student.first_name} ${student.last_name}.` });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to send notification.", variant: "destructive" });
+    } finally {
+      setSendingNotification(null);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
