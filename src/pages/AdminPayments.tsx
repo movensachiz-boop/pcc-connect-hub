@@ -155,6 +155,25 @@ const AdminPayments = () => {
     }
 
     setSaving(true);
+    let depositSlipUrl: string | null = null;
+
+    // Upload deposit slip image to storage
+    if (slipFile) {
+      const fileName = `${Date.now()}-${slipFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("deposit-slips")
+        .upload(fileName, slipFile);
+
+      if (uploadError) {
+        console.error("Slip upload error:", uploadError);
+      } else {
+        const { data: urlData } = supabase.storage
+          .from("deposit-slips")
+          .getPublicUrl(uploadData.path);
+        depositSlipUrl = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase.from("payments").insert({
       student_profile_id: selectedStudentId,
       amount: parseFloat(manualAmount),
@@ -162,14 +181,16 @@ const AdminPayments = () => {
       status: "confirmed",
       paynow_reference: manualRef || null,
       description: "Deposit slip payment",
+      deposit_slip_url: depositSlipUrl,
     });
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Payment Recorded", description: "The payment has been saved successfully." });
+      toast({ title: "Payment Recorded", description: "Payment saved with deposit slip attached." });
       setConfirmDialogOpen(false);
       setScannedData(null);
+      setSlipFile(null);
       setSelectedStudentId("");
       setManualAmount("");
       setManualMethod("");
