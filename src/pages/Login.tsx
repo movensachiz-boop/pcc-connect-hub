@@ -52,13 +52,13 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex gradient-hero relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-accent/10 blur-3xl animate-float" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary/20 blur-3xl animate-float" style={{ animationDelay: '3s' }} />
-        <div className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full bg-accent/5 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/hero-bg.png')" }}
+      />
+      <div className="absolute inset-0 bg-primary/70" />
 
       {/* Left side - branding */}
       <div className="hidden lg:flex flex-1 flex-col justify-center items-center relative z-10 px-12">
