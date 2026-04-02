@@ -10,7 +10,7 @@ interface StudentIDData {
 
 export const generateStudentID = async (student: StudentIDData) => {
   // Card size: 86mm x 54mm (standard credit card)
-  const doc = new jsPDF({ unit: "mm", format: [86, 54] });
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [86, 54] });
 
   const cw = 86;
   const ch = 54;
