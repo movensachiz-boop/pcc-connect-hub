@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard } from "lucide-react";
+import { generateStudentID, generateBulkStudentIDs } from "@/lib/generateStudentID";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -370,6 +371,24 @@ const AdminStudents = () => {
             <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
               <Camera size={16} /> Scan List
             </Button>
+            <Button variant="outline" className="gap-2" onClick={async () => {
+              const year = new Date().getFullYear().toString();
+              const ids = filtered.map(s => ({
+                name: `${s.first_name} ${s.last_name}`,
+                regNumber: s.registration_number,
+                form: s.form || "—",
+                stream: s.stream || "—",
+                year,
+              }));
+              if (ids.length === 0) {
+                toast({ title: "No Students", description: "No students to generate IDs for.", variant: "destructive" });
+                return;
+              }
+              await generateBulkStudentIDs(ids);
+              toast({ title: "IDs Generated", description: `${ids.length} student ID card(s) saved as PDF.` });
+            }}>
+              <CreditCard size={16} /> Generate All IDs
+            </Button>
             <Button className="gap-2" onClick={() => setOpen(true)}>
               <UserPlus size={16} /> Register Student
             </Button>
@@ -437,17 +456,37 @@ const AdminStudents = () => {
                       </TableCell>
                       <TableCell>${s.balance}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          disabled={sendingNotification === s.id || !s.guardian_phone}
-                          onClick={() => handleSendNotification(s)}
-                          title={s.guardian_phone ? `Send to ${s.guardian_phone}` : "No phone number"}
-                        >
-                          {sendingNotification === s.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                          Notify
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
+                            disabled={sendingNotification === s.id || !s.guardian_phone}
+                            onClick={() => handleSendNotification(s)}
+                            title={s.guardian_phone ? `Send to ${s.guardian_phone}` : "No phone number"}
+                          >
+                            {sendingNotification === s.id ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                            Notify
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
+                            onClick={async () => {
+                              await generateStudentID({
+                                name: `${s.first_name} ${s.last_name}`,
+                                regNumber: s.registration_number,
+                                form: s.form || "—",
+                                stream: s.stream || "—",
+                                year: new Date().getFullYear().toString(),
+                              });
+                              toast({ title: "ID Generated", description: `ID card for ${s.first_name} saved.` });
+                            }}
+                            title="Generate Student ID Card"
+                          >
+                            <CreditCard size={14} /> ID
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
