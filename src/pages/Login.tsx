@@ -99,7 +99,13 @@ const Login = () => {
               {loading ? "Signing In..." : "Sign In"}
             </Button>
             <p className="text-xs text-center text-muted-foreground mt-4">
-              Contact your administrator if you forgot your password.
+              New student?{" "}
+              <button type="button" className="text-primary underline" onClick={() => navigate("/setup-account")}>
+                Set up your account
+              </button>
+            </p>
+            <p className="text-xs text-center text-muted-foreground">
+              Forgot password? Contact your administrator.
             </p>
           </form>
         </CardContent>
