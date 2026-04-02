@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus } from "lucide-react";
 import { generateStudentID, generateBulkStudentIDs } from "@/lib/generateStudentID";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,6 +67,10 @@ const AdminStudents = () => {
   const [extractedStudents, setExtractedStudents] = useState<ExtractedStudent[]>([]);
   const [sendingNotification, setSendingNotification] = useState<string | null>(null);
   const [bulkRegistering, setBulkRegistering] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState<string | null>(null);
+  const [studentPhotos, setStudentPhotos] = useState<Record<string, string>>({});
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoTargetId, setPhotoTargetId] = useState<string | null>(null);
 
   const generateRegNumber = (offset = 0) => {
     const year = new Date().getFullYear();
@@ -94,6 +98,51 @@ const AdminStudents = () => {
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    if (students.length === 0) return;
+    const loadPhotos = async () => {
+      const photos: Record<string, string> = {};
+      for (const s of students) {
+        const { data } = supabase.storage
+          .from("student-photos")
+          .getPublicUrl(`${s.registration_number}.jpg`);
+        try {
+          const res = await fetch(data.publicUrl, { method: "HEAD" });
+          if (res.ok) photos[s.id] = data.publicUrl;
+        } catch { /* no photo */ }
+      }
+      setStudentPhotos(photos);
+    };
+    loadPhotos();
+  }, [students]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !photoTargetId) return;
+    const student = students.find((s) => s.id === photoTargetId);
+    if (!student) return;
+    setUploadingPhoto(photoTargetId);
+    try {
+      const filePath = `${student.registration_number}.jpg`;
+      const { error } = await supabase.storage
+        .from("student-photos")
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+      if (error) {
+        toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      const { data } = supabase.storage.from("student-photos").getPublicUrl(filePath);
+      setStudentPhotos((prev) => ({ ...prev, [photoTargetId]: data.publicUrl + "?t=" + Date.now() }));
+      toast({ title: "Photo Uploaded", description: `Photo for ${student.first_name} uploaded.` });
+    } catch {
+      toast({ title: "Error", description: "Failed to upload photo.", variant: "destructive" });
+    } finally {
+      setUploadingPhoto(null);
+      setPhotoTargetId(null);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
 
   const handleRegister = async () => {
     if (!firstName.trim() || !lastName.trim() || !form || !stream) {
@@ -379,6 +428,7 @@ const AdminStudents = () => {
                 form: s.form || "—",
                 stream: s.stream || "—",
                 year,
+                photoUrl: studentPhotos[s.id],
               }));
               if (ids.length === 0) {
                 toast({ title: "No Students", description: "No students to generate IDs for.", variant: "destructive" });
@@ -399,6 +449,13 @@ const AdminStudents = () => {
               capture="environment"
               className="hidden"
               onChange={handleFileSelect}
+            />
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoUpload}
             />
           </div>
         </div>
@@ -461,6 +518,20 @@ const AdminStudents = () => {
                             variant="ghost"
                             size="sm"
                             className="gap-1"
+                            disabled={uploadingPhoto === s.id}
+                            onClick={() => {
+                              setPhotoTargetId(s.id);
+                              setTimeout(() => photoInputRef.current?.click(), 0);
+                            }}
+                            title={studentPhotos[s.id] ? "Change photo" : "Upload photo"}
+                          >
+                            {uploadingPhoto === s.id ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />}
+                            {studentPhotos[s.id] ? "📷" : "Photo"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
                             disabled={sendingNotification === s.id || !s.guardian_phone}
                             onClick={() => handleSendNotification(s)}
                             title={s.guardian_phone ? `Send to ${s.guardian_phone}` : "No phone number"}
@@ -479,6 +550,7 @@ const AdminStudents = () => {
                                 form: s.form || "—",
                                 stream: s.stream || "—",
                                 year: new Date().getFullYear().toString(),
+                                photoUrl: studentPhotos[s.id],
                               });
                               toast({ title: "ID Generated", description: `ID card for ${s.first_name} saved.` });
                             }}
