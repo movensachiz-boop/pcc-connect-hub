@@ -415,6 +415,7 @@ const AdminStudents = () => {
                     <TableHead>Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Balance</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
