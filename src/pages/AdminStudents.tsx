@@ -379,6 +379,7 @@ const AdminStudents = () => {
                 form: s.form || "—",
                 stream: s.stream || "—",
                 year,
+                photoUrl: studentPhotos[s.id],
               }));
               if (ids.length === 0) {
                 toast({ title: "No Students", description: "No students to generate IDs for.", variant: "destructive" });
