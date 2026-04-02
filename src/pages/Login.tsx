@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
+import { Eye, EyeOff, LogIn, Loader2, GraduationCap, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import pccLogo from "@/assets/pcc-logo.png";
 
@@ -32,7 +32,6 @@ const Login = () => {
         return;
       }
 
-      // Set the session from the edge function response
       if (data.session) {
         await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -40,7 +39,6 @@ const Login = () => {
         });
       }
 
-      // Navigate based on role
       if (data.role === "admin") {
         navigate("/admin");
       } else {
@@ -54,62 +52,103 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center gradient-primary px-4">
-      <Card className="w-full max-w-md shadow-card-hover border-0">
-        <CardHeader className="text-center pb-2 pt-8">
-          <img src={pccLogo} alt="Pioneer Christian College" width={80} height={80} className="mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-primary">Pioneer Christian College</h1>
-          <p className="text-sm text-muted-foreground mt-1">Finance & Student Portal</p>
-        </CardHeader>
-        <CardContent className="px-8 pb-8">
-          <form onSubmit={handleLogin} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="regNumber">Registration Number</Label>
-              <Input
-                id="regNumber"
-                placeholder="e.g. PCC-2025-001"
-                value={regNumber}
-                onChange={(e) => setRegNumber(e.target.value)}
-                required
-              />
+    <div className="min-h-screen flex gradient-hero relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-accent/10 blur-3xl animate-float" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-primary/20 blur-3xl animate-float" style={{ animationDelay: '3s' }} />
+        <div className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full bg-accent/5 blur-3xl" />
+      </div>
+
+      {/* Left side - branding */}
+      <div className="hidden lg:flex flex-1 flex-col justify-center items-center relative z-10 px-12">
+        <div className="max-w-md text-center space-y-6">
+          <img src={pccLogo} alt="Progress Christian Centre" width={120} height={120} className="mx-auto drop-shadow-2xl animate-float" />
+          <h1 className="text-4xl font-bold text-primary-foreground leading-tight">
+            Progress Christian Centre
+          </h1>
+          <p className="text-lg text-primary-foreground/70">
+            Finance & Student Management Portal
+          </p>
+          <div className="flex items-center justify-center gap-8 pt-4">
+            <div className="flex items-center gap-2 text-primary-foreground/60">
+              <GraduationCap size={20} />
+              <span className="text-sm">Student Portal</span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
+            <div className="flex items-center gap-2 text-primary-foreground/60">
+              <Shield size={20} />
+              <span className="text-sm">Secure Access</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side - login form */}
+      <div className="flex-1 flex items-center justify-center relative z-10 px-4 py-8">
+        <Card className="w-full max-w-[420px] shadow-glow border-0 animate-fade-in">
+          <CardHeader className="text-center pb-2 pt-8">
+            <img src={pccLogo} alt="Progress Christian Centre" width={72} height={72} className="mx-auto mb-3 lg:hidden" />
+            <h2 className="text-2xl font-bold text-foreground">Welcome Back</h2>
+            <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+          </CardHeader>
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleLogin} className="space-y-5 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="regNumber" className="text-sm font-medium">Registration Number</Label>
                 <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="regNumber"
+                  placeholder="e.g. PCC-2025-001"
+                  value={regNumber}
+                  onChange={(e) => setRegNumber(e.target.value)}
                   required
+                  className="h-11 bg-muted/50 border-border/50 focus:bg-card transition-colors"
                 />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
               </div>
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full gap-2" disabled={loading}>
-              {loading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
-              {loading ? "Signing In..." : "Sign In"}
-            </Button>
-            <p className="text-xs text-center text-muted-foreground mt-4">
-              New student?{" "}
-              <button type="button" className="text-primary underline" onClick={() => navigate("/setup-account")}>
-                Set up your account
-              </button>
-            </p>
-            <p className="text-xs text-center text-muted-foreground">
-              Forgot password? Contact your administrator.
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-11 bg-muted/50 border-border/50 focus:bg-card transition-colors pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              {error && (
+                <div className="bg-destructive/10 text-destructive text-sm px-3 py-2 rounded-lg">
+                  {error}
+                </div>
+              )}
+              <Button type="submit" className="w-full h-11 gap-2 text-base font-semibold shadow-lg hover:shadow-xl transition-all" disabled={loading}>
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
+                {loading ? "Signing In..." : "Sign In"}
+              </Button>
+              <div className="space-y-2 pt-2">
+                <p className="text-sm text-center text-muted-foreground">
+                  New student?{" "}
+                  <button type="button" className="text-primary font-medium hover:underline" onClick={() => navigate("/setup-account")}>
+                    Set up your account
+                  </button>
+                </p>
+                <p className="text-xs text-center text-muted-foreground">
+                  Forgot password? Contact your administrator.
+                </p>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
