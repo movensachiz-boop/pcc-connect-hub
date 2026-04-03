@@ -62,7 +62,7 @@ const AdminPayments = () => {
   }, []);
 
   const fetchStudents = async () => {
-    const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number").order("first_name");
+    const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone").order("first_name");
     if (data) setStudents(data);
   };
 
