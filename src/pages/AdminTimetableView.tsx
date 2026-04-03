@@ -4,14 +4,19 @@ import { useTimetable } from '@/context/TimetableContext';
 import { DAYS } from '@/data/defaults';
 import { DayOfWeek, TimetableSlot } from '@/types/school';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, AlertTriangle, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, AlertTriangle, Pencil, Eraser, RotateCcw } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SlotEditDialog from '@/components/SlotEditDialog';
+import { toast } from 'sonner';
 
 export default function AdminTimetableView() {
-  const { timetable, classes, subjects, teachers, config, updateSlot } = useTimetable();
+  const { timetable, classes, subjects, teachers, config, updateSlot, generateTimetable } = useTimetable();
   const [viewMode, setViewMode] = useState<'class' | 'teacher'>('class');
   const [selectedId, setSelectedId] = useState<string>('');
   const [editSlot, setEditSlot] = useState<TimetableSlot | null>(null);
+  const [clearConfirm, setClearConfirm] = useState(false);
 
   const totalSlots = config.periodsPerDay + 2;
   const periods = Array.from({ length: totalSlots }, (_, i) => i + 1);
@@ -32,7 +37,7 @@ export default function AdminTimetableView() {
   };
 
   const classOptions = [...classes].sort((a, b) => a.form - b.form || a.stream.localeCompare(b.stream)).map(c => ({ value: c.id, label: `${c.form}${c.stream}` }));
-  const teacherOptions = teachers.map(t => ({ value: t.id, label: t.name }));
+  const teacherOptions = teachers.map(t => ({ value: t.id, label: `${t.title} ${t.name}` }));
 
   const filteredSlots = useMemo(() => {
     if (!timetable || !selectedId) return [];
@@ -53,7 +58,7 @@ export default function AdminTimetableView() {
     return {
       label: subject?.code || 'Free',
       sublabel: viewMode === 'class' ? teacher?.name : classes.find(c => c.id === slot.classId)?.id,
-      className: isConflict ? 'bg-destructive/20 text-destructive' : subject ? 'bg-primary/10 text-primary' : '',
+      className: isConflict ? 'bg-destructive/20 text-destructive border border-destructive/30' : subject ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
       isConflict, editable: true,
     };
   };
@@ -68,7 +73,27 @@ export default function AdminTimetableView() {
     if (cleaned.subjectId === '__none') cleaned.subjectId = undefined;
     if (cleaned.teacherId === '__none') cleaned.teacherId = undefined;
     updateSlot(slotId, cleaned);
+    toast.success('Slot updated');
   };
+
+  const handleClearSlot = (day: DayOfWeek, period: number) => {
+    const slot = getSlot(day, period);
+    if (slot && slot.type === 'lesson') {
+      updateSlot(slot.id, { subjectId: undefined, teacherId: undefined });
+      toast.success('Slot cleared');
+    }
+  };
+
+  const handleRegenerate = () => {
+    generateTimetable();
+    setClearConfirm(false);
+    toast.success('Timetable regenerated');
+  };
+
+  // Stats
+  const filledSlots = filteredSlots.filter(s => s.type === 'lesson' && s.subjectId).length;
+  const totalLessonSlots = filteredSlots.filter(s => s.type === 'lesson').length;
+  const conflictCount = timetable?.conflicts.length || 0;
 
   if (!timetable) {
     return (
@@ -78,6 +103,7 @@ export default function AdminTimetableView() {
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Calendar className="w-16 h-16 mb-4 opacity-30" />
             <p>No timetable generated yet</p>
+            <p className="text-xs mt-1">Go to Timetable → Generate to create one</p>
           </div>
         </div>
       </DashboardLayout>
@@ -87,19 +113,24 @@ export default function AdminTimetableView() {
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">View Timetable</h2>
-          <p className="text-sm text-muted-foreground">Click any lesson cell to edit it</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">View Timetable</h2>
+            <p className="text-sm text-muted-foreground">Click any lesson cell to edit · Right-click to clear</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setClearConfirm(true)} className="gap-1.5">
+            <RotateCcw className="w-3.5 h-3.5" /> Regenerate
+          </Button>
         </div>
 
         <Tabs value={viewMode} onValueChange={v => { setViewMode(v as 'class' | 'teacher'); setSelectedId(''); }}>
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
             <TabsList>
               <TabsTrigger value="class">By Class</TabsTrigger>
               <TabsTrigger value="teacher">By Teacher</TabsTrigger>
             </TabsList>
             <select
-              className="px-3 py-2 border rounded-md text-sm bg-background"
+              className="px-3 py-2 border rounded-md text-sm bg-background min-w-[180px]"
               value={selectedId}
               onChange={e => setSelectedId(e.target.value)}
             >
@@ -108,6 +139,12 @@ export default function AdminTimetableView() {
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
+            {selectedId && (
+              <div className="flex gap-2 ml-auto">
+                <Badge variant="secondary">{filledSlots}/{totalLessonSlots} filled</Badge>
+                {conflictCount > 0 && <Badge variant="destructive">{conflictCount} conflicts</Badge>}
+              </div>
+            )}
           </div>
         </Tabs>
 
@@ -132,17 +169,22 @@ export default function AdminTimetableView() {
                       return (
                         <td key={day} className="p-1.5 border-b">
                           <div
-                            className={`rounded-md px-2 py-1.5 min-h-[40px] text-center ${display?.className || ''} ${isEditable ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-shadow' : ''}`}
+                            className={`rounded-md px-2 py-1.5 min-h-[44px] text-center relative group ${display?.className || ''} ${isEditable ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all' : ''}`}
                             onClick={() => isEditable && handleSlotClick(day, period)}
+                            onContextMenu={(e) => { e.preventDefault(); if (isEditable) handleClearSlot(day, period); }}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="font-semibold text-xs">{display?.label || ''}</div>
-                              {isEditable && <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100" />}
+                            <div className="flex items-center justify-center gap-1">
+                              <span className="font-semibold text-xs">{display?.label || ''}</span>
+                              {isEditable && (
+                                <div className="hidden group-hover:flex gap-0.5 absolute top-0.5 right-0.5">
+                                  <Pencil className="w-3 h-3 text-muted-foreground" />
+                                </div>
+                              )}
                             </div>
                             {display && 'sublabel' in display && display.sublabel && (
                               <div className="text-[10px] text-muted-foreground mt-0.5">{display.sublabel}</div>
                             )}
-                            {display?.isConflict && <AlertTriangle className="w-3 h-3 text-destructive mt-0.5" />}
+                            {display?.isConflict && <AlertTriangle className="w-3 h-3 text-destructive mt-0.5 mx-auto" />}
                           </div>
                         </td>
                       );
@@ -172,6 +214,20 @@ export default function AdminTimetableView() {
           subjects={subjects} teachers={teachers} classes={classes}
           onSave={handleSlotSave} allSlots={timetable.slots}
         />
+
+        {/* Regenerate Confirmation */}
+        <Dialog open={clearConfirm} onOpenChange={setClearConfirm}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-warning" /> Regenerate Timetable</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This will discard the current timetable and generate a new one. All manual edits will be lost.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setClearConfirm(false)}>Cancel</Button>
+              <Button onClick={handleRegenerate}>Regenerate</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
