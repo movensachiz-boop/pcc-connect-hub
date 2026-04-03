@@ -6,6 +6,27 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting
+const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkLoginRate(key: string): boolean {
+  const now = Date.now();
+  const record = loginAttempts.get(key);
+  if (!record || now - record.lastAttempt > LOCKOUT_MS) {
+    loginAttempts.set(key, { count: 1, lastAttempt: now });
+    return false;
+  }
+  record.count++;
+  record.lastAttempt = now;
+  return record.count > MAX_LOGIN_ATTEMPTS;
+}
+
+function resetLoginRate(key: string) {
+  loginAttempts.delete(key);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -18,17 +39,25 @@ Deno.serve(async (req) => {
 
     const { registrationNumber, password } = await req.json();
 
-    if (!registrationNumber || !password) {
+    if (!registrationNumber || !password || typeof registrationNumber !== "string" || typeof password !== "string") {
       return new Response(JSON.stringify({ error: "Registration number and password required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Convert registration number to the email format we use
-    const email = `${registrationNumber.toLowerCase()}@pcc.local`;
+    const cleanRegNumber = registrationNumber.trim().toUpperCase();
 
-    // Sign in using the anon client
+    // Rate limiting
+    if (checkLoginRate(cleanRegNumber)) {
+      return new Response(JSON.stringify({ error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const email = `${cleanRegNumber.toLowerCase()}@pcc.local`;
+
     const supabase = createClient(supabaseUrl, anonKey);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -42,7 +71,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get user role
+    // Successful login - reset rate limit
+    resetLoginRate(cleanRegNumber);
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
