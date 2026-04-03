@@ -35,6 +35,7 @@ interface StudentProfile {
   first_name: string;
   last_name: string;
   registration_number: string;
+  guardian_phone: string | null;
 }
 
 const AdminPayments = () => {
