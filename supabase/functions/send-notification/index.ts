@@ -85,26 +85,19 @@ Deno.serve(async (req) => {
       message = `Dear Guardian,\n\nThis is a notification regarding ${studentName} at Progress Christian Centre.\n\nRegistration Number: ${registrationNumber || "N/A"}\n\nThank you.\n- PCC School`;
     }
 
-    // Build Basic auth: accountId:apiKey
-    const basicAuth = btoa(`${accountId}:${PINGRAM_API_KEY}`);
-
-    // Send via Pingram REST API (formerly NotificationAPI)
-    const pingramResponse = await fetch(`https://api.pingram.io/${accountId}/sender`, {
+    // Send via Pingram REST API - POST /send with Bearer auth
+    const pingramResponse = await fetch("https://api.pingram.io/send", {
       method: "POST",
       headers: {
-        "Authorization": `Basic ${basicAuth}`,
+        "Authorization": `Bearer ${PINGRAM_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        notificationId: smsType,
-        user: {
+        type: smsType,
+        to: {
           id: guardianPhone,
           number: formattedPhone,
         },
-        mergeTags: {
-          message: message,
-        },
-        forceChannels: ["sms"],
         sms: {
           message: message,
         },
