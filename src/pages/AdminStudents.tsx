@@ -177,6 +177,7 @@ const AdminStudents = () => {
         try {
           await supabase.functions.invoke("send-notification", {
             body: {
+              type: "registration",
               guardianPhone: guardianPhone.trim(),
               studentName: `${firstName.trim()} ${lastName.trim()}`,
               registrationNumber: regNumber,
@@ -260,6 +261,7 @@ const AdminStudents = () => {
     try {
       const { data, error } = await supabase.functions.invoke("send-notification", {
         body: {
+          type: "registration",
           guardianPhone: student.guardian_phone,
           studentName: `${student.first_name} ${student.last_name}`,
           registrationNumber: student.registration_number,
@@ -375,6 +377,7 @@ const AdminStudents = () => {
             try {
               await supabase.functions.invoke("send-notification", {
                 body: {
+                  type: "registration",
                   guardianPhone: s.guardian_phone,
                   studentName: `${s.first_name.trim()} ${s.last_name.trim()}`,
                   registrationNumber: regNumber,

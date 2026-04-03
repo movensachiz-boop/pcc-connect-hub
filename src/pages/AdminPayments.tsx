@@ -35,6 +35,7 @@ interface StudentProfile {
   first_name: string;
   last_name: string;
   registration_number: string;
+  guardian_phone: string | null;
 }
 
 const AdminPayments = () => {
@@ -61,7 +62,7 @@ const AdminPayments = () => {
   }, []);
 
   const fetchStudents = async () => {
-    const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number").order("first_name");
+    const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone").order("first_name");
     if (data) setStudents(data);
   };
 
@@ -175,7 +176,7 @@ const AdminPayments = () => {
       }
     }
 
-    const { error } = await supabase.from("payments").insert({
+    const { data: paymentData, error } = await supabase.from("payments").insert({
       student_profile_id: selectedStudentId,
       amount: parseFloat(manualAmount),
       method: manualMethod || "Bank Deposit",
@@ -183,11 +184,29 @@ const AdminPayments = () => {
       paynow_reference: manualRef || null,
       description: "Deposit slip payment",
       deposit_slip_url: depositSlipUrl,
-    });
+    }).select().single();
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      // Send SMS notification to guardian
+      const student = students.find(s => s.id === selectedStudentId);
+      if (student?.guardian_phone) {
+        try {
+          await supabase.functions.invoke("send-notification", {
+            body: {
+              type: "payment",
+              guardianPhone: student.guardian_phone,
+              studentName: `${student.first_name} ${student.last_name}`,
+              amount: manualAmount,
+              receiptNumber: paymentData?.receipt_number,
+              method: manualMethod || "Bank Deposit",
+            },
+          });
+        } catch {
+          // Payment saved, notification failed silently
+        }
+      }
       toast({ title: "Payment Recorded", description: "Payment saved with deposit slip attached." });
       setConfirmDialogOpen(false);
       setScannedData(null);
