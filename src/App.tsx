@@ -22,6 +22,9 @@ import AdminClasses from "./pages/AdminClasses";
 import AdminTimetableGenerate from "./pages/AdminTimetableGenerate";
 import AdminTimetableView from "./pages/AdminTimetableView";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import AdminClassRoster from "./pages/AdminClassRoster";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherAttendance from "./pages/TeacherAttendance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
