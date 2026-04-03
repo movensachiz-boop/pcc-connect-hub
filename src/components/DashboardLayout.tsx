@@ -10,7 +10,7 @@ import pccLogo from "@/assets/pcc-logo.png";
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  role: "admin" | "student";
+  role: "admin" | "student" | "teacher";
 }
 
 const adminLinks = [
