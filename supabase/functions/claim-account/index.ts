@@ -6,6 +6,33 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting: simple in-memory store
+const attempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const record = attempts.get(key);
+  if (!record || now - record.lastAttempt > WINDOW_MS) {
+    attempts.set(key, { count: 1, lastAttempt: now });
+    return false;
+  }
+  record.count++;
+  record.lastAttempt = now;
+  if (record.count > MAX_ATTEMPTS) return true;
+  return false;
+}
+
+function validatePassword(password: string): string | null {
+  if (password.length < 8) return "Password must be at least 8 characters";
+  if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter";
+  if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter";
+  if (!/[0-9]/.test(password)) return "Password must contain a number";
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return "Password must contain a special character";
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -19,12 +46,29 @@ Deno.serve(async (req) => {
 
     const { action, registrationNumber, password } = await req.json();
 
+    // Validate registration number format
+    if (!registrationNumber || typeof registrationNumber !== "string" || registrationNumber.trim().length === 0) {
+      return new Response(JSON.stringify({ error: "Registration number is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const cleanRegNumber = registrationNumber.trim().toUpperCase();
+
+    // Rate limiting by registration number
+    if (isRateLimited(cleanRegNumber)) {
+      return new Response(JSON.stringify({ error: "Too many attempts. Please try again in 15 minutes." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "check") {
-      // Check if registration number exists and is unclaimed
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("id, first_name, last_name, claimed")
-        .eq("registration_number", registrationNumber)
+        .eq("registration_number", cleanRegNumber)
         .maybeSingle();
 
       if (!profile) {
@@ -50,25 +94,26 @@ Deno.serve(async (req) => {
     }
 
     if (action === "claim") {
-      if (!registrationNumber || !password) {
-        return new Response(JSON.stringify({ error: "Registration number and password are required" }), {
+      if (!password || typeof password !== "string") {
+        return new Response(JSON.stringify({ error: "Password is required" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      if (password.length < 6) {
-        return new Response(JSON.stringify({ error: "Password must be at least 6 characters" }), {
+      // Strong password validation
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        return new Response(JSON.stringify({ error: passwordError }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Verify registration number exists and is unclaimed
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("id, first_name, last_name, claimed")
-        .eq("registration_number", registrationNumber)
+        .eq("registration_number", cleanRegNumber)
         .maybeSingle();
 
       if (!profile) {
@@ -85,14 +130,13 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Create auth user
-      const email = `${registrationNumber.toLowerCase()}@pcc.local`;
+      const email = `${cleanRegNumber.toLowerCase()}@pcc.local`;
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
         user_metadata: {
-          registration_number: registrationNumber,
+          registration_number: cleanRegNumber,
           first_name: profile.first_name,
           last_name: profile.last_name,
         },
@@ -105,14 +149,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Update profile with user_id and mark as claimed
       const { error: updateError } = await supabaseAdmin
         .from("profiles")
         .update({ user_id: newUser.user.id, claimed: true })
         .eq("id", profile.id);
 
       if (updateError) {
-        // Cleanup auth user if profile update fails
         await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
         return new Response(JSON.stringify({ error: updateError.message }), {
           status: 400,
@@ -120,13 +162,11 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Assign student role
       await supabaseAdmin.from("user_roles").insert({
         user_id: newUser.user.id,
         role: "student",
       });
 
-      // Sign in the user
       const supabase = createClient(supabaseUrl, anonKey);
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
