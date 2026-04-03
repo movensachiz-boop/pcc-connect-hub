@@ -177,6 +177,7 @@ const AdminStudents = () => {
         try {
           await supabase.functions.invoke("send-notification", {
             body: {
+              type: "registration",
               guardianPhone: guardianPhone.trim(),
               studentName: `${firstName.trim()} ${lastName.trim()}`,
               registrationNumber: regNumber,
