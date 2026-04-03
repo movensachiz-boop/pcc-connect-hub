@@ -12,12 +12,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ZAVU_API_KEY = Deno.env.get("ZAVU_API_KEY");
-    if (!ZAVU_API_KEY) {
-      throw new Error("ZAVU_API_KEY is not configured");
+    const PINGRAM_API_KEY = Deno.env.get("PINGRAM_API_KEY");
+    if (!PINGRAM_API_KEY) {
+      throw new Error("PINGRAM_API_KEY is not configured");
     }
 
-    // Verify the caller is an admin
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -56,47 +55,71 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { guardianPhone, studentName, registrationNumber, channel } = await req.json();
+    const { type, guardianPhone, studentName, registrationNumber, amount, receiptNumber, method } = await req.json();
 
-    if (!guardianPhone || !studentName || !registrationNumber) {
-      return new Response(JSON.stringify({ error: "Missing required fields: guardianPhone, studentName, registrationNumber" }), {
+    if (!guardianPhone || !studentName) {
+      return new Response(JSON.stringify({ error: "Missing required fields: guardianPhone, studentName" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const message = `Dear Guardian,\n\nYour child ${studentName} has been registered at PCC School.\n\nRegistration Number: ${registrationNumber}\n\nPlease use this registration number to set up the student portal account at the school's portal.\n\nThank you.`;
+    // Format phone: ensure it starts with +263 for Zimbabwe
+    let formattedPhone = guardianPhone.replace(/\s+/g, "");
+    if (formattedPhone.startsWith("0")) {
+      formattedPhone = "+263" + formattedPhone.slice(1);
+    } else if (!formattedPhone.startsWith("+")) {
+      formattedPhone = "+" + formattedPhone;
+    }
 
-    // Send via Zavu API
-    const zavuResponse = await fetch("https://api.zavu.dev/v1/messages", {
+    let message = "";
+    let smsType = "general";
+
+    if (type === "registration") {
+      smsType = "registration";
+      message = `Dear Guardian,\n\nYour child ${studentName} has been registered at Progress Christian Centre.\n\nRegistration Number: ${registrationNumber}\n\nPlease use this registration number to set up the student portal account.\n\nThank you.\n- PCC School`;
+    } else if (type === "payment") {
+      smsType = "fees_payment";
+      message = `Dear Guardian,\n\nA fees payment of $${parseFloat(amount).toFixed(2)} has been recorded for ${studentName}.\n\nReceipt: ${receiptNumber || "Pending"}\nMethod: ${method || "N/A"}\n\nThank you for your payment.\n- PCC School`;
+    } else {
+      message = `Dear Guardian,\n\nThis is a notification regarding ${studentName} at Progress Christian Centre.\n\nRegistration Number: ${registrationNumber || "N/A"}\n\nThank you.\n- PCC School`;
+    }
+
+    // Send via Pingram API
+    const pingramResponse = await fetch("https://api.pingram.io/v1/messages/send", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${ZAVU_API_KEY}`,
+        "Authorization": `Bearer ${PINGRAM_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        to: guardianPhone,
-        text: message,
+        type: smsType,
+        to: {
+          number: formattedPhone,
+        },
+        sms: {
+          message: message,
+        },
       }),
     });
 
-    const zavuData = await zavuResponse.json();
+    const pingramData = await pingramResponse.json();
 
-    if (!zavuResponse.ok) {
-      console.error("Zavu API error:", JSON.stringify(zavuData));
-      return new Response(JSON.stringify({ 
-        error: "Failed to send notification", 
-        details: zavuData 
+    if (!pingramResponse.ok) {
+      console.error("Pingram API error:", JSON.stringify(pingramData));
+      return new Response(JSON.stringify({
+        error: "Failed to send SMS notification",
+        details: pingramData,
       }), {
-        status: zavuResponse.status,
+        status: pingramResponse.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      messageId: zavuData?.message?.id,
-      channel: zavuData?.message?.channel,
+    return new Response(JSON.stringify({
+      success: true,
+      messageId: pingramData?.id || pingramData?.messageId,
+      type: smsType,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
