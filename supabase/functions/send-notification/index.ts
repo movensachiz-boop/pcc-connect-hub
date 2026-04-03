@@ -17,16 +17,6 @@ Deno.serve(async (req) => {
       throw new Error("PINGRAM_API_KEY is not configured");
     }
 
-    // Extract accountId from the API key JWT
-    const jwtPayload = PINGRAM_API_KEY.replace("pingram_sk_", "");
-    const payloadPart = jwtPayload.split(".")[1];
-    const decoded = JSON.parse(atob(payloadPart));
-    const accountId = decoded.accountId;
-
-    if (!accountId) {
-      throw new Error("Could not extract accountId from PINGRAM_API_KEY");
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
