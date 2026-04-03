@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          date: string
+          id: string
+          marked_by: string | null
+          notes: string | null
+          status: string
+          student_profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          marked_by?: string | null
+          notes?: string | null
+          status?: string
+          student_profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          marked_by?: string | null
+          notes?: string | null
+          status?: string
+          student_profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "student_roster"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -69,6 +120,13 @@ export type Database = {
             columns: ["student_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "student_roster"
             referencedColumns: ["id"]
           },
         ]
@@ -144,7 +202,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      student_roster: {
+        Row: {
+          first_name: string | null
+          form: string | null
+          id: string | null
+          last_name: string | null
+          registration_number: string | null
+          status: string | null
+          stream: string | null
+        }
+        Insert: {
+          first_name?: string | null
+          form?: string | null
+          id?: string | null
+          last_name?: string | null
+          registration_number?: string | null
+          status?: string | null
+          stream?: string | null
+        }
+        Update: {
+          first_name?: string | null
+          form?: string | null
+          id?: string | null
+          last_name?: string | null
+          registration_number?: string | null
+          status?: string | null
+          stream?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
