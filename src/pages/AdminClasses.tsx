@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, School, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, School, Check, RefreshCw, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const FORMS: FormLevel[] = [1, 2, 3, 4, 5, 6];
 const LEARNING_AREAS: LearningArea[] = ['Sciences', 'Commercials', 'Arts'];
@@ -23,6 +24,62 @@ export default function AdminClasses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ClassFormState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
+
+  const syncFromRegistrations = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('form, stream')
+        .not('form', 'is', null)
+        .not('stream', 'is', null);
+      if (error) throw error;
+
+      // Count students per form+stream
+      const counts: Record<string, { form: number; stream: string; count: number }> = {};
+      for (const row of data || []) {
+        const formNum = parseInt(row.form!, 10);
+        if (isNaN(formNum) || formNum < 1 || formNum > 6) continue;
+        const key = `${formNum}${row.stream}`;
+        if (!counts[key]) counts[key] = { form: formNum, stream: row.stream!, count: 0 };
+        counts[key].count++;
+      }
+
+      let added = 0;
+      const newClasses = [...classes];
+      const newCounts: Record<string, number> = {};
+
+      for (const [key, info] of Object.entries(counts)) {
+        newCounts[key] = info.count;
+        if (!newClasses.some(c => c.id === key)) {
+          const formSubjects = subjects
+            .filter(s => s.forms.includes(info.form as FormLevel))
+            .map(s => s.id);
+          newClasses.push({
+            id: key,
+            form: info.form as FormLevel,
+            stream: info.stream,
+            subjectIds: formSubjects,
+          });
+          added++;
+        }
+      }
+
+      setStudentCounts(newCounts);
+      if (added > 0) {
+        setClasses(newClasses);
+        toast.success(`Synced: ${added} new class(es) added from registrations`);
+      } else {
+        toast.info('All registered form/stream combinations already exist');
+      }
+    } catch (e: any) {
+      toast.error('Failed to sync: ' + e.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const formGroups = FORMS.map(f => ({
     form: f, label: `Form ${f}`,
@@ -65,7 +122,12 @@ export default function AdminClasses() {
             <h2 className="text-2xl font-bold text-foreground">Classes</h2>
             <p className="text-sm text-muted-foreground">Manage class streams and subject allocations</p>
           </div>
-          <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-1" /> Add Class</Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={syncFromRegistrations} disabled={syncing}>
+              <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? 'animate-spin' : ''}`} /> Sync from Registrations
+            </Button>
+            <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-1" /> Add Class</Button>
+          </div>
         </div>
 
         <div className="space-y-8">
@@ -88,6 +150,11 @@ export default function AdminClasses() {
                           <p className="text-sm font-semibold">{cls.id}</p>
                           {cls.learningArea && <p className="text-xs text-accent-foreground">{cls.learningArea}</p>}
                         </div>
+                        {studentCounts[cls.id] !== undefined && (
+                          <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            <Users className="w-3 h-3" />{studentCounts[cls.id]}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {cls.subjectIds.map(sId => {
