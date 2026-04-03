@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, Receipt, Bell, FileText, Settings,
-  LogOut, Menu, X, BookOpen, CalendarDays, ChevronRight, GraduationCap, School, Calendar
+  LogOut, Menu, X, BookOpen, CalendarDays, ChevronRight, GraduationCap, School, Calendar, ClipboardList
 } from "lucide-react";
 import pccLogo from "@/assets/pcc-logo.png";
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  role: "admin" | "student";
+  role: "admin" | "student" | "teacher";
 }
 
 const adminLinks = [
@@ -20,6 +20,7 @@ const adminLinks = [
   { label: "Subjects", icon: BookOpen, path: "/admin/subjects" },
   { label: "Teachers", icon: GraduationCap, path: "/admin/teachers" },
   { label: "Classes", icon: School, path: "/admin/classes" },
+  { label: "Class Roster", icon: ClipboardList, path: "/admin/roster" },
   { label: "Timetable", icon: Calendar, path: "/admin/timetable" },
   { label: "Reports", icon: FileText, path: "/admin/reports" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
@@ -34,11 +35,18 @@ const studentLinks = [
   { label: "Announcements", icon: Bell, path: "/student/announcements" },
 ];
 
+const teacherLinks = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/teacher" },
+  { label: "Attendance", icon: Users, path: "/teacher/attendance" },
+  { label: "Timetable", icon: CalendarDays, path: "/teacher/timetable" },
+  { label: "Announcements", icon: Bell, path: "/teacher/announcements" },
+];
+
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const links = role === "admin" ? adminLinks : studentLinks;
+  const links = role === "admin" ? adminLinks : role === "teacher" ? teacherLinks : studentLinks;
 
   return (
     <div className="min-h-screen flex bg-background">

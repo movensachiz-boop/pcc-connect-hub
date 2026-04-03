@@ -22,6 +22,9 @@ import AdminClasses from "./pages/AdminClasses";
 import AdminTimetableGenerate from "./pages/AdminTimetableGenerate";
 import AdminTimetableView from "./pages/AdminTimetableView";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import AdminClassRoster from "./pages/AdminClassRoster";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherAttendance from "./pages/TeacherAttendance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +56,11 @@ const App = () => (
             <Route path="/admin/classes" element={<AdminClasses />} />
             <Route path="/admin/timetable" element={<AdminTimetableGenerate />} />
             <Route path="/admin/timetable/view" element={<AdminTimetableView />} />
+            <Route path="/admin/roster" element={<AdminClassRoster />} />
+            <Route path="/teacher" element={<TeacherDashboard />} />
+            <Route path="/teacher/attendance" element={<TeacherAttendance />} />
+            <Route path="/teacher/timetable" element={<StudentTimetable />} />
+            <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
