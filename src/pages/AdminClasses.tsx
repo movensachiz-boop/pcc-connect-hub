@@ -24,6 +24,62 @@ export default function AdminClasses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ClassFormState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
+
+  const syncFromRegistrations = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('form, stream')
+        .not('form', 'is', null)
+        .not('stream', 'is', null);
+      if (error) throw error;
+
+      // Count students per form+stream
+      const counts: Record<string, { form: number; stream: string; count: number }> = {};
+      for (const row of data || []) {
+        const formNum = parseInt(row.form!, 10);
+        if (isNaN(formNum) || formNum < 1 || formNum > 6) continue;
+        const key = `${formNum}${row.stream}`;
+        if (!counts[key]) counts[key] = { form: formNum, stream: row.stream!, count: 0 };
+        counts[key].count++;
+      }
+
+      let added = 0;
+      const newClasses = [...classes];
+      const newCounts: Record<string, number> = {};
+
+      for (const [key, info] of Object.entries(counts)) {
+        newCounts[key] = info.count;
+        if (!newClasses.some(c => c.id === key)) {
+          const formSubjects = subjects
+            .filter(s => s.forms.includes(info.form as FormLevel))
+            .map(s => s.id);
+          newClasses.push({
+            id: key,
+            form: info.form as FormLevel,
+            stream: info.stream,
+            subjectIds: formSubjects,
+          });
+          added++;
+        }
+      }
+
+      setStudentCounts(newCounts);
+      if (added > 0) {
+        setClasses(newClasses);
+        toast.success(`Synced: ${added} new class(es) added from registrations`);
+      } else {
+        toast.info('All registered form/stream combinations already exist');
+      }
+    } catch (e: any) {
+      toast.error('Failed to sync: ' + e.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const formGroups = FORMS.map(f => ({
     form: f, label: `Form ${f}`,
