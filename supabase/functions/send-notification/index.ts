@@ -85,8 +85,8 @@ Deno.serve(async (req) => {
       message = `Dear Guardian,\n\nThis is a notification regarding ${studentName} at Progress Christian Centre.\n\nRegistration Number: ${registrationNumber || "N/A"}\n\nThank you.\n- PCC School`;
     }
 
-    // Send via Pingram API
-    const pingramResponse = await fetch("https://api.pingram.io/v1/messages/send", {
+    // Send via Pingram REST API - POST /send with Bearer auth
+    const pingramResponse = await fetch("https://api.pingram.io/send", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${PINGRAM_API_KEY}`,
@@ -95,6 +95,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         type: smsType,
         to: {
+          id: guardianPhone,
           number: formattedPhone,
         },
         sms: {
@@ -103,7 +104,15 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const pingramData = await pingramResponse.json();
+    const responseText = await pingramResponse.text();
+    let pingramData;
+    try {
+      pingramData = JSON.parse(responseText);
+    } catch {
+      pingramData = { raw: responseText };
+    }
+
+    console.log("Pingram response status:", pingramResponse.status, "body:", responseText);
 
     if (!pingramResponse.ok) {
       console.error("Pingram API error:", JSON.stringify(pingramData));
@@ -118,7 +127,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      messageId: pingramData?.id || pingramData?.messageId,
+      data: pingramData,
       type: smsType,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
