@@ -599,7 +599,7 @@ const AdminStudents = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Form *</Label>
-                <Select value={form} onValueChange={setForm}>
+                <Select value={form} onValueChange={(v) => { setForm(v); setStream(""); }}>
                   <SelectTrigger><SelectValue placeholder="Select form" /></SelectTrigger>
                   <SelectContent>
                     {["1", "2", "3", "4", "5", "6"].map((f) => (
@@ -613,7 +613,10 @@ const AdminStudents = () => {
                 <Select value={stream} onValueChange={setStream}>
                   <SelectTrigger><SelectValue placeholder="Select stream" /></SelectTrigger>
                   <SelectContent>
-                    {["Science", "Arts", "Commerce"].map((s) => (
+                    {(parseInt(form) >= 5
+                      ? ["Sciences", "Commercials", "Arts"]
+                      : ["G1", "G2", "G22", "Blue"]
+                    ).map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
@@ -726,7 +729,7 @@ const AdminStudents = () => {
                         placeholder="Last name"
                         className="h-8 text-sm"
                       />
-                      <Select value={s.form} onValueChange={(v) => updateExtractedStudent(i, "form", v)}>
+                      <Select value={s.form} onValueChange={(v) => { updateExtractedStudent(i, "form", v); updateExtractedStudent(i, "stream", ""); }}>
                         <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Form" /></SelectTrigger>
                         <SelectContent>
                           {["1", "2", "3", "4", "5", "6"].map((f) => (
@@ -737,7 +740,10 @@ const AdminStudents = () => {
                       <Select value={s.stream} onValueChange={(v) => updateExtractedStudent(i, "stream", v)}>
                         <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Stream" /></SelectTrigger>
                         <SelectContent>
-                          {["Science", "Arts", "Commerce"].map((st) => (
+                          {(parseInt(s.form) >= 5
+                            ? ["Sciences", "Commercials", "Arts"]
+                            : ["G1", "G2", "G22", "Blue"]
+                          ).map((st) => (
                             <SelectItem key={st} value={st}>{st}</SelectItem>
                           ))}
                         </SelectContent>
