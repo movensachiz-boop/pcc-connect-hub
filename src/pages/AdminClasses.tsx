@@ -150,6 +150,11 @@ export default function AdminClasses() {
                           <p className="text-sm font-semibold">{cls.id}</p>
                           {cls.learningArea && <p className="text-xs text-accent-foreground">{cls.learningArea}</p>}
                         </div>
+                        {studentCounts[cls.id] !== undefined && (
+                          <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            <Users className="w-3 h-3" />{studentCounts[cls.id]}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {cls.subjectIds.map(sId => {
