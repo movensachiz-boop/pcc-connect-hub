@@ -20,6 +20,7 @@ const adminLinks = [
   { label: "Subjects", icon: BookOpen, path: "/admin/subjects" },
   { label: "Teachers", icon: GraduationCap, path: "/admin/teachers" },
   { label: "Classes", icon: School, path: "/admin/classes" },
+  { label: "Class Roster", icon: ClipboardList, path: "/admin/roster" },
   { label: "Timetable", icon: Calendar, path: "/admin/timetable" },
   { label: "Reports", icon: FileText, path: "/admin/reports" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
