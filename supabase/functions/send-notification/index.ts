@@ -17,6 +17,16 @@ Deno.serve(async (req) => {
       throw new Error("PINGRAM_API_KEY is not configured");
     }
 
+    // Extract accountId from the API key JWT
+    const jwtPayload = PINGRAM_API_KEY.replace("pingram_sk_", "");
+    const payloadPart = jwtPayload.split(".")[1];
+    const decoded = JSON.parse(atob(payloadPart));
+    const accountId = decoded.accountId;
+
+    if (!accountId) {
+      throw new Error("Could not extract accountId from PINGRAM_API_KEY");
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -85,25 +95,41 @@ Deno.serve(async (req) => {
       message = `Dear Guardian,\n\nThis is a notification regarding ${studentName} at Progress Christian Centre.\n\nRegistration Number: ${registrationNumber || "N/A"}\n\nThank you.\n- PCC School`;
     }
 
-    // Send via Pingram API
-    const pingramResponse = await fetch("https://api.pingram.io/v1/messages/send", {
+    // Build Basic auth: accountId:apiKey
+    const basicAuth = btoa(`${accountId}:${PINGRAM_API_KEY}`);
+
+    // Send via Pingram REST API (formerly NotificationAPI)
+    const pingramResponse = await fetch(`https://api.pingram.io/${accountId}/sender`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${PINGRAM_API_KEY}`,
+        "Authorization": `Basic ${basicAuth}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        type: smsType,
-        to: {
+        notificationId: smsType,
+        user: {
+          id: guardianPhone,
           number: formattedPhone,
         },
+        mergeTags: {
+          message: message,
+        },
+        forceChannels: ["sms"],
         sms: {
           message: message,
         },
       }),
     });
 
-    const pingramData = await pingramResponse.json();
+    const responseText = await pingramResponse.text();
+    let pingramData;
+    try {
+      pingramData = JSON.parse(responseText);
+    } catch {
+      pingramData = { raw: responseText };
+    }
+
+    console.log("Pingram response status:", pingramResponse.status, "body:", responseText);
 
     if (!pingramResponse.ok) {
       console.error("Pingram API error:", JSON.stringify(pingramData));
@@ -118,7 +144,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      messageId: pingramData?.id || pingramData?.messageId,
+      data: pingramData,
       type: smsType,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
