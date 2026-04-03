@@ -122,7 +122,12 @@ export default function AdminClasses() {
             <h2 className="text-2xl font-bold text-foreground">Classes</h2>
             <p className="text-sm text-muted-foreground">Manage class streams and subject allocations</p>
           </div>
-          <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-1" /> Add Class</Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={syncFromRegistrations} disabled={syncing}>
+              <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? 'animate-spin' : ''}`} /> Sync from Registrations
+            </Button>
+            <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-1" /> Add Class</Button>
+          </div>
         </div>
 
         <div className="space-y-8">
