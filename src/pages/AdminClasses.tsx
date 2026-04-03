@@ -27,6 +27,23 @@ export default function AdminClasses() {
   const [syncing, setSyncing] = useState(false);
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
 
+  // Valid class definitions matching the timetable defaults exactly
+  const VALID_LOWER_STREAMS = ['G1', 'G2', 'G22', 'Blue']; // Forms 1-4
+  const VALID_UPPER_AREAS: LearningArea[] = ['Sciences', 'Commercials', 'Arts']; // Forms 5-6
+
+  const getValidClassId = (formNum: number, stream: string): string | null => {
+    if (formNum >= 1 && formNum <= 4) {
+      if (VALID_LOWER_STREAMS.includes(stream)) return `${formNum}${stream}`;
+    } else if (formNum >= 5 && formNum <= 6) {
+      // Match learning area by first letter or full name
+      const area = VALID_UPPER_AREAS.find(
+        a => a === stream || a.charAt(0) === stream
+      );
+      if (area) return `${formNum}${area.charAt(0)}`;
+    }
+    return null;
+  };
+
   const syncFromRegistrations = async () => {
     setSyncing(true);
     try {
@@ -37,14 +54,19 @@ export default function AdminClasses() {
         .not('stream', 'is', null);
       if (error) throw error;
 
-      // Count students per form+stream
+      // Count students per valid class only
       const counts: Record<string, { form: number; stream: string; count: number }> = {};
+      let skipped = 0;
       for (const row of data || []) {
         const formNum = parseInt(row.form!, 10);
-        if (isNaN(formNum) || formNum < 1 || formNum > 6) continue;
-        const key = `${formNum}${row.stream}`;
-        if (!counts[key]) counts[key] = { form: formNum, stream: row.stream!, count: 0 };
-        counts[key].count++;
+        if (isNaN(formNum) || formNum < 1 || formNum > 6) { skipped++; continue; }
+        const classId = getValidClassId(formNum, row.stream!);
+        if (!classId) { skipped++; continue; }
+        const streamLabel = formNum >= 5
+          ? (VALID_UPPER_AREAS.find(a => a.charAt(0) === classId.slice(-1)) || row.stream!)
+          : row.stream!;
+        if (!counts[classId]) counts[classId] = { form: formNum, stream: streamLabel, count: 0 };
+        counts[classId].count++;
       }
 
       let added = 0;
@@ -54,14 +76,30 @@ export default function AdminClasses() {
       for (const [key, info] of Object.entries(counts)) {
         newCounts[key] = info.count;
         if (!newClasses.some(c => c.id === key)) {
-          const formSubjects = subjects
-            .filter(s => s.forms.includes(info.form as FormLevel))
-            .map(s => s.id);
+          const isUpper = info.form >= 5;
+          const area = isUpper ? VALID_UPPER_AREAS.find(a => a === info.stream) : undefined;
+
+          let classSubjects: string[];
+          if (isUpper && area) {
+            const areaSubjects = subjects
+              .filter(s => s.forms.includes(info.form as FormLevel) && s.learningAreas?.includes(area))
+              .map(s => s.id);
+            const compulsory = subjects
+              .filter(s => s.forms.includes(info.form as FormLevel) && s.isCompulsory)
+              .map(s => s.id);
+            classSubjects = [...new Set([...compulsory, ...areaSubjects])];
+          } else {
+            classSubjects = subjects
+              .filter(s => s.forms.includes(info.form as FormLevel))
+              .map(s => s.id);
+          }
+
           newClasses.push({
             id: key,
             form: info.form as FormLevel,
             stream: info.stream,
-            subjectIds: formSubjects,
+            learningArea: area,
+            subjectIds: classSubjects,
           });
           added++;
         }
@@ -73,6 +111,9 @@ export default function AdminClasses() {
         toast.success(`Synced: ${added} new class(es) added from registrations`);
       } else {
         toast.info('All registered form/stream combinations already exist');
+      }
+      if (skipped > 0) {
+        toast.warning(`${skipped} student(s) have invalid form/stream and were skipped`);
       }
     } catch (e: any) {
       toast.error('Failed to sync: ' + e.message);
