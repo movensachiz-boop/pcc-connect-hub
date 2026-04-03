@@ -34,11 +34,18 @@ const studentLinks = [
   { label: "Announcements", icon: Bell, path: "/student/announcements" },
 ];
 
+const teacherLinks = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/teacher" },
+  { label: "Attendance", icon: Users, path: "/teacher/attendance" },
+  { label: "Timetable", icon: CalendarDays, path: "/teacher/timetable" },
+  { label: "Announcements", icon: Bell, path: "/teacher/announcements" },
+];
+
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const links = role === "admin" ? adminLinks : studentLinks;
+  const links = role === "admin" ? adminLinks : role === "teacher" ? teacherLinks : studentLinks;
 
   return (
     <div className="min-h-screen flex bg-background">
