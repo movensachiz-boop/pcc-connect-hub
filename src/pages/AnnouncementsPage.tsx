@@ -11,7 +11,7 @@ const announcements = [
 ];
 
 interface AnnouncementsPageProps {
-  role: "admin" | "student";
+  role: "admin" | "student" | "teacher";
 }
 
 const AnnouncementsPage = ({ role }: AnnouncementsPageProps) => (
