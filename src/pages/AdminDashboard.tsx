@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import PinGate from "@/components/PinGate";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ const recentPayments = [
 ];
 
 const AdminDashboard = () => (
+  <PinGate>
   <DashboardLayout role="admin">
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
@@ -128,6 +130,7 @@ const AdminDashboard = () => (
       </Card>
     </div>
   </DashboardLayout>
+  </PinGate>
 );
 
 export default AdminDashboard;
