@@ -62,6 +62,7 @@ const App = () => (
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
             <Route path="/teacher/timetable" element={<StudentTimetable />} />
             <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
+            <Route path="/verify" element={<VerifyReceipt />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
