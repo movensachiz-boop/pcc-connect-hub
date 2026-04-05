@@ -130,6 +130,7 @@ const AdminDashboard = () => (
       </Card>
     </div>
   </DashboardLayout>
+  </PinGate>
 );
 
 export default AdminDashboard;
