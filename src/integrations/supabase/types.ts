@@ -65,6 +65,36 @@ export type Database = {
           },
         ]
       }
+      device_sessions: {
+        Row: {
+          created_at: string
+          device_fingerprint: string
+          id: string
+          ip_address: string
+          last_active_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint: string
+          id?: string
+          ip_address: string
+          last_active_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string
+          id?: string
+          ip_address?: string
+          last_active_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -81,6 +111,7 @@ export type Database = {
           status: string
           student_profile_id: string
           updated_at: string
+          verification_hash: string | null
         }
         Insert: {
           amount: number
@@ -97,6 +128,7 @@ export type Database = {
           status?: string
           student_profile_id: string
           updated_at?: string
+          verification_hash?: string | null
         }
         Update: {
           amount?: number
@@ -113,6 +145,7 @@ export type Database = {
           status?: string
           student_profile_id?: string
           updated_at?: string
+          verification_hash?: string | null
         }
         Relationships: [
           {
@@ -238,6 +271,16 @@ export type Database = {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      verify_payment_hash: {
+        Args: {
+          p_amount: string
+          p_created_at: string
+          p_receipt_number: string
+          p_stored_hash: string
+          p_student_profile_id: string
         }
         Returns: boolean
       }
