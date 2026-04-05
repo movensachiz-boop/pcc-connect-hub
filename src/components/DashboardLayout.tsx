@@ -22,6 +22,7 @@ const adminLinks = [
   { label: "Classes", icon: School, path: "/admin/classes" },
   { label: "Class Roster", icon: ClipboardList, path: "/admin/roster" },
   { label: "Timetable", icon: Calendar, path: "/admin/timetable" },
+  { label: "Master Timetable", icon: CalendarDays, path: "/admin/timetable/master" },
   { label: "Reports", icon: FileText, path: "/admin/reports" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
