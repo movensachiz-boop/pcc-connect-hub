@@ -21,6 +21,7 @@ import AdminTeachers from "./pages/AdminTeachers";
 import AdminClasses from "./pages/AdminClasses";
 import AdminTimetableGenerate from "./pages/AdminTimetableGenerate";
 import AdminTimetableView from "./pages/AdminTimetableView";
+import AdminMasterTimetable from "./pages/AdminMasterTimetable";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AdminClassRoster from "./pages/AdminClassRoster";
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/admin/classes" element={<AdminClasses />} />
             <Route path="/admin/timetable" element={<AdminTimetableGenerate />} />
             <Route path="/admin/timetable/view" element={<AdminTimetableView />} />
+            <Route path="/admin/timetable/master" element={<AdminMasterTimetable />} />
             <Route path="/admin/roster" element={<AdminClassRoster />} />
             <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
