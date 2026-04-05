@@ -10,6 +10,7 @@ const corsHeaders = {
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_DEVICES = 2;
 
 function checkLoginRate(key: string): boolean {
   const now = Date.now();
@@ -25,6 +26,17 @@ function checkLoginRate(key: string): boolean {
 
 function resetLoginRate(key: string) {
   loginAttempts.delete(key);
+}
+
+// Simple device fingerprint from IP + User-Agent
+function getDeviceFingerprint(req: Request): { ip: string; fingerprint: string; userAgent: string } {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+             req.headers.get("x-real-ip") ||
+             "unknown";
+  const userAgent = req.headers.get("user-agent") || "unknown";
+  // Create a simple fingerprint from IP + a hash of user agent
+  const fingerprint = `${ip}::${userAgent.substring(0, 100)}`;
+  return { ip, fingerprint, userAgent };
 }
 
 Deno.serve(async (req) => {
@@ -75,6 +87,47 @@ Deno.serve(async (req) => {
     resetLoginRate(cleanRegNumber);
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    // ── Device session fingerprinting ──
+    const { ip, fingerprint, userAgent } = getDeviceFingerprint(req);
+
+    // Get existing sessions for this user
+    const { data: existingSessions } = await supabaseAdmin
+      .from("device_sessions")
+      .select("id, device_fingerprint, ip_address, last_active_at")
+      .eq("user_id", data.user.id)
+      .order("last_active_at", { ascending: false });
+
+    const sessions = existingSessions || [];
+    const currentSession = sessions.find((s) => s.device_fingerprint === fingerprint);
+
+    if (currentSession) {
+      // Known device — update last active
+      await supabaseAdmin
+        .from("device_sessions")
+        .update({ last_active_at: new Date().toISOString(), ip_address: ip })
+        .eq("id", currentSession.id);
+    } else {
+      // New device — check if limit reached
+      if (sessions.length >= MAX_DEVICES) {
+        return new Response(JSON.stringify({
+          error: `Security alert: This account is already active on ${MAX_DEVICES} devices. Please log out from another device or contact the administrator.`,
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Register new device
+      await supabaseAdmin.from("device_sessions").insert({
+        user_id: data.user.id,
+        ip_address: ip,
+        device_fingerprint: fingerprint,
+        user_agent: userAgent.substring(0, 500),
+      });
+    }
+
+    // Get role
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
