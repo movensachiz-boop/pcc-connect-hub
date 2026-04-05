@@ -55,12 +55,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
-      {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/hero-bg.png')" }}
-      />
-      <div className="absolute inset-0 bg-primary/70" />
+      <div className="absolute inset-0 bg-primary" />
 
       {/* Left side - branding */}
       <div className="hidden lg:flex flex-1 flex-col justify-center items-center relative z-10 px-12">
