@@ -274,6 +274,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      verify_payment_hash: {
+        Args: {
+          p_amount: string
+          p_created_at: string
+          p_receipt_number: string
+          p_stored_hash: string
+          p_student_profile_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "student" | "teacher"

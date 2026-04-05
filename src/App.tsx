@@ -26,6 +26,7 @@ import AdminClassRoster from "./pages/AdminClassRoster";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherAttendance from "./pages/TeacherAttendance";
 import NotFound from "./pages/NotFound";
+import VerifyReceipt from "./pages/VerifyReceipt";
 
 const queryClient = new QueryClient();
 
