@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, FileDown } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import pccLogo from '@/assets/pcc-logo.png';
 
 export default function AdminMasterTimetable() {
   const { timetable, classes, subjects, teachers, config } = useTimetable();
@@ -69,18 +70,26 @@ export default function AdminMasterTimetable() {
     if (!timetable) return;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
 
+    // Add logo + header
+    const pageW = doc.internal.pageSize.width;
+    const logoImg = new Image();
+    logoImg.src = pccLogo;
+    try {
+      doc.addImage(logoImg, 'PNG', pageW / 2 - 8, 6, 16, 16);
+    } catch { /* logo optional */ }
+
     doc.setFontSize(18);
     doc.setTextColor(0, 51, 102);
-    doc.text(config.schoolName, doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    doc.text(config.schoolName, pageW / 2, 27, { align: 'center' });
     doc.setFontSize(13);
     doc.setTextColor(51, 51, 51);
-    doc.text('Master Timetable', doc.internal.pageSize.width / 2, 23, { align: 'center' });
+    doc.text('Master Timetable', pageW / 2, 34, { align: 'center' });
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, doc.internal.pageSize.width / 2, 28, { align: 'center' });
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageW / 2, 39, { align: 'center' });
 
     // One table per day
-    let startY = 34;
+    let startY = 45;
     for (const day of DAYS) {
       doc.setFontSize(11);
       doc.setTextColor(0, 51, 102);
@@ -153,7 +162,10 @@ export default function AdminMasterTimetable() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Master Timetable</h2>
+            <div className="flex items-center gap-3">
+              <img src={pccLogo} alt="PCC" className="w-8 h-8" />
+              <h2 className="text-2xl font-bold text-foreground">Master Timetable</h2>
+            </div>
             <p className="text-sm text-muted-foreground">All classes · All days</p>
           </div>
           <Button onClick={handlePrintPDF} className="gap-1.5">
