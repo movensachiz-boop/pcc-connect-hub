@@ -27,6 +27,10 @@ interface Student {
   is_beginner: boolean;
   guardian_phone: string | null;
   guardian_name: string | null;
+  total_fees: number;
+  total_paid: number;
+  computed_balance: number;
+  payment_status: string;
 }
 
 interface ExtractedStudent {
@@ -497,8 +501,9 @@ const AdminStudents = () => {
                     <TableHead>Stream</TableHead>
                     <TableHead>Account</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Balance</TableHead>
-                    <TableHead>Actions</TableHead>
+                     <TableHead>Balance</TableHead>
+                     <TableHead>Fee Status</TableHead>
+                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -523,7 +528,24 @@ const AdminStudents = () => {
                           {s.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>${s.balance}</TableCell>
+                      <TableCell>
+                        <div className="text-xs">
+                          <span className="block font-medium">${s.total_fees} owed</span>
+                          <span className="text-muted-foreground">${s.total_paid} paid</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={
+                          s.payment_status === "Paid in Full" ? "bg-success text-success-foreground" :
+                          s.payment_status === "Overpaid" ? "bg-primary text-primary-foreground" :
+                          s.payment_status === "Outstanding" ? "bg-destructive text-destructive-foreground" :
+                          ""
+                        }>
+                          {s.payment_status}
+                          {s.payment_status === "Outstanding" && ` ($${Math.abs(s.computed_balance)})`}
+                          {s.payment_status === "Overpaid" && ` (+$${s.computed_balance})`}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button
