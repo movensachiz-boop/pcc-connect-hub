@@ -71,6 +71,8 @@ const StudentDashboard = () => {
           const applicable = feeItems.filter((item: any) => {
             // Only include beginner-specific categories (uniforms, books, stationery) for beginners
             if (item.category !== "fees" && !isBeginner) return false;
+            // Skip beginner_only items (e.g. Admission) for returning students
+            if (item.beginner_only && !isBeginner) return false;
             if (!item.form_levels.includes(formNum)) return false;
             if (item.learning_area) {
               return item.learning_area === learningArea;
