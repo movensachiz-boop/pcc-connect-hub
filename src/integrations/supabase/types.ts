@@ -222,6 +222,7 @@ export type Database = {
           created_at: string
           first_name: string
           form: string | null
+          gender: string
           guardian_name: string | null
           guardian_phone: string | null
           id: string
@@ -239,6 +240,7 @@ export type Database = {
           created_at?: string
           first_name: string
           form?: string | null
+          gender?: string
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
@@ -256,6 +258,7 @@ export type Database = {
           created_at?: string
           first_name?: string
           form?: string | null
+          gender?: string
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
