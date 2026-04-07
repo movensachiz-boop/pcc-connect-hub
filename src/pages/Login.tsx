@@ -26,8 +26,22 @@ const Login = () => {
         body: { registrationNumber: regNumber.trim(), password },
       });
 
-      if (fnError || data?.error) {
-        setError(data?.error || "Login failed. Please try again.");
+      if (fnError) {
+        // For non-2xx responses, parse the error body
+        let errorMsg = "Login failed. Please try again.";
+        try {
+          if (fnError.context && typeof fnError.context.json === "function") {
+            const body = await fnError.context.json();
+            if (body?.error) errorMsg = body.error;
+          }
+        } catch {}
+        setError(errorMsg);
+        setLoading(false);
+        return;
+      }
+
+      if (data?.error) {
+        setError(data.error);
         setLoading(false);
         return;
       }
