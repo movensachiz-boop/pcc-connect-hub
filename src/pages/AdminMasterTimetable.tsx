@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTimetable } from '@/context/TimetableContext';
 import { DAYS } from '@/data/defaults';
@@ -8,9 +8,13 @@ import { Calendar, FileDown } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import pccLogo from '@/assets/pcc-logo.png';
+import SlotEditDialog from '@/components/SlotEditDialog';
+import { TimetableSlot } from '@/types/school';
 
 export default function AdminMasterTimetable() {
-  const { timetable, classes, subjects, teachers, config } = useTimetable();
+  const { timetable, classes, subjects, teachers, config, updateSlot } = useTimetable();
+  const [editSlot, setEditSlot] = useState<TimetableSlot | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const totalSlots = config.periodsPerDay + 2;
   const periods = Array.from({ length: totalSlots }, (_, i) => i + 1);
@@ -64,6 +68,17 @@ export default function AdminMasterTimetable() {
     if (slot.type === 'sports') return 'bg-success/20 text-success';
     if (slot.subjectId) return 'bg-primary/10 text-primary';
     return 'bg-muted text-muted-foreground';
+  };
+
+  const getSlot = (classId: string, day: DayOfWeek, period: number): TimetableSlot | undefined => {
+    return timetable?.slots.find(s => s.classId === classId && s.day === day && s.period === period);
+  };
+
+  const handleCellClick = (classId: string, day: DayOfWeek, period: number) => {
+    const slot = getSlot(classId, day, period);
+    if (!slot || slot.type === 'break' || slot.type === 'lunch' || slot.type === 'sports') return;
+    setEditSlot(slot);
+    setDialogOpen(true);
   };
 
   const handlePrintPDF = () => {
@@ -196,9 +211,14 @@ export default function AdminMasterTimetable() {
                       {sortedClasses.map(c => {
                         const content = getSlotContent(c.id, day, period);
                         const style = getSlotStyle(c.id, day, period);
+                        const slot = getSlot(c.id, day, period);
+                        const isEditable = slot && slot.type !== 'break' && slot.type !== 'lunch' && slot.type !== 'sports';
                         return (
                           <td key={c.id} className="p-1 border-b">
-                            <div className={`rounded px-1 py-0.5 text-center text-[9px] font-medium leading-tight min-h-[28px] flex items-center justify-center ${style}`}>
+                            <div
+                              onClick={() => isEditable && handleCellClick(c.id, day, period)}
+                              className={`rounded px-1 py-0.5 text-center text-[9px] font-medium leading-tight min-h-[28px] flex items-center justify-center ${style} ${isEditable ? 'cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all' : ''}`}
+                            >
                               <span className="whitespace-pre-line">{content}</span>
                             </div>
                           </td>
@@ -212,6 +232,17 @@ export default function AdminMasterTimetable() {
           </div>
         ))}
       </div>
+
+      <SlotEditDialog
+        slot={editSlot}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        subjects={subjects}
+        teachers={teachers}
+        classes={classes}
+        onSave={updateSlot}
+        allSlots={timetable?.slots || []}
+      />
     </DashboardLayout>
   );
 }
