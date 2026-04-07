@@ -24,6 +24,7 @@ interface Student {
   status: string;
   balance: number;
   claimed: boolean;
+  is_beginner: boolean;
   guardian_phone: string | null;
   guardian_name: string | null;
 }
