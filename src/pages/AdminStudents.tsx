@@ -24,6 +24,7 @@ interface Student {
   status: string;
   balance: number;
   claimed: boolean;
+  is_beginner: boolean;
   guardian_phone: string | null;
   guardian_name: string | null;
 }
@@ -56,6 +57,7 @@ const AdminStudents = () => {
   const [stream, setStream] = useState("");
   const [guardianName, setGuardianName] = useState("");
   const [guardianPhone, setGuardianPhone] = useState("");
+  const [isBeginner, setIsBeginner] = useState(true);
 
   // Reset password form
   const [resetRegNumber, setResetRegNumber] = useState("");
@@ -164,6 +166,7 @@ const AdminStudents = () => {
           guardianName: guardianName.trim(),
           guardianPhone: guardianPhone.trim(),
           registrationNumber: regNumber,
+          isBeginner,
         },
       });
 
@@ -206,6 +209,7 @@ const AdminStudents = () => {
       setStream("");
       setGuardianName("");
       setGuardianPhone("");
+      setIsBeginner(true);
       setOpen(false);
       fetchStudents();
     } catch {
@@ -505,9 +509,14 @@ const AdminStudents = () => {
                       <TableCell>{s.form || "—"}</TableCell>
                       <TableCell>{s.stream || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant={s.claimed ? "default" : "outline"} className={s.claimed ? "bg-success text-success-foreground" : ""}>
-                          {s.claimed ? "Active" : "Pending"}
-                        </Badge>
+                        <div className="flex gap-1 flex-wrap">
+                          <Badge variant={s.claimed ? "default" : "outline"} className={s.claimed ? "bg-success text-success-foreground" : ""}>
+                            {s.claimed ? "Active" : "Pending"}
+                          </Badge>
+                          {s.is_beginner && (
+                            <Badge variant="secondary" className="text-xs">Beginner</Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={s.status === "Active" ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
@@ -630,6 +639,10 @@ const AdminStudents = () => {
             <div className="space-y-2">
               <Label>Guardian Phone</Label>
               <Input value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} placeholder="+254 7XX XXX XXX" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="isBeginner" checked={isBeginner} onCheckedChange={(v) => setIsBeginner(!!v)} />
+              <Label htmlFor="isBeginner" className="text-sm font-normal">Beginner / New / Transferred Student</Label>
             </div>
             <div className="rounded-md bg-secondary p-3">
               <p className="text-xs text-muted-foreground">Registration number will be auto-generated:</p>

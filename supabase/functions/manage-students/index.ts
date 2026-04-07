@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const { action, ...payload } = await req.json();
 
     if (action === "create_student") {
-      const { firstName, lastName, form, stream, guardianName, guardianPhone, registrationNumber } = payload;
+      const { firstName, lastName, form, stream, guardianName, guardianPhone, registrationNumber, isBeginner } = payload;
 
       if (!firstName || !lastName || !registrationNumber) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
         guardian_name: guardianName || null,
         guardian_phone: guardianPhone || null,
         claimed: false,
+        is_beginner: isBeginner !== undefined ? isBeginner : true,
       }).select().single();
 
       if (profileError) {
