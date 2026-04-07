@@ -25,6 +25,7 @@ const adminLinks = [
   { label: "Master Timetable", icon: CalendarDays, path: "/admin/timetable/master" },
   { label: "Reports", icon: FileText, path: "/admin/reports" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
+  { label: "Fees & Requirements", icon: Receipt, path: "/admin/fees" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
@@ -34,6 +35,7 @@ const studentLinks = [
   { label: "Timetable", icon: CalendarDays, path: "/student/timetable" },
   { label: "Courses", icon: BookOpen, path: "/student/courses" },
   { label: "Announcements", icon: Bell, path: "/student/announcements" },
+  { label: "Fees & Requirements", icon: FileText, path: "/student/requirements" },
 ];
 
 const teacherLinks = [
