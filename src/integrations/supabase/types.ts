@@ -318,6 +318,16 @@ export type Database = {
       }
     }
     Functions: {
+      get_student_fee_summary: {
+        Args: never
+        Returns: {
+          balance: number
+          payment_status: string
+          profile_id: string
+          total_fees: number
+          total_paid: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
