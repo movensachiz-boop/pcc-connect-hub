@@ -94,22 +94,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === "claim") {
-      if (!password || typeof password !== "string") {
-        return new Response(JSON.stringify({ error: "Password is required" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Strong password validation
-      const passwordError = validatePassword(password);
-      if (passwordError) {
-        return new Response(JSON.stringify({ error: passwordError }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("id, first_name, last_name, claimed")
@@ -130,10 +114,27 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Auto-generate a secure password
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+      const specials = "!@#$%&*";
+      let generatedPassword = "";
+      const array = new Uint8Array(8);
+      crypto.getRandomValues(array);
+      for (let i = 0; i < 8; i++) {
+        generatedPassword += chars[array[i] % chars.length];
+      }
+      // Ensure at least one uppercase, lowercase, digit, special
+      const specArray = new Uint8Array(1);
+      crypto.getRandomValues(specArray);
+      generatedPassword += specials[specArray[0] % specials.length];
+      generatedPassword += "A1a";
+      // Shuffle
+      generatedPassword = generatedPassword.split("").sort(() => Math.random() - 0.5).join("");
+
       const email = `${cleanRegNumber.toLowerCase()}@pcc.local`;
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
-        password,
+        password: generatedPassword,
         email_confirm: true,
         user_metadata: {
           registration_number: cleanRegNumber,
@@ -170,13 +171,15 @@ Deno.serve(async (req) => {
       const supabase = createClient(supabaseUrl, anonKey);
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password: generatedPassword,
       });
 
       if (signInError) {
         return new Response(JSON.stringify({
           success: true,
-          message: "Account created. Please log in.",
+          generatedPassword,
+          message: "Account created. Please log in with the password shown.",
+          name: `${profile.first_name} ${profile.last_name}`,
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -185,6 +188,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         session: signInData.session,
+        generatedPassword,
         name: `${profile.first_name} ${profile.last_name}`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
