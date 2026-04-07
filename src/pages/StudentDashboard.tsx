@@ -21,6 +21,7 @@ interface Profile {
   registration_number: string;
   form: string | null;
   stream: string | null;
+  gender: string;
   balance: number;
   is_beginner: boolean;
 }
@@ -48,7 +49,7 @@ const StudentDashboard = () => {
       // Load profile
       const { data: prof } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, registration_number, form, stream, balance, is_beginner")
+        .select("id, first_name, last_name, registration_number, form, stream, gender, balance, is_beginner")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!prof) return;
@@ -65,6 +66,7 @@ const StudentDashboard = () => {
         if (feeItems) {
           const formNum = prof.form;
           const stream = prof.stream || "";
+          const studentGender = prof.gender === "female" ? "girls" : "boys";
           const isBeginner = prof.is_beginner;
           const learningArea = ["Sciences", "Commercials", "Arts"].includes(stream) ? stream : null;
 
@@ -74,6 +76,8 @@ const StudentDashboard = () => {
             // Skip beginner_only items (e.g. Admission) for returning students
             if (item.beginner_only && !isBeginner) return false;
             if (!item.form_levels.includes(formNum)) return false;
+            // Filter by gender
+            if (item.gender !== "all" && item.gender !== studentGender) return false;
             if (item.learning_area) {
               return item.learning_area === learningArea;
             }
