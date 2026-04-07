@@ -28,6 +28,8 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherAttendance from "./pages/TeacherAttendance";
 import NotFound from "./pages/NotFound";
 import VerifyReceipt from "./pages/VerifyReceipt";
+import AdminFees from "./pages/AdminFees";
+import StudentRequirements from "./pages/StudentRequirements";
 
 const queryClient = new QueryClient();
 
