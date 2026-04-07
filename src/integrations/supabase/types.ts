@@ -109,6 +109,7 @@ export type Database = {
           item_name: string
           learning_area: string | null
           notes: string | null
+          returning_only: boolean
           sort_order: number
           updated_at: string
         }
@@ -125,6 +126,7 @@ export type Database = {
           item_name: string
           learning_area?: string | null
           notes?: string | null
+          returning_only?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -141,6 +143,7 @@ export type Database = {
           item_name?: string
           learning_area?: string | null
           notes?: string | null
+          returning_only?: boolean
           sort_order?: number
           updated_at?: string
         }
