@@ -49,6 +49,7 @@ const App = () => (
             <Route path="/student/timetable" element={<StudentTimetable />} />
             <Route path="/student/courses" element={<StudentCourses />} />
             <Route path="/student/announcements" element={<AnnouncementsPage role="student" />} />
+            <Route path="/student/requirements" element={<StudentRequirements />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/students" element={<AdminStudents />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/admin/timetable/view" element={<AdminTimetableView />} />
             <Route path="/admin/timetable/master" element={<AdminMasterTimetable />} />
             <Route path="/admin/roster" element={<AdminClassRoster />} />
+            <Route path="/admin/fees" element={<AdminFees />} />
             <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
             <Route path="/teacher/timetable" element={<StudentTimetable />} />
