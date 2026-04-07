@@ -222,6 +222,7 @@ export type Database = {
           guardian_name: string | null
           guardian_phone: string | null
           id: string
+          is_beginner: boolean
           last_name: string
           registration_number: string
           status: string
@@ -238,6 +239,7 @@ export type Database = {
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
+          is_beginner?: boolean
           last_name: string
           registration_number: string
           status?: string
@@ -254,6 +256,7 @@ export type Database = {
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
+          is_beginner?: boolean
           last_name?: string
           registration_number?: string
           status?: string
