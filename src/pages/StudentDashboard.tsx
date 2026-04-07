@@ -22,6 +22,7 @@ interface Profile {
   form: string | null;
   stream: string | null;
   balance: number;
+  is_beginner: boolean;
 }
 
 interface Payment {
@@ -47,34 +48,33 @@ const StudentDashboard = () => {
       // Load profile
       const { data: prof } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, registration_number, form, stream, balance")
+        .select("id, first_name, last_name, registration_number, form, stream, balance, is_beginner")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!prof) return;
-      setProfile(prof);
+      setProfile(prof as Profile);
 
       // Load fee requirements for this student's form
       if (prof.form) {
+        // Load all active fee requirements (beginner students need all categories)
         const { data: feeItems } = await supabase
           .from("fee_requirements")
           .select("*")
-          .eq("category", "fees")
           .eq("is_active", true);
 
         if (feeItems) {
           const formNum = prof.form;
           const stream = prof.stream || "";
-          // Determine learning area from stream
+          const isBeginner = prof.is_beginner;
           const learningArea = ["Sciences", "Commercials", "Arts"].includes(stream) ? stream : null;
 
           const applicable = feeItems.filter((item: any) => {
+            // Only include beginner-specific categories (uniforms, books, stationery) for beginners
+            if (item.category !== "fees" && !isBeginner) return false;
             if (!item.form_levels.includes(formNum)) return false;
-            // If item has a learning_area, only include if it matches student's area
             if (item.learning_area) {
               return item.learning_area === learningArea;
             }
-            // If student is upper form with a learning area, exclude general items
-            // only if there are area-specific items for that form
             return true;
           });
 
