@@ -98,6 +98,7 @@ export type Database = {
       fee_requirements: {
         Row: {
           amount: number
+          beginner_only: boolean
           category: string
           created_at: string
           currency: string
@@ -113,6 +114,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          beginner_only?: boolean
           category?: string
           created_at?: string
           currency?: string
@@ -128,6 +130,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          beginner_only?: boolean
           category?: string
           created_at?: string
           currency?: string
