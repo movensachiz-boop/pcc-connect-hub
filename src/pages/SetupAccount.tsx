@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Eye, EyeOff, UserCheck, Loader2, ArrowLeft } from "lucide-react";
+import { UserCheck, Loader2, Eye, EyeOff, ShieldAlert, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import pccLogo from "@/assets/pcc-logo.png";
 
@@ -13,9 +13,9 @@ const SetupAccount = () => {
   const [step, setStep] = useState<"verify" | "password">("verify");
   const [regNumber, setRegNumber] = useState("");
   const [studentName, setStudentName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [generatedPassword, setGeneratedPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +36,27 @@ const SetupAccount = () => {
       }
 
       setStudentName(data.name);
+
+      // Now claim the account (auto-generate password)
+      const { data: claimData, error: claimError } = await supabase.functions.invoke("claim-account", {
+        body: { action: "claim", registrationNumber: regNumber.trim() },
+      });
+
+      if (claimError || claimData?.error) {
+        setError(claimData?.error || "Something went wrong.");
+        setLoading(false);
+        return;
+      }
+
+      setGeneratedPassword(claimData.generatedPassword);
+
+      if (claimData.session) {
+        await supabase.auth.setSession({
+          access_token: claimData.session.access_token,
+          refresh_token: claimData.session.refresh_token,
+        });
+      }
+
       setStep("password");
     } catch {
       setError("Something went wrong. Please try again.");
@@ -44,63 +65,18 @@ const SetupAccount = () => {
     }
   };
 
-  const handleSetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      setError("Password must contain an uppercase letter.");
-      return;
-    }
-    if (!/[a-z]/.test(password)) {
-      setError("Password must contain a lowercase letter.");
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      setError("Password must contain a number.");
-      return;
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      setError("Password must contain a special character (!@#$%...).");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setLoading(true);
-
+  const handleCopy = async () => {
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("claim-account", {
-        body: { action: "claim", registrationNumber: regNumber.trim(), password },
-      });
-
-      if (fnError || data?.error) {
-        setError(data?.error || "Something went wrong.");
-        setLoading(false);
-        return;
-      }
-
-      if (data.session) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-        navigate("/student");
-      } else {
-        navigate("/login");
-      }
+      await navigator.clipboard.writeText(generatedPassword);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+      // fallback
     }
+  };
+
+  const handleContinue = () => {
+    navigate("/student");
   };
 
   return (
@@ -112,7 +88,7 @@ const SetupAccount = () => {
           <p className="text-sm text-muted-foreground mt-1">
             {step === "verify"
               ? "Enter your registration number to get started"
-              : `Welcome, ${studentName}! Set your password below.`}
+              : `Welcome, ${studentName}!`}
           </p>
         </CardHeader>
         <CardContent className="px-8 pb-8">
@@ -131,7 +107,7 @@ const SetupAccount = () => {
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full gap-2" disabled={loading}>
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <UserCheck size={18} />}
-                {loading ? "Verifying..." : "Verify Registration"}
+                {loading ? "Setting up account..." : "Verify & Set Up Account"}
               </Button>
               <p className="text-xs text-center text-muted-foreground mt-4">
                 Already have an account?{" "}
@@ -141,55 +117,58 @@ const SetupAccount = () => {
               </p>
             </form>
           ) : (
-            <form onSubmit={handleSetPassword} className="space-y-4 mt-4">
-              <div className="rounded-md bg-secondary p-3 mb-2">
+            <div className="space-y-5 mt-4">
+              <div className="rounded-md bg-secondary p-3">
                 <p className="text-xs text-muted-foreground">Registration Number</p>
-                <p className="text-sm font-semibold text-primary">{regNumber}</p>
+                <p className="text-sm font-semibold text-primary">{regNumber.trim().toUpperCase()}</p>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="password">Create Password</Label>
+                <Label>Your Password</Label>
                 <div className="relative">
                   <Input
-                    id="password"
+                    readOnly
                     type={showPassword ? "text" : "password"}
-                    placeholder="Min 6 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    value={generatedPassword}
+                    className="pr-20 font-mono text-base tracking-wider"
                   />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                    <button
+                      type="button"
+                      className="p-1 text-muted-foreground hover:text-primary"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                    <button
+                      type="button"
+                      className="p-1 text-muted-foreground hover:text-primary"
+                      onClick={handleCopy}
+                    >
+                      {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Re-enter your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+
+              <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
+                  <ShieldAlert size={18} />
+                  Important Security Notice
+                </div>
+                <ul className="text-xs text-amber-800 space-y-1 list-disc list-inside">
+                  <li>Write down this password and keep it in a safe place</li>
+                  <li><strong>Do NOT share your password with anyone</strong></li>
+                  <li>You will use this password together with your registration number to log in</li>
+                  <li>If you forget your password, contact the school administrator</li>
+                </ul>
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full gap-2" disabled={loading}>
-                {loading ? <Loader2 size={18} className="animate-spin" /> : <UserCheck size={18} />}
-                {loading ? "Setting Up..." : "Set Password & Sign In"}
+
+              <Button onClick={handleContinue} className="w-full gap-2">
+                <UserCheck size={18} />
+                I've Saved My Password — Continue
               </Button>
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs text-muted-foreground mx-auto mt-2 hover:text-primary"
-                onClick={() => { setStep("verify"); setError(""); }}
-              >
-                <ArrowLeft size={14} /> Back
-              </button>
-            </form>
+            </div>
           )}
         </CardContent>
       </Card>
