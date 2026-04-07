@@ -166,7 +166,27 @@ Deno.serve(async (req) => {
         });
       }
 
-      return new Response(JSON.stringify({ students }), {
+      // Get fee summaries
+      const { data: feeSummaries } = await supabaseAdmin.rpc("get_student_fee_summary");
+      const feeMap = new Map();
+      if (feeSummaries) {
+        for (const fs of feeSummaries) {
+          feeMap.set(fs.profile_id, fs);
+        }
+      }
+
+      const enriched = (students || []).map((s: any) => {
+        const fee = feeMap.get(s.id);
+        return {
+          ...s,
+          total_fees: fee?.total_fees || 0,
+          total_paid: fee?.total_paid || 0,
+          computed_balance: fee?.balance || 0,
+          payment_status: fee?.payment_status || "No Fees",
+        };
+      });
+
+      return new Response(JSON.stringify({ students: enriched }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
