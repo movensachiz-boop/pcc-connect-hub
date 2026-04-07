@@ -5,14 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, CreditCard, AlertTriangle, Bell, Download, Loader2 } from "lucide-react";
+import { DollarSign, CreditCard, AlertTriangle, Bell, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-const payments = [
-  { id: "RCP-001", date: "2025-01-15", amount: "$450.00", method: "Bank Transfer", status: "Paid" },
-  { id: "RCP-002", date: "2025-03-20", amount: "$450.00", method: "Mobile Money", status: "Paid" },
-  { id: "RCP-003", date: "2025-06-01", amount: "$450.00", method: "Card", status: "Pending" },
-];
 
 const announcements = [
   { title: "Term 2 Exam Timetable Released", date: "Mar 28, 2025", priority: "high" },
@@ -20,22 +14,95 @@ const announcements = [
   { title: "Sports Day – April 5th", date: "Mar 20, 2025", priority: "low" },
 ];
 
+interface Profile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  registration_number: string;
+  form: string | null;
+  stream: string | null;
+  balance: number;
+}
+
+interface Payment {
+  id: string;
+  receipt_number: string | null;
+  created_at: string;
+  amount: number;
+  method: string;
+  status: string;
+}
+
 const StudentDashboard = () => {
-  const [profile, setProfile] = useState<{ first_name: string; last_name: string; registration_number: string; form: string | null; stream: string | null; balance: number } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [termFees, setTermFees] = useState(0);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [payments, setPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
+
+      // Load profile
+      const { data: prof } = await supabase
         .from("profiles")
-        .select("first_name, last_name, registration_number, form, stream, balance")
+        .select("id, first_name, last_name, registration_number, form, stream, balance")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (data) setProfile(data);
+      if (!prof) return;
+      setProfile(prof);
+
+      // Load fee requirements for this student's form
+      if (prof.form) {
+        const { data: feeItems } = await supabase
+          .from("fee_requirements")
+          .select("*")
+          .eq("category", "fees")
+          .eq("is_active", true);
+
+        if (feeItems) {
+          const formNum = prof.form;
+          const stream = prof.stream || "";
+          // Determine learning area from stream
+          const learningArea = ["Sciences", "Commercials", "Arts"].includes(stream) ? stream : null;
+
+          const applicable = feeItems.filter((item: any) => {
+            if (!item.form_levels.includes(formNum)) return false;
+            // If item has a learning_area, only include if it matches student's area
+            if (item.learning_area) {
+              return item.learning_area === learningArea;
+            }
+            // If student is upper form with a learning area, exclude general items
+            // only if there are area-specific items for that form
+            return true;
+          });
+
+          const total = applicable.reduce((sum: number, i: any) => sum + Number(i.amount), 0);
+          setTermFees(total);
+        }
+      }
+
+      // Load payments
+      const { data: paymentData } = await supabase
+        .from("payments")
+        .select("id, receipt_number, created_at, amount, method, status")
+        .eq("student_profile_id", prof.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (paymentData) {
+        setPayments(paymentData);
+        const paid = paymentData
+          .filter((p: any) => p.status === "paid" || p.status === "completed")
+          .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+        setTotalPaid(paid);
+      }
     };
-    loadProfile();
+    load();
   }, []);
+
+  const outstanding = Math.max(0, termFees - totalPaid);
 
   return (
     <DashboardLayout role="student">
@@ -49,74 +116,78 @@ const StudentDashboard = () => {
           </p>
         </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Fees" value="$1,350" icon={DollarSign} variant="primary" />
-        <StatCard title="Paid" value="$900" icon={CreditCard} variant="success" />
-        <StatCard title="Outstanding" value="$450" icon={AlertTriangle} variant="warning" />
-        <StatCard title="Notices" value="3" icon={Bell} variant="accent" />
-      </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Term Fees" value={`$${termFees}`} icon={DollarSign} variant="primary" />
+          <StatCard title="Paid" value={`$${totalPaid}`} icon={CreditCard} variant="success" />
+          <StatCard title="Outstanding" value={`$${outstanding}`} icon={AlertTriangle} variant="warning" />
+          <StatCard title="Notices" value="3" icon={Bell} variant="accent" />
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Payment History</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-secondary">
-                  <TableHead>Receipt</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.id}</TableCell>
-                    <TableCell>{p.date}</TableCell>
-                    <TableCell>{p.amount}</TableCell>
-                    <TableCell>{p.method}</TableCell>
-                    <TableCell>
-                      <Badge variant={p.status === "Paid" ? "default" : "secondary"} className={p.status === "Paid" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>
-                        {p.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {p.status === "Paid" && (
-                        <Button variant="ghost" size="icon"><Download size={16} /></Button>
-                      )}
-                    </TableCell>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 shadow-card">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base">Payment History</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary">
+                    <TableHead>Receipt</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {payments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No payments recorded yet</TableCell>
+                    </TableRow>
+                  ) : payments.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">{p.receipt_number || "—"}</TableCell>
+                      <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>${p.amount}</TableCell>
+                      <TableCell className="capitalize">{p.method}</TableCell>
+                      <TableCell>
+                        <Badge variant={p.status === "paid" || p.status === "completed" ? "default" : "secondary"} className={p.status === "paid" || p.status === "completed" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>
+                          {p.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {(p.status === "paid" || p.status === "completed") && (
+                          <Button variant="ghost" size="icon"><Download size={16} /></Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Announcements</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {announcements.map((a, i) => (
-              <div key={i} className="border-b last:border-0 pb-3 last:pb-0">
-                <div className="flex items-start gap-2">
-                  <Bell size={14} className={a.priority === "high" ? "text-destructive mt-0.5" : "text-muted-foreground mt-0.5"} />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{a.date}</p>
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Announcements</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {announcements.map((a, i) => (
+                <div key={i} className="border-b last:border-0 pb-3 last:pb-0">
+                  <div className="flex items-start gap-2">
+                    <Bell size={14} className={a.priority === "high" ? "text-destructive mt-0.5" : "text-muted-foreground mt-0.5"} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{a.title}</p>
+                      <p className="text-xs text-muted-foreground">{a.date}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
     </DashboardLayout>
   );
 };
