@@ -95,6 +95,54 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_requirements: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          currency: string
+          form_levels: string[]
+          gender: string
+          id: string
+          is_active: boolean
+          item_name: string
+          learning_area: string | null
+          notes: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          currency?: string
+          form_levels?: string[]
+          gender?: string
+          id?: string
+          is_active?: boolean
+          item_name: string
+          learning_area?: string | null
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          currency?: string
+          form_levels?: string[]
+          gender?: string
+          id?: string
+          is_active?: boolean
+          item_name?: string
+          learning_area?: string | null
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
