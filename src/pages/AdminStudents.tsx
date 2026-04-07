@@ -56,6 +56,7 @@ const AdminStudents = () => {
   const [stream, setStream] = useState("");
   const [guardianName, setGuardianName] = useState("");
   const [guardianPhone, setGuardianPhone] = useState("");
+  const [isBeginner, setIsBeginner] = useState(true);
 
   // Reset password form
   const [resetRegNumber, setResetRegNumber] = useState("");
@@ -164,6 +165,7 @@ const AdminStudents = () => {
           guardianName: guardianName.trim(),
           guardianPhone: guardianPhone.trim(),
           registrationNumber: regNumber,
+          isBeginner,
         },
       });
 
@@ -206,6 +208,7 @@ const AdminStudents = () => {
       setStream("");
       setGuardianName("");
       setGuardianPhone("");
+      setIsBeginner(true);
       setOpen(false);
       fetchStudents();
     } catch {
@@ -630,6 +633,10 @@ const AdminStudents = () => {
             <div className="space-y-2">
               <Label>Guardian Phone</Label>
               <Input value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} placeholder="+254 7XX XXX XXX" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="isBeginner" checked={isBeginner} onCheckedChange={(v) => setIsBeginner(!!v)} />
+              <Label htmlFor="isBeginner" className="text-sm font-normal">Beginner / New / Transferred Student</Label>
             </div>
             <div className="rounded-md bg-secondary p-3">
               <p className="text-xs text-muted-foreground">Registration number will be auto-generated:</p>
