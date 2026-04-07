@@ -21,6 +21,7 @@ interface Student {
   last_name: string;
   form: string | null;
   stream: string | null;
+  gender: string;
   status: string;
   balance: number;
   claimed: boolean;
@@ -62,6 +63,7 @@ const AdminStudents = () => {
   const [guardianName, setGuardianName] = useState("");
   const [guardianPhone, setGuardianPhone] = useState("");
   const [isBeginner, setIsBeginner] = useState(true);
+  const [gender, setGender] = useState("male");
 
   // Reset password form
   const [resetRegNumber, setResetRegNumber] = useState("");
@@ -167,6 +169,7 @@ const AdminStudents = () => {
           lastName: lastName.trim(),
           form,
           stream,
+          gender,
           guardianName: guardianName.trim(),
           guardianPhone: guardianPhone.trim(),
           registrationNumber: regNumber,
@@ -662,9 +665,21 @@ const AdminStudents = () => {
               <Label>Guardian Phone</Label>
               <Input value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} placeholder="+254 7XX XXX XXX" />
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="isBeginner" checked={isBeginner} onCheckedChange={(v) => setIsBeginner(!!v)} />
-              <Label htmlFor="isBeginner" className="text-sm font-normal">Beginner / New / Transferred Student</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Gender *</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2 pt-7">
+                <Checkbox id="isBeginner" checked={isBeginner} onCheckedChange={(v) => setIsBeginner(!!v)} />
+                <Label htmlFor="isBeginner" className="text-sm font-normal">Beginner / New / Transferred</Label>
+              </div>
             </div>
             <div className="rounded-md bg-secondary p-3">
               <p className="text-xs text-muted-foreground">Registration number will be auto-generated:</p>
