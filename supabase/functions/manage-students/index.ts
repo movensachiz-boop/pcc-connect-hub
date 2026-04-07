@@ -155,16 +155,29 @@ Deno.serve(async (req) => {
     }
 
     if (action === "list_students") {
-      const { data: students, error } = await supabaseAdmin
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // Paginated fetch — get ALL students in batches of 1000
+      let allStudents: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      while (hasMore) {
+        const { data: batch, error } = await supabaseAdmin
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(from, from + batchSize - 1);
+
+        if (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        allStudents = allStudents.concat(batch || []);
+        hasMore = (batch?.length || 0) === batchSize;
+        from += batchSize;
       }
 
       // Get fee summaries
@@ -176,7 +189,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      const enriched = (students || []).map((s: any) => {
+      const enriched = allStudents.map((s: any) => {
         const fee = feeMap.get(s.id);
         return {
           ...s,
