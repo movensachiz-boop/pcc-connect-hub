@@ -75,20 +75,22 @@ Extract:
 - depositor_name (the person who made the deposit)
 - amount (numeric value only, no currency symbol)
 - currency (USD, ZWL, etc. - default USD if unclear)
-- bank_name (bank where deposit was made, if visible)
+- bank_name (full official bank name, e.g. "Ecobank Zimbabwe", "NBS Building Society")
+- swift_code (SWIFT/BIC code if visible, otherwise infer from known banks: Ecobank=ABORZIHA, NBS=NBSZZIHA, CBZ=CBZWZWHA, Stanbic=SBICZWHA, FBC=FBCPZWHA, ZB=ZBCOZWHA)
 - reference_number (transaction/deposit reference number)
+- transaction_id_format (describe the pattern of the reference number, e.g. "SMTXXXXXXXXXX" for alphanumeric or "DEP-NNNNNN" for sequential)
 - date (payment date in YYYY-MM-DD format)
 - method (Bank Deposit, Mobile Money, EcoCash, etc.)
 
 Return ONLY a valid JSON object. No explanation or markdown.
-Example: {"depositor_name":"James Mwangi","amount":"450","currency":"USD","bank_name":"CBZ Bank","reference_number":"DEP-123456","date":"2025-03-28","method":"Bank Deposit"}
+Example: {"depositor_name":"James Mwangi","amount":"450","currency":"USD","bank_name":"Ecobank Zimbabwe","swift_code":"ADORZIHA","reference_number":"SMTEZWDTGBS9Y7Q8","transaction_id_format":"SMTXXXXXXXXXX","date":"2025-03-28","method":"Bank Deposit"}
 
 If a field is not visible, use an empty string. Make your best guess for unclear text.`,
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Extract all payment details from this deposit slip or payment receipt. Read carefully." },
+              { type: "text", text: "Extract all payment details from this deposit slip or payment receipt. Read carefully. Identify the bank, its SWIFT code, and the transaction ID format pattern." },
               {
                 type: "image_url",
                 image_url: {
@@ -111,7 +113,9 @@ If a field is not visible, use an empty string. Make your best guess for unclear
                   amount: { type: "string" },
                   currency: { type: "string" },
                   bank_name: { type: "string" },
+                  swift_code: { type: "string" },
                   reference_number: { type: "string" },
+                  transaction_id_format: { type: "string" },
                   date: { type: "string" },
                   method: { type: "string" },
                 },

@@ -132,6 +132,24 @@ const AdminPayments = () => {
           setManualAmount(payment.amount || "");
           setManualMethod(payment.method || "Bank Deposit");
           setManualRef(payment.reference_number || "");
+
+          // Check for duplicate via document fingerprint
+          if (payment.bank_name && payment.amount) {
+            const { data: fpMatch } = await supabase.rpc("verify_document_fingerprint", {
+              p_bank_name: payment.bank_name || "",
+              p_swift_code: payment.swift_code || "",
+              p_transaction_id_format: payment.transaction_id_format || "",
+              p_amount: payment.amount,
+            });
+            if (fpMatch && fpMatch.length > 0) {
+              toast({
+                title: "⚠️ Possible Duplicate",
+                description: `This document matches receipt ${fpMatch[0].matching_receipt_number} for ${fpMatch[0].matching_student}.`,
+                variant: "destructive",
+              });
+            }
+          }
+
           // Try to match student by name
           const name = (payment.depositor_name || "").toLowerCase();
           const match = students.find(s =>
@@ -184,6 +202,9 @@ const AdminPayments = () => {
       paynow_reference: manualRef || null,
       description: "Deposit slip payment",
       deposit_slip_url: depositSlipUrl,
+      bank_name: scannedData?.bank_name || null,
+      swift_code: scannedData?.swift_code || null,
+      transaction_id_format: scannedData?.transaction_id_format || null,
     }).select().single();
 
     if (error) {
