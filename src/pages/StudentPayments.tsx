@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Download, Loader2, CreditCard, Smartphone, Building2, DollarSign, CheckCircle2 } from "lucide-react";
-import { generateReceipt } from "@/lib/generateReceipt";
+import { Download, Loader2, CreditCard, Smartphone, Building2, DollarSign, CheckCircle2, Printer } from "lucide-react";
+import { generateReceipt, generateThermalReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
