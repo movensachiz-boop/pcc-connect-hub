@@ -102,8 +102,16 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           })}
         </nav>
 
-        {/* Sign out */}
-        <div className="p-3 border-t border-sidebar-border">
+        {/* User Guide + Sign out */}
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          <a
+            href="/PCC_Connect_Hub_User_Guide.pdf"
+            download
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all"
+          >
+            <HelpCircle size={18} />
+            User Guide (PDF)
+          </a>
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg"
