@@ -279,6 +279,18 @@ const AdminPayments = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
+              setManualAmount("");
+              setManualMethod("Cash");
+              setManualRef("");
+              setSelectedStudentId("");
+              setStudentSearch("");
+              setSlipFile(null);
+              setConfirmDialogOpen(true);
+            }} className="gap-2">
+              Record Payment
+            </Button>
             <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
               <Camera size={16} /> Scan Deposit Slip
             </Button>
