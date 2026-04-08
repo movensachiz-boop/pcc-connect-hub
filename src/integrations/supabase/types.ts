@@ -218,10 +218,12 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          bank_name: string | null
           created_at: string
           currency: string
           deposit_slip_url: string | null
           description: string | null
+          document_fingerprint: string | null
           id: string
           method: string
           paynow_reference: string | null
@@ -230,15 +232,19 @@ export type Database = {
           receipt_number: string | null
           status: string
           student_profile_id: string
+          swift_code: string | null
+          transaction_id_format: string | null
           updated_at: string
           verification_hash: string | null
         }
         Insert: {
           amount: number
+          bank_name?: string | null
           created_at?: string
           currency?: string
           deposit_slip_url?: string | null
           description?: string | null
+          document_fingerprint?: string | null
           id?: string
           method: string
           paynow_reference?: string | null
@@ -247,15 +253,19 @@ export type Database = {
           receipt_number?: string | null
           status?: string
           student_profile_id: string
+          swift_code?: string | null
+          transaction_id_format?: string | null
           updated_at?: string
           verification_hash?: string | null
         }
         Update: {
           amount?: number
+          bank_name?: string | null
           created_at?: string
           currency?: string
           deposit_slip_url?: string | null
           description?: string | null
+          document_fingerprint?: string | null
           id?: string
           method?: string
           paynow_reference?: string | null
@@ -264,6 +274,8 @@ export type Database = {
           receipt_number?: string | null
           status?: string
           student_profile_id?: string
+          swift_code?: string | null
+          transaction_id_format?: string | null
           updated_at?: string
           verification_hash?: string | null
         }
