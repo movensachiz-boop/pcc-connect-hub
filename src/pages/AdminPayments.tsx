@@ -384,37 +384,56 @@ const AdminPayments = () => {
                 </div>
               )}
 
-              {(scannedData.bank_name || scannedData.swift_code) && (
-                <div className="grid grid-cols-3 gap-2 rounded-md bg-primary/5 border border-primary/20 p-3">
-                  {scannedData.bank_name && (
+              {scannedData.bank_name ? (
+                <div className={`rounded-lg border-2 p-4 ${patternWarnings.length === 0 ? "border-green-500/40 bg-green-50/50" : "border-destructive/30 bg-destructive/5"}`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    {patternWarnings.length === 0 ? (
+                      <>
+                        <ShieldCheck className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold text-green-700 text-sm">Verified Bank Document</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldX className="h-5 w-5 text-destructive" />
+                        <span className="font-semibold text-destructive text-sm">Unverified — Pattern Mismatch</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
                       <p className="text-xs text-muted-foreground">Bank</p>
-                      <p className="font-medium text-sm">{scannedData.bank_name}</p>
+                      <p className="font-medium">{scannedData.bank_name}</p>
+                    </div>
+                    {scannedData.swift_code && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">SWIFT/BIC</p>
+                        <p className="font-mono font-medium">{scannedData.swift_code}</p>
+                      </div>
+                    )}
+                    {scannedData.transaction_id_format && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">TX Format</p>
+                        <p className="font-mono font-medium">{scannedData.transaction_id_format}</p>
+                      </div>
+                    )}
+                  </div>
+                  {patternWarnings.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-destructive/20 space-y-1">
+                      {patternWarnings.map((w, i) => (
+                        <p key={i} className="text-xs text-destructive/80">⚠ {w}</p>
+                      ))}
                     </div>
                   )}
-                  {scannedData.swift_code && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">SWIFT/BIC</p>
-                      <p className="font-mono font-medium text-sm">{scannedData.swift_code}</p>
-                    </div>
-                  )}
-                  {scannedData.transaction_id_format && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">TX Format</p>
-                      <p className="font-mono font-medium text-sm">{scannedData.transaction_id_format}</p>
-                    </div>
+                  {patternWarnings.length === 0 && (
+                    <p className="text-xs text-green-600/80 mt-2 pt-2 border-t border-green-500/20">
+                      ✓ SWIFT code and transaction ID format match {scannedData.bank_name} records on file.
+                    </p>
                   )}
                 </div>
-              )}
-
-              {patternWarnings.length > 0 && (
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-1">
-                  <p className="text-sm font-medium text-destructive flex items-center gap-1.5">
-                    <AlertTriangle size={14} /> Document Pattern Warnings
-                  </p>
-                  {patternWarnings.map((w, i) => (
-                    <p key={i} className="text-xs text-destructive/80">• {w}</p>
-                  ))}
+              ) : (
+                <div className="rounded-lg border-2 border-amber-400/30 bg-amber-50/50 p-3 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm text-amber-700">Bank could not be identified from this document.</span>
                 </div>
               )}
 
