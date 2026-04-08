@@ -260,7 +260,7 @@ export const generateReceipt = async (data: ReceiptData) => {
 };
 
 // ── Thermal Receipt (80mm roll) ──
-export const generateThermalReceipt = async (data: ReceiptData) => {
+export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "print" = "save") => {
   const pw = 80; // 80mm thermal paper
   const margin = 4;
   const contentW = pw - margin * 2;
