@@ -334,9 +334,14 @@ const AdminPayments = () => {
                           </Button>
                         )}
                         {p.status === "confirmed" && (
-                          <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
-                            <Download size={16} />
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)} title="A4 Receipt">
+                              <Download size={16} />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDownloadThermal(p)} title="Thermal Receipt">
+                              <Printer size={16} />
+                            </Button>
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
