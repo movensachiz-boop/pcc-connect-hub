@@ -166,6 +166,18 @@ const StudentPayments = () => {
     toast({ title: "Thermal Receipt Downloaded" });
   };
 
+  const handlePrint = (p: Payment) => {
+    printReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 8),
+      studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
+      regNo: profile?.registration_number || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount.toFixed(2)}`,
+      method: p.method,
+      verificationHash: p.verification_hash || undefined,
+    });
+  };
+
   const statusColor = (s: string) =>
     s === "confirmed" ? "bg-success text-success-foreground" :
     s === "pending" ? "bg-warning text-warning-foreground" :
