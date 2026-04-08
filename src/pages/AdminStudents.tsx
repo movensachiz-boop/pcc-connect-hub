@@ -758,60 +758,102 @@ const AdminStudents = () => {
 
           {!scanning && extractedStudents.length > 0 && (
             <div className="space-y-3">
-              <p className="text-sm font-medium">Found {extractedStudents.length} student(s). Review and edit:</p>
+              <p className="text-sm font-medium">Found {extractedStudents.length} student(s). Review and edit names — highlighted fields need attention:</p>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {extractedStudents.map((s, i) => (
-                  <div key={i} className={`flex items-start gap-3 p-3 rounded-md border ${s.selected ? "bg-secondary/50" : "opacity-50"}`}>
-                    <Checkbox
-                      checked={s.selected}
-                      onCheckedChange={() => toggleStudentSelection(i)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                      <Input
-                        value={s.first_name}
-                        onChange={(e) => updateExtractedStudent(i, "first_name", e.target.value)}
-                        placeholder="First name"
-                        className="h-8 text-sm"
+                {extractedStudents.map((s, i) => {
+                  const missingFirst = !s.first_name.trim();
+                  const missingLast = !s.last_name.trim();
+                  return (
+                    <div key={i} className={`flex items-start gap-3 p-3 rounded-md border ${(missingFirst || missingLast) && s.selected ? "border-destructive bg-destructive/5" : s.selected ? "bg-secondary/50" : "opacity-50"}`}>
+                      <Checkbox
+                        checked={s.selected}
+                        onCheckedChange={() => toggleStudentSelection(i)}
+                        className="mt-1"
                       />
-                      <Input
-                        value={s.last_name}
-                        onChange={(e) => updateExtractedStudent(i, "last_name", e.target.value)}
-                        placeholder="Last name"
-                        className="h-8 text-sm"
-                      />
-                      <Select value={s.form} onValueChange={(v) => { updateExtractedStudent(i, "form", v); updateExtractedStudent(i, "stream", ""); }}>
-                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Form" /></SelectTrigger>
-                        <SelectContent>
-                          {["1", "2", "3", "4", "5", "6"].map((f) => (
-                            <SelectItem key={f} value={f}>Form {f}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={s.stream} onValueChange={(v) => updateExtractedStudent(i, "stream", v)}>
-                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Stream" /></SelectTrigger>
-                        <SelectContent>
-                          {(parseInt(s.form) >= 5
-                            ? ["Sciences", "Commercials", "Arts"]
-                            : ["G1", "G2", "G22", "Blue"]
-                          ).map((st) => (
-                            <SelectItem key={st} value={st}>{st}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex-1 grid grid-cols-2 gap-2">
+                        <Input
+                          value={s.first_name}
+                          onChange={(e) => updateExtractedStudent(i, "first_name", e.target.value)}
+                          placeholder="First name (required)"
+                          className={`h-8 text-sm ${missingFirst ? "border-destructive ring-1 ring-destructive" : ""}`}
+                        />
+                        <Input
+                          value={s.last_name}
+                          onChange={(e) => updateExtractedStudent(i, "last_name", e.target.value)}
+                          placeholder="Last name (required)"
+                          className={`h-8 text-sm ${missingLast ? "border-destructive ring-1 ring-destructive" : ""}`}
+                        />
+                        <Select value={s.form} onValueChange={(v) => { updateExtractedStudent(i, "form", v); updateExtractedStudent(i, "stream", ""); }}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Form" /></SelectTrigger>
+                          <SelectContent>
+                            {["1", "2", "3", "4", "5", "6"].map((f) => (
+                              <SelectItem key={f} value={f}>Form {f}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select value={s.stream} onValueChange={(v) => updateExtractedStudent(i, "stream", v)}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Stream" /></SelectTrigger>
+                          <SelectContent>
+                            {(parseInt(s.form) >= 5
+                              ? ["Sciences", "Commercials", "Arts"]
+                              : ["G1", "G2", "G22", "Blue"]
+                            ).map((st) => (
+                              <SelectItem key={st} value={st}>{st}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive h-8 w-8 p-0 mt-0.5"
+                        onClick={() => setExtractedStudents(prev => prev.filter((_, idx) => idx !== i))}
+                        title="Remove student"
+                      >
+                        <X size={14} />
+                      </Button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setExtractedStudents(prev => [...prev, {
+                  first_name: "",
+                  last_name: "",
+                  form: "",
+                  stream: "",
+                  guardian_name: "",
+                  guardian_phone: "",
+                  selected: true,
+                }])}
+              >
+                <UserPlus size={14} /> Add Student Manually
+              </Button>
             </div>
           )}
 
           {!scanning && extractedStudents.length === 0 && previewImage && (
             <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">No students could be extracted. Try a clearer photo.</p>
-              <Button variant="outline" className="mt-3 gap-2" onClick={() => fileInputRef.current?.click()}>
-                <Upload size={16} /> Try Another Photo
-              </Button>
+              <p className="text-sm text-muted-foreground">No students could be extracted. Try a clearer photo or add manually.</p>
+              <div className="flex justify-center gap-2 mt-3">
+                <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={16} /> Try Another Photo
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => setExtractedStudents([{
+                  first_name: "",
+                  last_name: "",
+                  form: "",
+                  stream: "",
+                  guardian_name: "",
+                  guardian_phone: "",
+                  selected: true,
+                }])}>
+                  <UserPlus size={16} /> Add Manually
+                </Button>
+              </div>
             </div>
           )}
 
