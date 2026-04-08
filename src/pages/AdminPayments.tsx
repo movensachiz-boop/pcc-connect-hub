@@ -514,29 +514,92 @@ const AdminPayments = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Select Student *</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search student..."
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                    className="pl-9"
-                  />
+                <div className="flex items-center justify-between">
+                  <Label>Select Student *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs h-7"
+                    onClick={() => setQuickRegister(!quickRegister)}
+                  >
+                    <UserPlus size={14} />
+                    {quickRegister ? "Search Existing" : "Register New"}
+                  </Button>
                 </div>
-                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                  <SelectTrigger><SelectValue placeholder="Choose student" /></SelectTrigger>
-                  <SelectContent>
-                    {filteredStudents.map(s => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.first_name} {s.last_name} ({s.registration_number})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  If student is not listed, register them first then come back to record the payment.
-                </p>
+
+                {quickRegister ? (
+                  <div className="space-y-3 rounded-md border p-3 bg-muted/30">
+                    <p className="text-xs font-medium text-muted-foreground">Quick Register New Student</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">First Name *</Label>
+                        <Input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} placeholder="First name" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Last Name *</Label>
+                        <Input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} placeholder="Last name" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Form</Label>
+                        <Select value={newForm} onValueChange={setNewForm}>
+                          <SelectTrigger><SelectValue placeholder="Select form" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Form 1">Form 1</SelectItem>
+                            <SelectItem value="Form 2">Form 2</SelectItem>
+                            <SelectItem value="Form 3">Form 3</SelectItem>
+                            <SelectItem value="Form 4">Form 4</SelectItem>
+                            <SelectItem value="Form 5">Form 5</SelectItem>
+                            <SelectItem value="Form 6">Form 6</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Gender</Label>
+                        <Select value={newGender} onValueChange={setNewGender}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={handleQuickRegister} disabled={registering} className="w-full">
+                      {registering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus size={14} className="mr-2" />}
+                      Register & Select
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search student..."
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                      <SelectTrigger><SelectValue placeholder="Choose student" /></SelectTrigger>
+                      <SelectContent>
+                        {filteredStudents.map(s => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.first_name} {s.last_name} ({s.registration_number})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
+                {selectedStudentId && (
+                  <p className="text-xs text-success">
+                    ✓ Student selected: {students.find(s => s.id === selectedStudentId)?.first_name} {students.find(s => s.id === selectedStudentId)?.last_name}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
