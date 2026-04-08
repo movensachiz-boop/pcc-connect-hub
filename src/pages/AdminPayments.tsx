@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, AlertTriangle, ShieldCheck, ShieldX, Printer } from "lucide-react";
-import { generateReceipt, generateThermalReceipt } from "@/lib/generateReceipt";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, AlertTriangle, ShieldCheck, ShieldX, Printer, MoreVertical } from "lucide-react";
+import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -120,6 +121,30 @@ const AdminPayments = () => {
       verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Thermal Receipt Downloaded" });
+  };
+
+  const handlePrint = (p: PaymentRow) => {
+    printReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 12),
+      studentName: p.studentName || "Unknown",
+      regNo: p.regNo || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount}`,
+      method: p.method,
+      verificationHash: p.verification_hash || undefined,
+    });
+  };
+
+  const handlePrintThermal = (p: PaymentRow) => {
+    generateThermalReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 12),
+      studentName: p.studentName || "Unknown",
+      regNo: p.regNo || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount}`,
+      method: p.method,
+      verificationHash: p.verification_hash || undefined,
+    }, "print");
   };
 
   const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,24 +350,39 @@ const AdminPayments = () => {
                           {p.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="flex gap-1">
-                        {p.deposit_slip_url && (
-                          <Button variant="ghost" size="icon" asChild>
-                            <a href={p.deposit_slip_url} target="_blank" rel="noopener noreferrer" title="View Deposit Slip">
-                              <Eye size={16} />
-                            </a>
-                          </Button>
-                        )}
-                        {p.status === "confirmed" && (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)} title="A4 Receipt">
-                              <Download size={16} />
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {p.deposit_slip_url && (
+                            <Button variant="ghost" size="icon" asChild>
+                              <a href={p.deposit_slip_url} target="_blank" rel="noopener noreferrer" title="View Slip">
+                                <Eye size={16} />
+                              </a>
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDownloadThermal(p)} title="Thermal Receipt">
-                              <Printer size={16} />
-                            </Button>
-                          </>
-                        )}
+                          )}
+                          {p.status === "confirmed" && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical size={16} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handlePrint(p)}>
+                                  <Printer size={14} className="mr-2" /> Print A4
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handlePrintThermal(p)}>
+                                  <Printer size={14} className="mr-2" /> Print Thermal
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadReceipt(p)}>
+                                  <Download size={14} className="mr-2" /> Download A4 PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadThermal(p)}>
+                                  <Download size={14} className="mr-2" /> Download Thermal PDF
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
