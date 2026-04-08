@@ -26,6 +26,7 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AdminClassRoster from "./pages/AdminClassRoster";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherAttendance from "./pages/TeacherAttendance";
+import TeacherClassRoster from "./pages/TeacherClassRoster";
 import NotFound from "./pages/NotFound";
 import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/admin/fees" element={<AdminFees />} />
             <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
+            <Route path="/teacher/roster" element={<TeacherClassRoster />} />
             <Route path="/teacher/timetable" element={<StudentTimetable />} />
             <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
             <Route path="/verify" element={<VerifyReceipt />} />
