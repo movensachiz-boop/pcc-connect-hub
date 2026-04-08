@@ -258,3 +258,155 @@ export const generateReceipt = async (data: ReceiptData) => {
 
   doc.save(`Receipt_${data.receiptNo}.pdf`);
 };
+
+// ── Thermal Receipt (80mm roll) ──
+export const generateThermalReceipt = async (data: ReceiptData) => {
+  const pw = 80; // 80mm thermal paper
+  const margin = 4;
+  const contentW = pw - margin * 2;
+  const cx = pw / 2;
+
+  // Estimate height needed
+  const doc = new jsPDF({ unit: "mm", format: [pw, 200] });
+  let y = 6;
+
+  const dashed = (yPos: number) => {
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.1);
+    for (let x = margin; x < pw - margin; x += 2) {
+      doc.line(x, yPos, x + 1, yPos);
+    }
+  };
+
+  // ── Header ──
+  try {
+    const logoModule = await import("@/assets/pcc-logo.png");
+    const logoUrl = logoModule.default;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = logoUrl;
+    });
+    doc.addImage(img, "JPEG", cx - 8, y, 16, 16);
+    y += 18;
+  } catch {
+    y += 2;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  doc.text("PROGRESS CHRISTIAN CENTRE", cx, y, { align: "center" });
+  y += 4;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.text("info@pcc.ac.zw | +263 786 133 259", cx, y, { align: "center" });
+  y += 5;
+
+  dashed(y);
+  y += 4;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("PAYMENT RECEIPT", cx, y, { align: "center" });
+  y += 5;
+
+  dashed(y);
+  y += 4;
+
+  // ── Details ──
+  const addLine = (label: string, value: string) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(80);
+    doc.text(label, margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0);
+    doc.text(value, pw - margin, y, { align: "right" });
+    y += 4;
+  };
+
+  addLine("Receipt No:", data.receiptNo);
+  addLine("Date:", data.date);
+  addLine("Student:", data.studentName);
+  addLine("Reg No:", data.regNo);
+  addLine("Method:", data.method);
+
+  y += 1;
+  dashed(y);
+  y += 4;
+
+  // ── Amount ──
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(80);
+  doc.text("Tuition Fee", margin, y);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0);
+  doc.text(data.amount, pw - margin, y, { align: "right" });
+  y += 5;
+
+  dashed(y);
+  y += 3;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("TOTAL:", margin, y + 1);
+  doc.setFontSize(11);
+  doc.text(data.amount, pw - margin, y + 1, { align: "right" });
+  y += 6;
+
+  dashed(y);
+  y += 4;
+
+  // ── Status ──
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("** PAID **", cx, y, { align: "center" });
+  y += 5;
+
+  dashed(y);
+  y += 4;
+
+  // ── Verification ──
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5.5);
+  doc.setTextColor(80);
+  doc.text("Verify at:", margin, y);
+  y += 3;
+  doc.setFontSize(5);
+  doc.text("pcc-connect-hub.lovable.app/verify", margin, y);
+  y += 4;
+
+  if (data.verificationHash) {
+    doc.text(`Hash: ${formatHash(data.verificationHash)}`, margin, y);
+    y += 4;
+  }
+
+  dashed(y);
+  y += 4;
+
+  doc.setFontSize(5);
+  doc.setTextColor(120);
+  doc.text("This receipt is cryptographically", cx, y, { align: "center" });
+  y += 2.5;
+  doc.text("signed. Keep for your records.", cx, y, { align: "center" });
+  y += 4;
+
+  doc.text("Thank you for your payment!", cx, y, { align: "center" });
+  y += 4;
+
+  dashed(y);
+  y += 2;
+
+  // Trim the page to actual content height
+  const finalDoc = new jsPDF({ unit: "mm", format: [pw, y + 4] });
+  // Re-render on correctly sized page
+  const pages = doc.output("arraybuffer");
+  // Instead, just save with extra whitespace trimmed conceptually
+  doc.internal.pageSize.height = y + 4;
+
+  doc.save(`Thermal_${data.receiptNo}.pdf`);
+};

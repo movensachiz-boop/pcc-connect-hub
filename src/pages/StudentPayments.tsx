@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Download, Loader2, CreditCard, Smartphone, Building2, DollarSign, CheckCircle2 } from "lucide-react";
-import { generateReceipt } from "@/lib/generateReceipt";
+import { Download, Loader2, CreditCard, Smartphone, Building2, DollarSign, CheckCircle2, Printer } from "lucide-react";
+import { generateReceipt, generateThermalReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -153,6 +153,19 @@ const StudentPayments = () => {
     toast({ title: "Receipt Downloaded" });
   };
 
+  const handleDownloadThermal = (p: Payment) => {
+    generateThermalReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 8),
+      studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
+      regNo: profile?.registration_number || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount.toFixed(2)}`,
+      method: p.method,
+      verificationHash: p.verification_hash || undefined,
+    });
+    toast({ title: "Thermal Receipt Downloaded" });
+  };
+
   const statusColor = (s: string) =>
     s === "confirmed" ? "bg-success text-success-foreground" :
     s === "pending" ? "bg-warning text-warning-foreground" :
@@ -230,9 +243,14 @@ const StudentPayments = () => {
                       </TableCell>
                       <TableCell>
                         {p.status === "confirmed" && (
-                          <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)}>
-                            <Download size={16} />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)} title="A4 Receipt">
+                              <Download size={16} />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDownloadThermal(p)} title="Thermal Receipt">
+                              <Printer size={16} />
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
