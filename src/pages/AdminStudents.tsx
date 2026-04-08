@@ -161,7 +161,6 @@ const AdminStudents = () => {
     }
 
     setSubmitting(true);
-    const regNumber = generateRegNumber();
 
     try {
       const { data, error } = await supabase.functions.invoke("manage-students", {
@@ -174,7 +173,6 @@ const AdminStudents = () => {
           gender,
           guardianName: guardianName.trim(),
           guardianPhone: guardianPhone.trim(),
-          registrationNumber: regNumber,
           isBeginner,
         },
       });
