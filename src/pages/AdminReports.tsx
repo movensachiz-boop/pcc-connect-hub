@@ -39,12 +39,12 @@ const reports: ReportDef[] = [
     filename: "outstanding_balances",
     headers: ["Reg No", "Student Name", "Form", "Total Fees", "Paid", "Outstanding", "Status"],
     rows: [
-      ["PCC-2025-042", "Grace Otieno", "2", "$4,500", "$3,800", "$700", "Partially Paid"],
-      ["PCC-2025-033", "David Omondi", "3", "$4,500", "$3,300", "$1,200", "Partially Paid"],
-      ["PCC-2025-001", "James Mwangi", "4", "$4,500", "$4,050", "$450", "Partially Paid"],
-      ["PCC-2025-088", "Faith Njeri", "1", "$4,500", "$4,050", "$450", "Partially Paid"],
-      ["PCC-2025-071", "John Kiplagat", "4", "$4,500", "$4,200", "$300", "Partially Paid"],
-      ["PCC-2025-099", "Sarah Achieng", "2", "$4,500", "$4,350", "$150", "Partially Paid"],
+      ["G0042O", "Grace Otieno", "2", "$4,500", "$3,800", "$700", "Partially Paid"],
+      ["D0033O", "David Omondi", "3", "$4,500", "$3,300", "$1,200", "Partially Paid"],
+      ["J0001M", "James Mwangi", "4", "$4,500", "$4,050", "$450", "Partially Paid"],
+      ["F0088N", "Faith Njeri", "1", "$4,500", "$4,050", "$450", "Partially Paid"],
+      ["J0071K", "John Kiplagat", "4", "$4,500", "$4,200", "$300", "Partially Paid"],
+      ["S0099A", "Sarah Achieng", "2", "$4,500", "$4,350", "$150", "Partially Paid"],
     ],
   },
   {
