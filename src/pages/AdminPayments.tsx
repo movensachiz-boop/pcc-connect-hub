@@ -146,6 +146,7 @@ const AdminPayments = () => {
     }, "print");
   };
 
+  const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSlipFile(file);
