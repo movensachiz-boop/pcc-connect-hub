@@ -108,7 +108,7 @@ const Login = () => {
                 <Label htmlFor="regNumber" className="text-sm font-medium">Registration Number</Label>
                 <Input
                   id="regNumber"
-                  placeholder="e.g. A0001B"
+                  placeholder="e.g. K0023T"
                   value={regNumber}
                   onChange={(e) => setRegNumber(e.target.value)}
                   required
