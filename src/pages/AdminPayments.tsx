@@ -128,8 +128,10 @@ const AdminPayments = () => {
         if (resp.error) throw new Error(resp.error.message || "Scan failed");
 
         const payment = resp.data?.payment;
+        const warnings: string[] = resp.data?.warnings || [];
         if (payment) {
           setScannedData(payment);
+          setPatternWarnings(warnings);
           setManualAmount(payment.amount || "");
           setManualMethod(payment.method || "Bank Deposit");
           setManualRef(payment.reference_number || "");
