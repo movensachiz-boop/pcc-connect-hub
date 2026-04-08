@@ -81,9 +81,11 @@ const AdminStudents = () => {
   const [photoTargetId, setPhotoTargetId] = useState<string | null>(null);
 
   const generateRegNumber = (offset = 0) => {
-    const year = new Date().getFullYear();
-    const num = (students.length + 1 + offset).toString().padStart(3, "0");
-    return `PCC-${year}-${num}`;
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const first = letters[Math.floor(Math.random() * 26)];
+    const last = letters[Math.floor(Math.random() * 26)];
+    const num = (students.length + 1 + offset).toString().padStart(4, "0");
+    return `${first}${num}${last}`;
   };
 
   const fetchStudents = async () => {
@@ -709,7 +711,7 @@ const AdminStudents = () => {
               <Input
                 value={resetRegNumber}
                 onChange={(e) => setResetRegNumber(e.target.value)}
-                placeholder="e.g. PCC-2025-001"
+                placeholder="e.g. A0001B"
               />
             </div>
             <div className="space-y-2">

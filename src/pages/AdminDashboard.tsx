@@ -25,11 +25,11 @@ const pieData = [
 const PIE_COLORS = ["hsl(210,100%,20%)", "hsl(51,100%,50%)", "hsl(142,72%,40%)", "hsl(0,0%,60%)"];
 
 const recentPayments = [
-  { student: "James Mwangi", reg: "PCC-2025-001", form: "4", amount: "$450", date: "2025-03-28", status: "Paid" },
-  { student: "Grace Otieno", reg: "PCC-2025-042", form: "2", amount: "$200", date: "2025-03-27", status: "Partial" },
-  { student: "Peter Kamau", reg: "PCC-2025-015", form: "5", amount: "$500", date: "2025-03-26", status: "Paid" },
-  { student: "Faith Njeri", reg: "PCC-2025-088", form: "1", amount: "$450", date: "2025-03-25", status: "Paid" },
-  { student: "David Omondi", reg: "PCC-2025-033", form: "3", amount: "$150", date: "2025-03-24", status: "Partial" },
+  { student: "James Mwangi", reg: "J0001M", form: "4", amount: "$450", date: "2025-03-28", status: "Paid" },
+  { student: "Grace Otieno", reg: "G0042O", form: "2", amount: "$200", date: "2025-03-27", status: "Partial" },
+  { student: "Peter Kamau", reg: "P0015K", form: "5", amount: "$500", date: "2025-03-26", status: "Paid" },
+  { student: "Faith Njeri", reg: "F0088N", form: "1", amount: "$450", date: "2025-03-25", status: "Paid" },
+  { student: "David Omondi", reg: "D0033O", form: "3", amount: "$150", date: "2025-03-24", status: "Partial" },
 ];
 
 const AdminDashboard = () => (

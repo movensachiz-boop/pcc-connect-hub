@@ -98,7 +98,7 @@ const SetupAccount = () => {
                 <Label htmlFor="regNumber">Registration Number</Label>
                 <Input
                   id="regNumber"
-                  placeholder="e.g. PCC-2025-001"
+                  placeholder="e.g. A0001B"
                   value={regNumber}
                   onChange={(e) => setRegNumber(e.target.value)}
                   required
