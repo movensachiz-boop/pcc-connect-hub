@@ -406,7 +406,17 @@ const AdminPayments = () => {
                 </div>
               )}
 
-              <div className="space-y-2">
+              {patternWarnings.length > 0 && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+                  <p className="text-sm font-medium text-destructive flex items-center gap-1.5">
+                    <AlertTriangle size={14} /> Document Pattern Warnings
+                  </p>
+                  {patternWarnings.map((w, i) => (
+                    <p key={i} className="text-xs text-destructive/80">• {w}</p>
+                  ))}
+                </div>
+              )}
+
                 <Label>Select Student *</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
