@@ -58,6 +58,12 @@ const AdminPayments = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [patternWarnings, setPatternWarnings] = useState<string[]>([]);
+  const [quickRegister, setQuickRegister] = useState(false);
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
+  const [newForm, setNewForm] = useState("");
+  const [newGender, setNewGender] = useState("male");
+  const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
     fetchPayments();
