@@ -160,7 +160,42 @@ If a field is not visible, use an empty string. Make your best guess for unclear
       });
     }
 
-    return new Response(JSON.stringify({ payment }), {
+    // Validate against known bank patterns
+    const warnings: string[] = [];
+    if (payment.bank_name) {
+      // Fuzzy match bank name
+      const bankNameLower = payment.bank_name.toLowerCase();
+      const { data: patterns } = await supabaseAdmin.from("bank_document_patterns").select("*");
+
+      const matchedPattern = patterns?.find((p: any) =>
+        bankNameLower.includes(p.bank_name.toLowerCase().split(" ")[0].toLowerCase())
+      );
+
+      if (matchedPattern) {
+        // Validate SWIFT code
+        if (payment.swift_code && payment.swift_code !== matchedPattern.swift_code) {
+          warnings.push(`SWIFT code mismatch: got "${payment.swift_code}", expected "${matchedPattern.swift_code}" for ${matchedPattern.bank_name}`);
+        } else if (!payment.swift_code) {
+          payment.swift_code = matchedPattern.swift_code;
+        }
+
+        // Validate reference number format
+        if (payment.reference_number && matchedPattern.id_regex) {
+          const regex = new RegExp(matchedPattern.id_regex);
+          if (!regex.test(payment.reference_number)) {
+            warnings.push(`Transaction ID "${payment.reference_number}" doesn't match expected ${matchedPattern.bank_name} format (e.g. ${matchedPattern.sample_reference})`);
+          }
+        }
+
+        // Set canonical bank name and format
+        payment.bank_name = matchedPattern.bank_name;
+        payment.transaction_id_format = matchedPattern.transaction_id_format;
+      } else {
+        warnings.push(`Unknown bank "${payment.bank_name}" — no pattern on file to validate against`);
+      }
+    }
+
+    return new Response(JSON.stringify({ payment, warnings }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
