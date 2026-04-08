@@ -352,23 +352,39 @@ const AdminPayments = () => {
                       </TableCell>
                       <TableCell className="flex gap-1">
                         {p.deposit_slip_url && (
-                          <Button variant="ghost" size="icon" asChild>
-                            <a href={p.deposit_slip_url} target="_blank" rel="noopener noreferrer" title="View Deposit Slip">
-                              <Eye size={16} />
-                            </a>
-                          </Button>
-                        )}
-                        {p.status === "confirmed" && (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)} title="A4 Receipt">
-                              <Download size={16} />
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {p.deposit_slip_url && (
+                            <Button variant="ghost" size="icon" asChild>
+                              <a href={p.deposit_slip_url} target="_blank" rel="noopener noreferrer" title="View Slip">
+                                <Eye size={16} />
+                              </a>
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDownloadThermal(p)} title="Thermal Receipt">
-                              <Printer size={16} />
-                            </Button>
-                          </>
-                        )}
-                      </TableCell>
+                          )}
+                          {p.status === "confirmed" && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical size={16} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handlePrint(p)}>
+                                  <Printer size={14} className="mr-2" /> Print A4
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handlePrintThermal(p)}>
+                                  <Printer size={14} className="mr-2" /> Print Thermal
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadReceipt(p)}>
+                                  <Download size={14} className="mr-2" /> Download A4 PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadThermal(p)}>
+                                  <Download size={14} className="mr-2" /> Download Thermal PDF
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                     </TableRow>
                   ))}
                 </TableBody>
