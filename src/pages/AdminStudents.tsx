@@ -684,9 +684,8 @@ const AdminStudents = () => {
               </div>
             </div>
             <div className="rounded-md bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">Registration number will be auto-generated:</p>
-              <p className="text-sm font-semibold text-primary">{generateRegNumber()}</p>
-              <p className="text-xs text-muted-foreground mt-1">Share this number with the student so they can set up their account.</p>
+              <p className="text-xs text-muted-foreground">Registration number will be auto-generated (e.g. K0023T)</p>
+              <p className="text-xs text-muted-foreground mt-1">The number will be shown after registration. Share it with the student so they can set up their account.</p>
             </div>
           </div>
           <DialogFooter>
