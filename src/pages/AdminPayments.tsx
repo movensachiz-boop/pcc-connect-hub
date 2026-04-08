@@ -104,6 +104,7 @@ const AdminPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
+      verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Receipt Downloaded" });
   };
