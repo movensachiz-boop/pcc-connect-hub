@@ -711,7 +711,7 @@ const AdminStudents = () => {
               <Input
                 value={resetRegNumber}
                 onChange={(e) => setResetRegNumber(e.target.value)}
-                placeholder="e.g. A0001B"
+                placeholder="e.g. K0023T"
               />
             </div>
             <div className="space-y-2">
