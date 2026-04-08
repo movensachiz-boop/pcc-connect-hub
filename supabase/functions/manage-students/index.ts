@@ -103,9 +103,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Create profile WITHOUT auth user - student will claim later
       const { data: profile, error: profileError } = await supabaseAdmin.from("profiles").insert({
-        registration_number: registrationNumber,
+        registration_number: regNum,
         first_name: firstName,
         last_name: lastName,
         form: form || null,
@@ -128,7 +127,7 @@ Deno.serve(async (req) => {
         success: true,
         student: {
           id: profile.id,
-          registrationNumber,
+          registrationNumber: regNum,
           name: `${firstName} ${lastName}`,
           form,
           stream,
