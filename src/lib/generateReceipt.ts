@@ -421,7 +421,51 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
 
 // ── Print A4 receipt directly ──
 export const printReceipt = async (data: ReceiptData) => {
-  const doc = await buildA4Receipt(data);
+  // Reuse generateReceipt logic but intercept to print instead of save
+  // We create a hidden iframe approach for printing
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  // Build a simple printable version
+  const pw = 210;
+  const margin = 20;
+  let y = 20;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("PROGRESS CHRISTIAN CENTRE", pw / 2, y, { align: "center" });
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("info@pcc.ac.zw | +263 786 133 259", pw / 2, y, { align: "center" });
+  y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("School Fees Receipt", pw / 2, y, { align: "center" });
+  y += 10;
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  const lines = [
+    `Receipt No: ${data.receiptNo}`,
+    `Date: ${data.date}`,
+    `Student: ${data.studentName}`,
+    `Reg No: ${data.regNo}`,
+    `Method: ${data.method}`,
+    `Amount: ${data.amount}`,
+    `Status: PAID`,
+  ];
+  lines.forEach(l => { doc.text(l, margin, y); y += 6; });
+
+  y += 5;
+  if (data.verificationHash) {
+    doc.setFontSize(7);
+    doc.text(`Verification: ${formatHash(data.verificationHash)}`, margin, y);
+    y += 5;
+  }
+  doc.setFontSize(7);
+  doc.text("Verify at: pcc-connect-hub.lovable.app/verify", margin, y);
+
   doc.autoPrint();
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
