@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { type, guardianPhone, studentName, registrationNumber, amount, receiptNumber, method } = await req.json();
+    const { type, guardianPhone, studentName, registrationNumber, amount, receiptNumber, method, customMessage } = await req.json();
 
     if (!guardianPhone || !studentName) {
       return new Response(JSON.stringify({ error: "Missing required fields: guardianPhone, studentName" }), {
@@ -75,7 +75,10 @@ Deno.serve(async (req) => {
     let message = "";
     let smsType = "general";
 
-    if (type === "registration") {
+    if (type === "custom" && customMessage) {
+      smsType = "general";
+      message = `Dear ${studentName},\n\n${customMessage}\n\n- PCC School`;
+    } else if (type === "registration") {
       smsType = "registration";
       message = `Dear Guardian,\n\nYour child ${studentName} has been registered at Progress Christian Centre.\n\nRegistration Number: ${registrationNumber}\n\nPlease use this registration number to set up the student portal account.\n\nThank you.\n- PCC School`;
     } else if (type === "payment") {
