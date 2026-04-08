@@ -274,6 +274,53 @@ const AdminPayments = () => {
     setSaving(false);
   };
 
+  const handleQuickRegister = async () => {
+    if (!newFirstName.trim() || !newLastName.trim()) {
+      toast({ title: "Missing Info", description: "First and last name are required.", variant: "destructive" });
+      return;
+    }
+    setRegistering(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-students", {
+        body: {
+          action: "add",
+          students: [{
+            first_name: newFirstName.trim(),
+            last_name: newLastName.trim(),
+            form: newForm || null,
+            gender: newGender,
+          }],
+        },
+      });
+      if (error) throw error;
+      // Refresh students list and select the new student
+      await fetchStudents();
+      // Find the newly created student by name match (most recent)
+      const { data: newStudents } = await supabase.from("profiles")
+        .select("id, first_name, last_name, registration_number, guardian_phone")
+        .ilike("first_name", newFirstName.trim())
+        .ilike("last_name", newLastName.trim())
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (newStudents && newStudents.length > 0) {
+        setSelectedStudentId(newStudents[0].id);
+        setStudents(prev => {
+          const exists = prev.find(s => s.id === newStudents[0].id);
+          return exists ? prev : [...prev, newStudents[0]];
+        });
+      }
+      toast({ title: "Student Registered", description: `${newFirstName} ${newLastName} added successfully.` });
+      setQuickRegister(false);
+      setNewFirstName("");
+      setNewLastName("");
+      setNewForm("");
+      setNewGender("male");
+    } catch (err: any) {
+      toast({ title: "Registration Failed", description: err.message, variant: "destructive" });
+    }
+    setRegistering(false);
+  };
+
   const filteredStudents = students.filter(s =>
     studentSearch === "" ||
     `${s.first_name} ${s.last_name} ${s.registration_number}`.toLowerCase().includes(studentSearch.toLowerCase())
