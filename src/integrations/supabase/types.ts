@@ -377,6 +377,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      verify_document_fingerprint: {
+        Args: {
+          p_amount: string
+          p_bank_name: string
+          p_swift_code: string
+          p_transaction_id_format: string
+        }
+        Returns: {
+          match_found: boolean
+          matching_payment_id: string
+          matching_receipt_number: string
+          matching_student: string
+        }[]
+      }
       verify_payment_hash: {
         Args: {
           p_amount: string
