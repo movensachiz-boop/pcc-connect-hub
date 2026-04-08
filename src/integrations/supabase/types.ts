@@ -98,6 +98,39 @@ export type Database = {
           },
         ]
       }
+      bank_document_patterns: {
+        Row: {
+          bank_name: string
+          created_at: string
+          id: string
+          id_regex: string
+          sample_reference: string | null
+          swift_code: string
+          transaction_id_format: string
+          updated_at: string
+        }
+        Insert: {
+          bank_name: string
+          created_at?: string
+          id?: string
+          id_regex: string
+          sample_reference?: string | null
+          swift_code: string
+          transaction_id_format: string
+          updated_at?: string
+        }
+        Update: {
+          bank_name?: string
+          created_at?: string
+          id?: string
+          id_regex?: string
+          sample_reference?: string | null
+          swift_code?: string
+          transaction_id_format?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       device_sessions: {
         Row: {
           created_at: string

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye } from "lucide-react";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, AlertTriangle } from "lucide-react";
 import { generateReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +55,7 @@ const AdminPayments = () => {
   const [manualRef, setManualRef] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [patternWarnings, setPatternWarnings] = useState<string[]>([]);
 
   useEffect(() => {
     fetchPayments();
@@ -127,8 +128,10 @@ const AdminPayments = () => {
         if (resp.error) throw new Error(resp.error.message || "Scan failed");
 
         const payment = resp.data?.payment;
+        const warnings: string[] = resp.data?.warnings || [];
         if (payment) {
           setScannedData(payment);
+          setPatternWarnings(warnings);
           setManualAmount(payment.amount || "");
           setManualMethod(payment.method || "Bank Deposit");
           setManualRef(payment.reference_number || "");
@@ -232,6 +235,7 @@ const AdminPayments = () => {
       setConfirmDialogOpen(false);
       setScannedData(null);
       setSlipFile(null);
+      setPatternWarnings([]);
       setSelectedStudentId("");
       setManualAmount("");
       setManualMethod("");
@@ -400,6 +404,17 @@ const AdminPayments = () => {
                       <p className="font-mono font-medium text-sm">{scannedData.transaction_id_format}</p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {patternWarnings.length > 0 && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+                  <p className="text-sm font-medium text-destructive flex items-center gap-1.5">
+                    <AlertTriangle size={14} /> Document Pattern Warnings
+                  </p>
+                  {patternWarnings.map((w, i) => (
+                    <p key={i} className="text-xs text-destructive/80">• {w}</p>
+                  ))}
                 </div>
               )}
 
