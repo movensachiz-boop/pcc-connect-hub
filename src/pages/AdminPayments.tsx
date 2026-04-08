@@ -385,6 +385,7 @@ const AdminPayments = () => {
                             </DropdownMenu>
                           )}
                         </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
