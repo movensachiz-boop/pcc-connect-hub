@@ -235,6 +235,7 @@ const AdminPayments = () => {
       setConfirmDialogOpen(false);
       setScannedData(null);
       setSlipFile(null);
+      setPatternWarnings([]);
       setSelectedStudentId("");
       setManualAmount("");
       setManualMethod("");
