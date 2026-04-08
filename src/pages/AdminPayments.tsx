@@ -230,7 +230,7 @@ const AdminPayments = () => {
       student_profile_id: selectedStudentId,
       amount: parseFloat(manualAmount),
       method: manualMethod || "Bank Deposit",
-      status: "confirmed",
+      status: "paid",
       paynow_reference: manualRef || null,
       description: "Deposit slip payment",
       deposit_slip_url: depositSlipUrl,
