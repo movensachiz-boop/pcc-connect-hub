@@ -8,6 +8,7 @@ export default function TeacherDashboard() {
 
   const cards = [
     { label: "Mark Attendance", icon: CheckCircle, path: "/teacher/attendance", color: "bg-green-500/10 text-green-600" },
+    { label: "Class Roster", icon: Users, path: "/teacher/roster", color: "bg-primary/10 text-primary" },
     { label: "View Timetable", icon: CalendarDays, path: "/teacher/timetable", color: "bg-primary/10 text-primary" },
   ];
 
