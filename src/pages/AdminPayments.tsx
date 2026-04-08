@@ -420,45 +420,32 @@ const AdminPayments = () => {
 
           {scannedData && (
             <div className="space-y-4">
-              {scannedData.depositor_name && (
-                <div className="rounded-md bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Depositor on slip</p>
-                  <p className="font-medium">{scannedData.depositor_name}</p>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Depositor / Student Name</Label>
+                <Input
+                  value={scannedData.depositor_name || ""}
+                  onChange={(e) => setScannedData({ ...scannedData, depositor_name: e.target.value })}
+                  placeholder="Name on deposit slip or student name"
+                />
+              </div>
 
-              {scannedData.depositor_name !== undefined && (
-                <div className="space-y-2">
-                  <Label>Depositor Name</Label>
-                  <Input
-                    value={scannedData.depositor_name || ""}
-                    onChange={(e) => setScannedData({ ...scannedData, depositor_name: e.target.value })}
-                    placeholder="Name on deposit slip"
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Bank</Label>
+                <Input
+                  value={scannedData.bank_name || ""}
+                  onChange={(e) => setScannedData({ ...scannedData, bank_name: e.target.value })}
+                  placeholder="e.g. Ecobank Zimbabwe"
+                />
+              </div>
 
-              {scannedData.bank_name !== undefined && (
-                <div className="space-y-2">
-                  <Label>Bank</Label>
-                  <Input
-                    value={scannedData.bank_name || ""}
-                    onChange={(e) => setScannedData({ ...scannedData, bank_name: e.target.value })}
-                    placeholder="e.g. Ecobank Zimbabwe"
-                  />
-                </div>
-              )}
-
-              {scannedData.date && (
-                <div className="space-y-2">
-                  <Label>Payment Date</Label>
-                  <Input
-                    value={scannedData.date || ""}
-                    onChange={(e) => setScannedData({ ...scannedData, date: e.target.value })}
-                    type="date"
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Payment Date</Label>
+                <Input
+                  value={scannedData.date || ""}
+                  onChange={(e) => setScannedData({ ...scannedData, date: e.target.value })}
+                  type="date"
+                />
+              </div>
 
               <div className="space-y-2">
                 <Label>Select Student *</Label>
@@ -481,6 +468,9 @@ const AdminPayments = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  If student is not listed, register them first then come back to record the payment.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
