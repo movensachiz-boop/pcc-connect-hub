@@ -23,6 +23,7 @@ interface Payment {
   receipt_number: string | null;
   description: string | null;
   created_at: string;
+  verification_hash: string | null;
 }
 
 interface Profile {
@@ -147,6 +148,7 @@ const StudentPayments = () => {
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,
       description: p.description || undefined,
+      verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Receipt Downloaded" });
   };
