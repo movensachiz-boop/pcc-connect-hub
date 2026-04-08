@@ -256,11 +256,11 @@ const StudentPayments = () => {
                       <TableCell>
                         {p.status === "confirmed" && (
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)} title="A4 Receipt">
-                              <Download size={16} />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDownloadThermal(p)} title="Thermal Receipt">
+                            <Button variant="ghost" size="icon" onClick={() => handlePrint(p)} title="Print">
                               <Printer size={16} />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(p)} title="Download PDF">
+                              <Download size={16} />
                             </Button>
                           </div>
                         )}
