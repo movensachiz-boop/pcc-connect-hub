@@ -283,16 +283,15 @@ const AdminPayments = () => {
     try {
       const { data, error } = await supabase.functions.invoke("manage-students", {
         body: {
-          action: "add",
-          students: [{
-            first_name: newFirstName.trim(),
-            last_name: newLastName.trim(),
-            form: newForm || null,
-            gender: newGender,
-          }],
+          action: "create_student",
+          firstName: newFirstName.trim(),
+          lastName: newLastName.trim(),
+          form: newForm || null,
+          gender: newGender,
         },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       // Refresh students list and select the new student
       await fetchStudents();
       // Find the newly created student by name match (most recent)
