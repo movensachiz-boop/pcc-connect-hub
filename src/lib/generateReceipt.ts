@@ -401,12 +401,35 @@ export const generateThermalReceipt = async (data: ReceiptData) => {
   dashed(y);
   y += 2;
 
-  // Trim the page to actual content height
-  const finalDoc = new jsPDF({ unit: "mm", format: [pw, y + 4] });
-  // Re-render on correctly sized page
-  const pages = doc.output("arraybuffer");
-  // Instead, just save with extra whitespace trimmed conceptually
   doc.internal.pageSize.height = y + 4;
 
-  doc.save(`Thermal_${data.receiptNo}.pdf`);
+  if (mode === "print") {
+    doc.autoPrint();
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url);
+    if (printWindow) {
+      printWindow.onafterprint = () => {
+        printWindow.close();
+        URL.revokeObjectURL(url);
+      };
+    }
+  } else {
+    doc.save(`Thermal_${data.receiptNo}.pdf`);
+  }
+};
+
+// ── Print A4 receipt directly ──
+export const printReceipt = async (data: ReceiptData) => {
+  const doc = await buildA4Receipt(data);
+  doc.autoPrint();
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const printWindow = window.open(url);
+  if (printWindow) {
+    printWindow.onafterprint = () => {
+      printWindow.close();
+      URL.revokeObjectURL(url);
+    };
+  }
 };
