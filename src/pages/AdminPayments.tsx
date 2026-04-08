@@ -350,8 +350,6 @@ const AdminPayments = () => {
                           {p.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="flex gap-1">
-                        {p.deposit_slip_url && (
                       <TableCell>
                         <div className="flex gap-1">
                           {p.deposit_slip_url && (
