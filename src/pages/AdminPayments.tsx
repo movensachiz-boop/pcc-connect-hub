@@ -26,6 +26,7 @@ interface PaymentRow {
   paynow_reference: string | null;
   phone: string | null;
   deposit_slip_url: string | null;
+  verification_hash: string | null;
   studentName?: string;
   regNo?: string;
 }
@@ -103,6 +104,7 @@ const AdminPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
+      verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Receipt Downloaded" });
   };

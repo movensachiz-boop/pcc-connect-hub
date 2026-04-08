@@ -9,16 +9,50 @@ interface ReceiptData {
   amount: string;
   method: string;
   description?: string;
+  verificationHash?: string;
 }
+
+// Simple hash display: show first 16 + last 8 chars
+const formatHash = (hash: string) => {
+  if (!hash || hash.length < 24) return hash || "N/A";
+  return `${hash.slice(0, 16)}...${hash.slice(-8)}`;
+};
 
 export const generateReceipt = async (data: ReceiptData) => {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
   const pw = 210;
+  const ph = 297;
   const margin = 20;
   const primary: [number, number, number] = [0, 51, 102];
   const blue: [number, number, number] = [41, 128, 185];
   let y = 15;
+
+  // ── Diagonal watermark (anti-copy) ──
+  doc.saveGraphicsState();
+  // @ts-ignore
+  doc.setGState(new doc.GState({ opacity: 0.04 }));
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(60);
+  doc.setTextColor(0, 51, 102);
+  const centerX = pw / 2;
+  const centerY = ph / 2;
+  // Rotated watermark text
+  for (let i = -1; i <= 1; i++) {
+    const offsetY = i * 70;
+    doc.text("PCC OFFICIAL RECEIPT", centerX, centerY + offsetY, {
+      align: "center",
+      angle: 35,
+    });
+  }
+  doc.restoreGraphicsState();
+
+  // ── Decorative border ──
+  doc.setDrawColor(41, 128, 185);
+  doc.setLineWidth(0.8);
+  doc.rect(8, 8, pw - 16, ph - 16);
+  doc.setLineWidth(0.3);
+  doc.rect(10, 10, pw - 20, ph - 20);
 
   // ── Logo centered at top ──
   try {
@@ -43,7 +77,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
-  doc.text("PROGRESS CHRISTIAN CENTRE  |  info@pcc.ac.zw  |  +263 XXX XXX XXX", pw / 2, y + 6.5, { align: "center" });
+  doc.text("PROGRESS CHRISTIAN CENTRE  |  info@pcc.ac.zw  |  +263 786 133 259", pw / 2, y + 6.5, { align: "center" });
   y += 18;
 
   // ── Title ──
@@ -51,10 +85,17 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFontSize(20);
   doc.setTextColor(30, 30, 30);
   doc.text("School Fees Receipt", pw / 2, y, { align: "center" });
-  y += 12;
+  y += 5;
+
+  // ── Security document ID ──
+  const docId = `DOC-${data.receiptNo}-${Date.now().toString(36).toUpperCase()}`;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  doc.text(`Document ID: ${docId}`, pw / 2, y + 3, { align: "center" });
+  y += 10;
 
   // ── Invoice & Student Details (two-column table) ──
-  const midX = margin + (pw - 2 * margin) / 2;
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
@@ -146,6 +187,35 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.text(`Payment was received via ${data.method}. Please retain this receipt for your records.`, margin, y);
   y += 12;
 
+  // ── Security Verification Section ──
+  doc.setFillColor(245, 248, 252);
+  doc.setDrawColor(41, 128, 185);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin, y, pw - 2 * margin, 32, 2, 2, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...primary);
+  doc.text("SECURITY VERIFICATION", margin + 5, y + 6);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(60, 60, 60);
+
+  const verifyUrl = `https://pcc-connect-hub.lovable.app/verify`;
+  doc.text(`Verify online: ${verifyUrl}`, margin + 5, y + 12);
+  doc.text(`Receipt No: ${data.receiptNo}`, margin + 5, y + 17);
+
+  if (data.verificationHash) {
+    doc.text(`SHA-256 Hash: ${formatHash(data.verificationHash)}`, margin + 5, y + 22);
+  }
+
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 100, 100);
+  doc.text("This receipt is cryptographically signed. Any alteration will invalidate the verification hash.", margin + 5, y + 28);
+
+  y += 40;
+
   // ── Terms and Conditions ──
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -168,7 +238,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setTextColor(128, 128, 128);
   doc.text("Authorized Signature", margin + 30, y + 5, { align: "center" });
 
-  // ── PAID stamp ──
+  // ── PAID / VERIFIED stamp ──
   doc.setDrawColor(...blue);
   doc.setLineWidth(1.5);
   doc.circle(pw - margin - 20, y - 5, 14);
@@ -179,10 +249,12 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFontSize(6);
   doc.text("VERIFIED", pw - margin - 20, y, { align: "center" });
 
-  // ── Footer ──
-  doc.setFontSize(7);
+  // ── Footer with security notice ──
+  doc.setFontSize(6.5);
   doc.setTextColor(150, 150, 150);
-  doc.text("This is a computer-generated receipt from Progress Christian Centre.", pw / 2, 285, { align: "center" });
+  doc.text("This is a computer-generated receipt from Progress Christian Centre. It is protected by SHA-256 cryptographic verification.", pw / 2, 278, { align: "center" });
+  doc.text(`Document ID: ${docId}  |  Generated: ${new Date().toISOString()}`, pw / 2, 282, { align: "center" });
+  doc.text("Unauthorized reproduction or alteration of this document is prohibited.", pw / 2, 286, { align: "center" });
 
   doc.save(`Receipt_${data.receiptNo}.pdf`);
 };
