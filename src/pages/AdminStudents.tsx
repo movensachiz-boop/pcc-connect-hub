@@ -182,6 +182,8 @@ const AdminStudents = () => {
         return;
       }
 
+      const regNumber = data.student?.registrationNumber || "N/A";
+
       // Send notification to guardian if phone is provided
       if (guardianPhone.trim()) {
         try {
