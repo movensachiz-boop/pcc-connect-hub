@@ -122,7 +122,30 @@ const AdminPayments = () => {
     toast({ title: "Thermal Receipt Downloaded" });
   };
 
-  const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePrint = (p: PaymentRow) => {
+    printReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 12),
+      studentName: p.studentName || "Unknown",
+      regNo: p.regNo || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount}`,
+      method: p.method,
+      verificationHash: p.verification_hash || undefined,
+    });
+  };
+
+  const handlePrintThermal = (p: PaymentRow) => {
+    generateThermalReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 12),
+      studentName: p.studentName || "Unknown",
+      regNo: p.regNo || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount}`,
+      method: p.method,
+      verificationHash: p.verification_hash || undefined,
+    }, "print");
+  };
+
     const file = e.target.files?.[0];
     if (!file) return;
     setSlipFile(file);
