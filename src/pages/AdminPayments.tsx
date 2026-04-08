@@ -420,8 +420,8 @@ const AdminPayments = () => {
 
       {/* Confirm Scanned Payment Dialog */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-success" /> Payment Details Extracted
             </DialogTitle>
@@ -430,8 +430,9 @@ const AdminPayments = () => {
             </DialogDescription>
           </DialogHeader>
 
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
           {scannedData && (
-            <div className="space-y-4">
+            <>
               <div className="space-y-2">
                 <Label>Depositor / Student Name</Label>
                 <Input
@@ -509,10 +510,11 @@ const AdminPayments = () => {
                 <Label>Reference Number</Label>
                 <Input value={manualRef} onChange={(e) => setManualRef(e.target.value)} placeholder="e.g. DEP-123456" />
               </div>
-            </div>
+            </>
           )}
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSavePayment} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
