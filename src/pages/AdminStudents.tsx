@@ -161,7 +161,6 @@ const AdminStudents = () => {
     }
 
     setSubmitting(true);
-    const regNumber = generateRegNumber();
 
     try {
       const { data, error } = await supabase.functions.invoke("manage-students", {
@@ -174,7 +173,6 @@ const AdminStudents = () => {
           gender,
           guardianName: guardianName.trim(),
           guardianPhone: guardianPhone.trim(),
-          registrationNumber: regNumber,
           isBeginner,
         },
       });
@@ -183,6 +181,8 @@ const AdminStudents = () => {
         toast({ title: "Registration Failed", description: data?.error || "Something went wrong.", variant: "destructive" });
         return;
       }
+
+      const regNumber = data.student?.registrationNumber || "N/A";
 
       // Send notification to guardian if phone is provided
       if (guardianPhone.trim()) {
@@ -684,9 +684,8 @@ const AdminStudents = () => {
               </div>
             </div>
             <div className="rounded-md bg-secondary p-3">
-              <p className="text-xs text-muted-foreground">Registration number will be auto-generated:</p>
-              <p className="text-sm font-semibold text-primary">{generateRegNumber()}</p>
-              <p className="text-xs text-muted-foreground mt-1">Share this number with the student so they can set up their account.</p>
+              <p className="text-xs text-muted-foreground">Registration number will be auto-generated (e.g. K0023T)</p>
+              <p className="text-xs text-muted-foreground mt-1">The number will be shown after registration. Share it with the student so they can set up their account.</p>
             </div>
           </div>
           <DialogFooter>

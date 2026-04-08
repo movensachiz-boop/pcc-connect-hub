@@ -57,30 +57,54 @@ Deno.serve(async (req) => {
     if (action === "create_student") {
       const { firstName, lastName, form, stream, gender, guardianName, guardianPhone, registrationNumber, isBeginner } = payload;
 
-      if (!firstName || !lastName || !registrationNumber) {
-        return new Response(JSON.stringify({ error: "Missing required fields" }), {
+      if (!firstName || !lastName) {
+        return new Response(JSON.stringify({ error: "First name and last name are required" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Check if registration number already exists
-      const { data: existing } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("registration_number", registrationNumber)
-        .maybeSingle();
+      // Auto-generate reg number if not provided
+      let regNum = registrationNumber?.trim().toUpperCase();
+      if (!regNum) {
+        const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const randomLetter = () => letters[Math.floor(Math.random() * letters.length)];
+        const randomDigits = () => String(Math.floor(1000 + Math.random() * 9000));
 
-      if (existing) {
-        return new Response(JSON.stringify({ error: "Registration number already exists" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // Try up to 10 times to find a unique reg number
+        for (let attempt = 0; attempt < 10; attempt++) {
+          regNum = `${randomLetter()}${randomDigits()}${randomLetter()}`;
+          const { data: dup } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("registration_number", regNum)
+            .maybeSingle();
+          if (!dup) break;
+          if (attempt === 9) {
+            return new Response(JSON.stringify({ error: "Could not generate unique registration number. Try again." }), {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+      } else {
+        // Check if provided registration number already exists
+        const { data: existing } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("registration_number", regNum)
+          .maybeSingle();
+
+        if (existing) {
+          return new Response(JSON.stringify({ error: "Registration number already exists" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
-      // Create profile WITHOUT auth user - student will claim later
       const { data: profile, error: profileError } = await supabaseAdmin.from("profiles").insert({
-        registration_number: registrationNumber,
+        registration_number: regNum,
         first_name: firstName,
         last_name: lastName,
         form: form || null,
@@ -103,7 +127,7 @@ Deno.serve(async (req) => {
         success: true,
         student: {
           id: profile.id,
-          registrationNumber,
+          registrationNumber: regNum,
           name: `${firstName} ${lastName}`,
           form,
           stream,
