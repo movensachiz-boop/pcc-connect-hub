@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, AlertTriangle, ShieldCheck, ShieldX } from "lucide-react";
-import { generateReceipt } from "@/lib/generateReceipt";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, AlertTriangle, ShieldCheck, ShieldX, Printer } from "lucide-react";
+import { generateReceipt, generateThermalReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -107,6 +107,19 @@ const AdminPayments = () => {
       verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Receipt Downloaded" });
+  };
+
+  const handleDownloadThermal = (p: PaymentRow) => {
+    generateThermalReceipt({
+      receiptNo: p.receipt_number || p.id.slice(0, 12),
+      studentName: p.studentName || "Unknown",
+      regNo: p.regNo || "N/A",
+      date: new Date(p.created_at).toLocaleDateString(),
+      amount: `$${p.amount}`,
+      method: p.method,
+      verificationHash: p.verification_hash || undefined,
+    });
+    toast({ title: "Thermal Receipt Downloaded" });
   };
 
   const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
