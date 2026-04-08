@@ -380,6 +380,29 @@ const AdminPayments = () => {
                 </div>
               )}
 
+              {(scannedData.bank_name || scannedData.swift_code) && (
+                <div className="grid grid-cols-3 gap-2 rounded-md bg-primary/5 border border-primary/20 p-3">
+                  {scannedData.bank_name && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Bank</p>
+                      <p className="font-medium text-sm">{scannedData.bank_name}</p>
+                    </div>
+                  )}
+                  {scannedData.swift_code && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">SWIFT/BIC</p>
+                      <p className="font-mono font-medium text-sm">{scannedData.swift_code}</p>
+                    </div>
+                  )}
+                  {scannedData.transaction_id_format && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">TX Format</p>
+                      <p className="font-mono font-medium text-sm">{scannedData.transaction_id_format}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Select Student *</Label>
                 <div className="relative">
