@@ -19,10 +19,35 @@ interface VerifyResult {
 }
 
 const VerifyReceipt = () => {
+  const [searchParams] = useSearchParams();
   const [receiptNo, setReceiptNo] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [checked, setChecked] = useState(false);
+
+  // Auto-fill and verify from QR code URL param
+  useEffect(() => {
+    const r = searchParams.get("r");
+    if (r) {
+      setReceiptNo(r);
+      // Auto-trigger verification
+      const autoVerify = async () => {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase.functions.invoke("verify-receipt", {
+            body: { receiptNumber: r.trim().toUpperCase() },
+          });
+          setResult(error || data?.error ? { valid: false } : data);
+        } catch {
+          setResult({ valid: false });
+        } finally {
+          setLoading(false);
+          setChecked(true);
+        }
+      };
+      autoVerify();
+    }
+  }, [searchParams]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
