@@ -393,7 +393,7 @@ const AdminPayments = () => {
                       <TableCell>{p.method}</TableCell>
                       <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Badge className={p.status === "confirmed" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>
+                        <Badge className={["paid","completed","confirmed"].includes(p.status) ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>
                           {p.status}
                         </Badge>
                       </TableCell>
@@ -406,7 +406,7 @@ const AdminPayments = () => {
                               </a>
                             </Button>
                           )}
-                          {p.status === "confirmed" && (
+                          {(p.status === "paid" || p.status === "completed" || p.status === "confirmed") && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon">
