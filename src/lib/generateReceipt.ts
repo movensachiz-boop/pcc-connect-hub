@@ -19,6 +19,13 @@ const formatHash = (hash: string) => {
   return `${hash.slice(0, 16)}...${hash.slice(-8)}`;
 };
 
+const getVerifyUrl = (receiptNo: string) =>
+  `https://pcc-connect-hub.lovable.app/verify?r=${encodeURIComponent(receiptNo)}`;
+
+const generateQRDataUrl = async (text: string): Promise<string> => {
+  return QRCode.toDataURL(text, { width: 200, margin: 1, errorCorrectionLevel: "M" });
+};
+
 export const generateReceipt = async (data: ReceiptData) => {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
