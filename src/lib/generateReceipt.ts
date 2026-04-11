@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 
 interface ReceiptData {
   receiptNo: string;
@@ -16,6 +17,13 @@ interface ReceiptData {
 const formatHash = (hash: string) => {
   if (!hash || hash.length < 24) return hash || "N/A";
   return `${hash.slice(0, 16)}...${hash.slice(-8)}`;
+};
+
+const getVerifyUrl = (receiptNo: string) =>
+  `https://pcc-connect-hub.lovable.app/verify?r=${encodeURIComponent(receiptNo)}`;
+
+const generateQRDataUrl = async (text: string): Promise<string> => {
+  return QRCode.toDataURL(text, { width: 200, margin: 1, errorCorrectionLevel: "M" });
 };
 
 export const generateReceipt = async (data: ReceiptData) => {
@@ -187,11 +195,21 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.text(`Payment was received via ${data.method}. Please retain this receipt for your records.`, margin, y);
   y += 12;
 
-  // ── Security Verification Section ──
+  // ── Security Verification Section with QR Code ──
+  const verifyUrl = getVerifyUrl(data.receiptNo);
+  const qrBoxH = 42;
+  const qrSize = 30;
+
   doc.setFillColor(245, 248, 252);
   doc.setDrawColor(41, 128, 185);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, pw - 2 * margin, 32, 2, 2, "FD");
+  doc.roundedRect(margin, y, pw - 2 * margin, qrBoxH, 2, 2, "FD");
+
+  // QR code on the right
+  try {
+    const qrDataUrl = await generateQRDataUrl(verifyUrl);
+    doc.addImage(qrDataUrl, "PNG", pw - margin - qrSize - 4, y + (qrBoxH - qrSize) / 2, qrSize, qrSize);
+  } catch { /* QR generation failed, continue without */ }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
@@ -202,7 +220,6 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFontSize(7.5);
   doc.setTextColor(60, 60, 60);
 
-  const verifyUrl = `https://pcc-connect-hub.lovable.app/verify`;
   doc.text(`Verify online: ${verifyUrl}`, margin + 5, y + 12);
   doc.text(`Receipt No: ${data.receiptNo}`, margin + 5, y + 17);
 
@@ -210,11 +227,12 @@ export const generateReceipt = async (data: ReceiptData) => {
     doc.text(`SHA-256 Hash: ${formatHash(data.verificationHash)}`, margin + 5, y + 22);
   }
 
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   doc.setTextColor(100, 100, 100);
-  doc.text("This receipt is cryptographically signed. Any alteration will invalidate the verification hash.", margin + 5, y + 28);
+  doc.text("Scan QR code to verify authenticity.", margin + 5, y + 28);
+  doc.text("This receipt is cryptographically signed. Any alteration will invalidate the verification hash.", margin + 5, y + 33);
 
-  y += 40;
+  y += qrBoxH + 8;
 
   // ── Terms and Conditions ──
   doc.setFont("helvetica", "bold");
@@ -370,17 +388,23 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   dashed(y);
   y += 4;
 
-  // ── Verification ──
+  // ── Verification with QR ──
+  const thermalVerifyUrl = getVerifyUrl(data.receiptNo);
+  try {
+    const qrDataUrl = await generateQRDataUrl(thermalVerifyUrl);
+    const qrS = 22;
+    doc.addImage(qrDataUrl, "PNG", cx - qrS / 2, y, qrS, qrS);
+    y += qrS + 2;
+  } catch { /* continue without QR */ }
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(5.5);
   doc.setTextColor(80);
-  doc.text("Verify at:", margin, y);
-  y += 3;
-  doc.setFontSize(5);
-  doc.text("pcc-connect-hub.lovable.app/verify", margin, y);
+  doc.text("Scan to verify receipt", cx, y, { align: "center" });
   y += 4;
 
   if (data.verificationHash) {
+    doc.setFontSize(5);
     doc.text(`Hash: ${formatHash(data.verificationHash)}`, margin, y);
     y += 4;
   }
@@ -458,13 +482,20 @@ export const printReceipt = async (data: ReceiptData) => {
   lines.forEach(l => { doc.text(l, margin, y); y += 6; });
 
   y += 5;
+  // QR code for print version
+  const printVerifyUrl = getVerifyUrl(data.receiptNo);
+  try {
+    const qrDataUrl = await generateQRDataUrl(printVerifyUrl);
+    doc.addImage(qrDataUrl, "PNG", pw - margin - 30, y - 10, 25, 25);
+  } catch { /* continue */ }
+
   if (data.verificationHash) {
     doc.setFontSize(7);
     doc.text(`Verification: ${formatHash(data.verificationHash)}`, margin, y);
     y += 5;
   }
   doc.setFontSize(7);
-  doc.text("Verify at: pcc-connect-hub.lovable.app/verify", margin, y);
+  doc.text(`Verify at: ${printVerifyUrl}`, margin, y);
 
   doc.autoPrint();
   const blob = doc.output("blob");
