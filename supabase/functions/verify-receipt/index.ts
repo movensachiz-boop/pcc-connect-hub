@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     // Mask: show first 2 chars, rest as *
     const maskedName = `${firstName.substring(0, 2)}${"*".repeat(Math.max(0, firstName.length - 2))} ${lastName.substring(0, 2)}${"*".repeat(Math.max(0, lastName.length - 2))}`;
 
-    const isValid = hashCheck === true;
+    const isValid = hashCheck === true || hashCheck === "true";
 
     return new Response(JSON.stringify({
       valid: isValid,
