@@ -195,11 +195,21 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.text(`Payment was received via ${data.method}. Please retain this receipt for your records.`, margin, y);
   y += 12;
 
-  // ── Security Verification Section ──
+  // ── Security Verification Section with QR Code ──
+  const verifyUrl = getVerifyUrl(data.receiptNo);
+  const qrBoxH = 42;
+  const qrSize = 30;
+
   doc.setFillColor(245, 248, 252);
   doc.setDrawColor(41, 128, 185);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, pw - 2 * margin, 32, 2, 2, "FD");
+  doc.roundedRect(margin, y, pw - 2 * margin, qrBoxH, 2, 2, "FD");
+
+  // QR code on the right
+  try {
+    const qrDataUrl = await generateQRDataUrl(verifyUrl);
+    doc.addImage(qrDataUrl, "PNG", pw - margin - qrSize - 4, y + (qrBoxH - qrSize) / 2, qrSize, qrSize);
+  } catch { /* QR generation failed, continue without */ }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
@@ -210,7 +220,6 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFontSize(7.5);
   doc.setTextColor(60, 60, 60);
 
-  const verifyUrl = `https://pcc-connect-hub.lovable.app/verify`;
   doc.text(`Verify online: ${verifyUrl}`, margin + 5, y + 12);
   doc.text(`Receipt No: ${data.receiptNo}`, margin + 5, y + 17);
 
@@ -218,11 +227,12 @@ export const generateReceipt = async (data: ReceiptData) => {
     doc.text(`SHA-256 Hash: ${formatHash(data.verificationHash)}`, margin + 5, y + 22);
   }
 
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   doc.setTextColor(100, 100, 100);
-  doc.text("This receipt is cryptographically signed. Any alteration will invalidate the verification hash.", margin + 5, y + 28);
+  doc.text("Scan QR code to verify authenticity.", margin + 5, y + 28);
+  doc.text("This receipt is cryptographically signed. Any alteration will invalidate the verification hash.", margin + 5, y + 33);
 
-  y += 40;
+  y += qrBoxH + 8;
 
   // ── Terms and Conditions ──
   doc.setFont("helvetica", "bold");
