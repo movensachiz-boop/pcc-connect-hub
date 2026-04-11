@@ -48,7 +48,14 @@ Deno.serve(async (req) => {
       p_created_at: payment.created_at,
       p_stored_hash: payment.verification_hash || "",
     });
-    console.log("Hash check result:", hashCheck, "type:", typeof hashCheck, "rpcError:", rpcError);
+    console.log("RPC params:", JSON.stringify({
+      p_receipt_number: payment.receipt_number,
+      p_amount: String(payment.amount),
+      p_student_profile_id: payment.student_profile_id,
+      p_created_at: payment.created_at,
+      p_stored_hash: payment.verification_hash || "",
+    }));
+    console.log("Hash check result:", hashCheck, "rpcError:", rpcError);
 
     // Get student name (partially masked for privacy)
     const { data: profile } = await supabaseAdmin
