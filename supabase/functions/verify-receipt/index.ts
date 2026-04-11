@@ -41,10 +41,9 @@ Deno.serve(async (req) => {
     }
 
     // Verify the hash by recomputing it
-    // Uses pgcrypto's digest via a raw SQL call
-    const { data: hashCheck } = await supabaseAdmin.rpc("verify_payment_hash", {
+    const { data: hashCheck, error: rpcError } = await supabaseAdmin.rpc("verify_payment_hash", {
       p_receipt_number: payment.receipt_number,
-      p_amount: payment.amount.toString(),
+      p_amount: String(payment.amount),
       p_student_profile_id: payment.student_profile_id,
       p_created_at: payment.created_at,
       p_stored_hash: payment.verification_hash || "",
@@ -62,7 +61,7 @@ Deno.serve(async (req) => {
     // Mask: show first 2 chars, rest as *
     const maskedName = `${firstName.substring(0, 2)}${"*".repeat(Math.max(0, firstName.length - 2))} ${lastName.substring(0, 2)}${"*".repeat(Math.max(0, lastName.length - 2))}`;
 
-    const isValid = hashCheck === true;
+    const isValid = hashCheck === true || hashCheck === "true";
 
     return new Response(JSON.stringify({
       valid: isValid,
