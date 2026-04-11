@@ -388,17 +388,23 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   dashed(y);
   y += 4;
 
-  // ── Verification ──
+  // ── Verification with QR ──
+  const thermalVerifyUrl = getVerifyUrl(data.receiptNo);
+  try {
+    const qrDataUrl = await generateQRDataUrl(thermalVerifyUrl);
+    const qrS = 22;
+    doc.addImage(qrDataUrl, "PNG", cx - qrS / 2, y, qrS, qrS);
+    y += qrS + 2;
+  } catch { /* continue without QR */ }
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(5.5);
   doc.setTextColor(80);
-  doc.text("Verify at:", margin, y);
-  y += 3;
-  doc.setFontSize(5);
-  doc.text("pcc-connect-hub.lovable.app/verify", margin, y);
+  doc.text("Scan to verify receipt", cx, y, { align: "center" });
   y += 4;
 
   if (data.verificationHash) {
+    doc.setFontSize(5);
     doc.text(`Hash: ${formatHash(data.verificationHash)}`, margin, y);
     y += 4;
   }
