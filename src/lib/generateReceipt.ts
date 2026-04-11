@@ -482,13 +482,20 @@ export const printReceipt = async (data: ReceiptData) => {
   lines.forEach(l => { doc.text(l, margin, y); y += 6; });
 
   y += 5;
+  // QR code for print version
+  const printVerifyUrl = getVerifyUrl(data.receiptNo);
+  try {
+    const qrDataUrl = await generateQRDataUrl(printVerifyUrl);
+    doc.addImage(qrDataUrl, "PNG", pw - margin - 30, y - 10, 25, 25);
+  } catch { /* continue */ }
+
   if (data.verificationHash) {
     doc.setFontSize(7);
     doc.text(`Verification: ${formatHash(data.verificationHash)}`, margin, y);
     y += 5;
   }
   doc.setFontSize(7);
-  doc.text("Verify at: pcc-connect-hub.lovable.app/verify", margin, y);
+  doc.text(`Verify at: ${printVerifyUrl}`, margin, y);
 
   doc.autoPrint();
   const blob = doc.output("blob");
