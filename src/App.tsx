@@ -32,6 +32,7 @@ import NotFound from "./pages/NotFound";
 import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
+import OwnerDashboard from "./pages/OwnerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/teacher/roster" element={<TeacherClassRoster />} />
             <Route path="/teacher/timetable" element={<TeacherTimetable />} />
             <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
+            <Route path="/owner" element={<OwnerDashboard />} />
             <Route path="/verify" element={<VerifyReceipt />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

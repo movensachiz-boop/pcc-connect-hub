@@ -1,33 +1,136 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Crown } from "lucide-react";
 
-const AdminSettings = () => (
-  <DashboardLayout role="admin">
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground">Settings</h2>
-      <Card className="shadow-card max-w-lg">
-        <CardHeader><CardTitle className="text-base">School Information</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>School Name</Label>
-            <Input defaultValue="Pioneer Christian College" />
-          </div>
-          <div className="space-y-2">
-            <Label>Term</Label>
-            <Input defaultValue="Term 1 – 2025" />
-          </div>
-          <div className="space-y-2">
-            <Label>Admin Email</Label>
-            <Input defaultValue="admin@pcc.edu" />
-          </div>
-          <Button>Save Changes</Button>
-        </CardContent>
-      </Card>
-    </div>
-  </DashboardLayout>
-);
+const AdminSettings = () => {
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const handleCreateOwner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-students", {
+        body: { action: "create_owner", fullName, email: email.trim().toLowerCase(), password },
+      });
+      if (error) {
+        let msg = "Failed to create owner account";
+        try {
+          if (error.context?.json) {
+            const body = await error.context.json();
+            if (body?.error) msg = body.error;
+          }
+        } catch {}
+        toast({ title: "Error", description: msg, variant: "destructive" });
+        return;
+      }
+      if (data?.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+        return;
+      }
+      toast({
+        title: "Owner account created",
+        description: `${fullName} can now sign in with email ${email}.`,
+      });
+      setFullName("");
+      setEmail("");
+      setPassword("");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <DashboardLayout role="admin">
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+
+        <Card className="shadow-card max-w-lg">
+          <CardHeader>
+            <CardTitle className="text-base">School Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>School Name</Label>
+              <Input defaultValue="Pioneer Christian College" />
+            </div>
+            <div className="space-y-2">
+              <Label>Term</Label>
+              <Input defaultValue="Term 1 – 2025" />
+            </div>
+            <div className="space-y-2">
+              <Label>Admin Email</Label>
+              <Input defaultValue="admin@pcc.edu" />
+            </div>
+            <Button>Save Changes</Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card max-w-lg border-l-4 border-l-accent">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Crown size={18} className="text-accent" />
+              Create School Owner Account
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Owners get a read-only portal showing revenue collected and student registrations.
+              They sign in with their email and password (not a registration number).
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateOwner} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="ownerName">Full Name</Label>
+                <Input
+                  id="ownerName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Mr. John Moyo"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ownerEmail">Email</Label>
+                <Input
+                  id="ownerEmail"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="owner@school.com"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ownerPassword">Temporary Password (min 8 chars)</Label>
+                <Input
+                  id="ownerPassword"
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  minLength={8}
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={creating} className="gap-2">
+                {creating && <Loader2 size={16} className="animate-spin" />}
+                Create Owner Account
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+};
 
 export default AdminSettings;

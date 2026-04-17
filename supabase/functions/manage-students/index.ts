@@ -229,6 +229,55 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "create_owner") {
+      const { fullName, email, password } = payload;
+      if (!fullName || !email || !password) {
+        return new Response(JSON.stringify({ error: "Full name, email, and password are required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (typeof password !== "string" || password.length < 8) {
+        return new Response(JSON.stringify({ error: "Password must be at least 8 characters" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Create the auth user (auto-confirmed so they can log in immediately)
+      const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName, role: "owner" },
+      });
+      if (createErr || !created.user) {
+        return new Response(JSON.stringify({ error: createErr?.message || "Failed to create user" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Assign the owner role
+      const { error: roleErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: created.user.id, role: "owner" });
+      if (roleErr) {
+        return new Response(JSON.stringify({ error: roleErr.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          owner: { id: created.user.id, email, fullName },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
