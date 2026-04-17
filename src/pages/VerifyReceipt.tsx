@@ -123,15 +123,26 @@ const VerifyReceipt = () => {
               </CardTitle>
             </CardHeader>
             {result.valid && (
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
+                {/* Prominent paid amount banner */}
+                <div className="rounded-lg bg-green-50 border-2 border-green-500/40 p-5 text-center">
+                  <Badge className="bg-green-600 hover:bg-green-600 text-white mb-2">
+                    <CheckCircle2 size={14} className="mr-1" /> PAID & CONFIRMED
+                  </Badge>
+                  <p className="text-xs uppercase tracking-wide text-green-700/80 mt-2">Amount Paid</p>
+                  <p className="text-4xl font-bold text-green-700">
+                    {result.currency} {Number(result.amount).toFixed(2)}
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground">Receipt No.</p>
                     <p className="font-semibold">{result.receiptNumber}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Amount</p>
-                    <p className="font-semibold">{result.currency} {result.amount}</p>
+                    <p className="text-muted-foreground">Status</p>
+                    <p className="font-semibold text-green-700">Paid</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Student</p>
