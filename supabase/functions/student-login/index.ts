@@ -108,17 +108,7 @@ Deno.serve(async (req) => {
         .update({ last_active_at: new Date().toISOString(), ip_address: ip })
         .eq("id", currentSession.id);
     } else {
-      // New device — check if limit reached
-      if (sessions.length >= MAX_DEVICES) {
-        return new Response(JSON.stringify({
-          error: `Security alert: This account is already active on ${MAX_DEVICES} devices. Please log out from another device or contact the administrator.`,
-        }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Register new device
+      // Device limit temporarily disabled — allow any device to connect
       await supabaseAdmin.from("device_sessions").insert({
         user_id: data.user.id,
         ip_address: ip,
