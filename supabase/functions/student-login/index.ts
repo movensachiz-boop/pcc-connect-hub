@@ -58,17 +58,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    const cleanRegNumber = registrationNumber.trim().toUpperCase();
+    const cleanInput = registrationNumber.trim();
 
-    // Rate limiting
-    if (checkLoginRate(cleanRegNumber)) {
+    // Rate limiting (keyed by lowercase identifier)
+    if (checkLoginRate(cleanInput.toLowerCase())) {
       return new Response(JSON.stringify({ error: "Account temporarily locked due to too many failed attempts. Try again in 15 minutes." }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const email = `${cleanRegNumber.toLowerCase()}@pcc.local`;
+    // If the input looks like an email (e.g. owner accounts), use it directly.
+    // Otherwise treat it as a registration number and map to the virtual email.
+    const email = cleanInput.includes("@")
+      ? cleanInput.toLowerCase()
+      : `${cleanInput.toUpperCase().toLowerCase()}@pcc.local`;
 
     const supabase = createClient(supabaseUrl, anonKey);
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -84,7 +88,7 @@ Deno.serve(async (req) => {
     }
 
     // Successful login - reset rate limit
-    resetLoginRate(cleanRegNumber);
+    resetLoginRate(cleanInput.toLowerCase());
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
