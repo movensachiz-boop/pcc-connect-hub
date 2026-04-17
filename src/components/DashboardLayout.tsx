@@ -10,8 +10,12 @@ import pccLogo from "@/assets/pcc-logo.png";
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  role: "admin" | "student" | "teacher";
+  role: "admin" | "student" | "teacher" | "owner";
 }
+
+const ownerLinks = [
+  { label: "Overview", icon: LayoutDashboard, path: "/owner" },
+];
 
 const adminLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
@@ -50,7 +54,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const links = role === "admin" ? adminLinks : role === "teacher" ? teacherLinks : studentLinks;
+  const links =
+    role === "admin" ? adminLinks
+    : role === "teacher" ? teacherLinks
+    : role === "owner" ? ownerLinks
+    : studentLinks;
 
   return (
     <div className="min-h-screen flex bg-background">
