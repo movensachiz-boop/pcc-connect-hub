@@ -286,7 +286,8 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   const cx = pw / 2;
 
   // Use generous initial height to avoid content being cut off
-  const doc = new jsPDF({ unit: "mm", format: [pw, 300] });
+  const estimatedHeight = 250;
+  const doc = new jsPDF({ unit: "mm", format: [pw, estimatedHeight] });
   let y = 6;
 
   const dashed = (yPos: number) => {
