@@ -426,7 +426,13 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   dashed(y);
   y += 2;
 
-  doc.internal.pageSize.height = y + 4;
+  const finalHeight = y + 4;
+  doc.internal.pageSize.setHeight(finalHeight);
+  // Also update the page info for proper rendering
+  const pages = doc.internal.pages;
+  if (pages && pages[1]) {
+    doc.internal.pageSize.height = finalHeight;
+  }
 
   if (mode === "print") {
     doc.autoPrint();
