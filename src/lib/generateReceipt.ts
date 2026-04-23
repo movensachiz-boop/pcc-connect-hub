@@ -85,15 +85,8 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
-  doc.text("PROGRESS CHRISTIAN CENTRE  |  info@pcc.ac.zw  |  +263 786 133 259", pw / 2, y + 6.5, { align: "center" });
-  y += 12;
-
-  // ── Address line ──
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor(80, 80, 80);
-  doc.text("11729 Mkoba 14 Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, y, { align: "center" });
-  y += 10;
+  doc.text("PROGRESS CHRISTIAN CENTRE  |  11729 Mkoba 14 Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, y + 6.5, { align: "center" });
+  y += 14;
 
   // ── Title ──
   doc.setFont("helvetica", "bold");
@@ -281,7 +274,8 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.text(`Document ID: ${docId}  |  Generated: ${new Date().toISOString()}`, pw / 2, 282, { align: "center" });
   doc.text("Unauthorized reproduction or alteration of this document is prohibited.", pw / 2, 286, { align: "center" });
 
-  doc.save(`Receipt_${data.receiptNo}.pdf`);
+  const safeName = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
+  doc.save(`Fees_Invoice_${safeName}.pdf`);
 };
 
 // ── Thermal Receipt (80mm roll) ──
@@ -327,8 +321,6 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   y += 4;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6);
-  doc.text("info@pcc.ac.zw | +263 786 133 259", cx, y, { align: "center" });
-  y += 3;
   doc.text("11729 Mkoba 14 Gweru | +263 77 400 0143", cx, y, { align: "center" });
   y += 5;
 
@@ -448,7 +440,8 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
       };
     }
   } else {
-    doc.save(`Thermal_${data.receiptNo}.pdf`);
+    const safeName = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
+    doc.save(`Fees_Invoice_Thermal_${safeName}.pdf`);
   }
 };
 
@@ -469,9 +462,6 @@ export const printReceipt = async (data: ReceiptData) => {
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("info@pcc.ac.zw | +263 786 133 259", pw / 2, y, { align: "center" });
-  y += 4;
-  doc.setFontSize(7);
   doc.text("11729 Mkoba 14 Gweru, Zimbabwe | +263 77 400 0143", pw / 2, y, { align: "center" });
   y += 10;
 
