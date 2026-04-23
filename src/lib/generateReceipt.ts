@@ -286,7 +286,8 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   const cx = pw / 2;
 
   // Use generous initial height to avoid content being cut off
-  const doc = new jsPDF({ unit: "mm", format: [pw, 300] });
+  const estimatedHeight = 250;
+  const doc = new jsPDF({ unit: "mm", format: [pw, estimatedHeight] });
   let y = 6;
 
   const dashed = (yPos: number) => {
@@ -426,7 +427,10 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   dashed(y);
   y += 2;
 
-  doc.internal.pageSize.height = y + 4;
+  // Trim page to actual content height
+  const finalHeight = y + 4;
+  // @ts-ignore - jsPDF internal API for resizing custom page
+  doc.internal.pageSize.height = finalHeight;
 
   if (mode === "print") {
     doc.autoPrint();
