@@ -86,14 +86,14 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
   doc.text("PROGRESS CHRISTIAN CENTRE  |  11729 Mkoba 14 Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, y + 6.5, { align: "center" });
-  y += 14;
+  y += 18;
 
   // ── Title ──
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(30, 30, 30);
   doc.text("Fees Invoice", pw / 2, y, { align: "center" });
-  y += 5;
+  y += 8;
 
   // ── Security document ID ──
   const docId = `DOC-${data.receiptNo}-${Date.now().toString(36).toUpperCase()}`;
