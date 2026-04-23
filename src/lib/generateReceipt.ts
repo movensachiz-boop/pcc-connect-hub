@@ -282,11 +282,8 @@ export const generateReceipt = async (data: ReceiptData) => {
 export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "print" = "save") => {
   const pw = 80; // 80mm thermal paper
   const margin = 4;
-  const contentW = pw - margin * 2;
   const cx = pw / 2;
-
-  // Use generous initial height to avoid content being cut off
-  const estimatedHeight = 250;
+  const estimatedHeight = 260;
   const doc = new jsPDF({ unit: "mm", format: [pw, estimatedHeight] });
   let y = 6;
 
@@ -298,7 +295,26 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
     }
   };
 
-  // ── Header ──
+  const addWrappedValue = (value: string, x: number, yPos: number, maxWidth: number) => {
+    const lines = doc.splitTextToSize(value || "-", maxWidth) as string[];
+    lines.forEach((line, index) => {
+      doc.text(line, x, yPos + index * 3.6, { align: "right" });
+    });
+    return Math.max(lines.length, 1) * 3.6;
+  };
+
+  const addLine = (label: string, value: string) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(80);
+    doc.text(label, margin, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0);
+    const usedHeight = addWrappedValue(value, pw - margin, y, 40);
+    y += Math.max(usedHeight, 4.2);
+  };
+
   try {
     const logoModule = await import("@/assets/pcc-logo.png");
     const logoUrl = logoModule.default;
@@ -320,9 +336,12 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   doc.setTextColor(0);
   doc.text("PROGRESS CHRISTIAN CENTRE", cx, y, { align: "center" });
   y += 4;
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6);
-  doc.text("11729 Mkoba 14 Gweru | +263 77 400 0143", cx, y, { align: "center" });
+  doc.text("11729 Mkoba 14 Gweru", cx, y, { align: "center" });
+  y += 3.5;
+  doc.text("+263 77 400 0143", cx, y, { align: "center" });
   y += 5;
 
   dashed(y);
@@ -336,33 +355,24 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   dashed(y);
   y += 4;
 
-  // ── Details ──
-  const addLine = (label: string, value: string) => {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
-    doc.setTextColor(80);
-    doc.text(label, margin, y);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(0);
-    doc.text(value, pw - margin, y, { align: "right" });
-    y += 4;
-  };
-
   addLine("Receipt No:", data.receiptNo);
   addLine("Date:", data.date);
   addLine("Student:", data.studentName);
   addLine("Reg No:", data.regNo);
   addLine("Method:", data.method);
 
+  if (data.description) {
+    addLine("Desc:", data.description);
+  }
+
   y += 1;
   dashed(y);
   y += 4;
 
-  // ── Amount ──
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(80);
-  doc.text("Tuition Fee", margin, y);
+  doc.text(data.description || "Tuition Fee", margin, y);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0);
   doc.text(data.amount, pw - margin, y, { align: "right" });
@@ -381,7 +391,6 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   dashed(y);
   y += 4;
 
-  // ── Status ──
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("** PAID **", cx, y, { align: "center" });
@@ -390,14 +399,15 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   dashed(y);
   y += 4;
 
-  // ── Verification with QR ──
   const thermalVerifyUrl = getVerifyUrl(data.receiptNo);
   try {
     const qrDataUrl = await generateQRDataUrl(thermalVerifyUrl);
     const qrS = 22;
     doc.addImage(qrDataUrl, "PNG", cx - qrS / 2, y, qrS, qrS);
     y += qrS + 2;
-  } catch { /* continue without QR */ }
+  } catch {
+    y += 2;
+  }
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(5.5);
@@ -407,9 +417,19 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
 
   if (data.verificationHash) {
     doc.setFontSize(5);
-    doc.text(`Hash: ${formatHash(data.verificationHash)}`, margin, y);
-    y += 4;
+    const hashLines = doc.splitTextToSize(`Hash: ${formatHash(data.verificationHash)}`, pw - margin * 2) as string[];
+    hashLines.forEach((line) => {
+      doc.text(line, margin, y);
+      y += 3.2;
+    });
   }
+
+  const verifyLines = doc.splitTextToSize(`Verify: ${thermalVerifyUrl}`, pw - margin * 2) as string[];
+  doc.setFontSize(5);
+  verifyLines.forEach((line) => {
+    doc.text(line, margin, y);
+    y += 3.2;
+  });
 
   dashed(y);
   y += 4;
@@ -420,17 +440,11 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   y += 2.5;
   doc.text("signed. Keep for your records.", cx, y, { align: "center" });
   y += 4;
-
   doc.text("Thank you for your payment!", cx, y, { align: "center" });
   y += 4;
 
   dashed(y);
   y += 2;
-
-  // Trim page to actual content height
-  const finalHeight = y + 4;
-  // @ts-ignore - jsPDF internal API for resizing custom page
-  doc.internal.pageSize.height = finalHeight;
 
   if (mode === "print") {
     doc.autoPrint();
