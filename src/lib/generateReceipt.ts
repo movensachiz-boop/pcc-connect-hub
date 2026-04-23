@@ -282,17 +282,170 @@ export const generateReceipt = async (data: ReceiptData) => {
 export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "print" = "save") => {
   const pw = 80; // 80mm thermal paper
   const margin = 4;
-  const contentW = pw - margin * 2;
   const cx = pw / 2;
-
-  // Use generous initial height to avoid content being cut off
   const estimatedHeight = 260;
   const doc = new jsPDF({ unit: "mm", format: [pw, estimatedHeight] });
-...
+  let y = 6;
+
+  const dashed = (yPos: number) => {
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.1);
+    for (let x = margin; x < pw - margin; x += 2) {
+      doc.line(x, yPos, x + 1, yPos);
+    }
+  };
+
+  const addWrappedValue = (value: string, x: number, yPos: number, maxWidth: number) => {
+    const lines = doc.splitTextToSize(value || "-", maxWidth) as string[];
+    lines.forEach((line, index) => {
+      doc.text(line, x, yPos + index * 3.6, { align: "right" });
+    });
+    return Math.max(lines.length, 1) * 3.6;
+  };
+
+  const addLine = (label: string, value: string) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(80);
+    doc.text(label, margin, y);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0);
+    const usedHeight = addWrappedValue(value, pw - margin, y, 40);
+    y += Math.max(usedHeight, 4.2);
+  };
+
+  try {
+    const logoModule = await import("@/assets/pcc-logo.png");
+    const logoUrl = logoModule.default;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = logoUrl;
+    });
+    doc.addImage(img, "JPEG", cx - 8, y, 16, 16);
+    y += 18;
+  } catch {
+    y += 2;
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  doc.text("PROGRESS CHRISTIAN CENTRE", cx, y, { align: "center" });
+  y += 4;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.text("11729 Mkoba 14 Gweru", cx, y, { align: "center" });
+  y += 3.5;
+  doc.text("+263 77 400 0143", cx, y, { align: "center" });
+  y += 5;
+
+  dashed(y);
+  y += 4;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("FEES INVOICE", cx, y, { align: "center" });
+  y += 5;
+
+  dashed(y);
+  y += 4;
+
+  addLine("Receipt No:", data.receiptNo);
+  addLine("Date:", data.date);
+  addLine("Student:", data.studentName);
+  addLine("Reg No:", data.regNo);
+  addLine("Method:", data.method);
+
+  if (data.description) {
+    addLine("Desc:", data.description);
+  }
+
+  y += 1;
+  dashed(y);
+  y += 4;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(80);
+  doc.text(data.description || "Tuition Fee", margin, y);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0);
+  doc.text(data.amount, pw - margin, y, { align: "right" });
+  y += 5;
+
+  dashed(y);
+  y += 3;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("TOTAL:", margin, y + 1);
+  doc.setFontSize(11);
+  doc.text(data.amount, pw - margin, y + 1, { align: "right" });
+  y += 6;
+
+  dashed(y);
+  y += 4;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("** PAID **", cx, y, { align: "center" });
+  y += 5;
+
+  dashed(y);
+  y += 4;
+
+  const thermalVerifyUrl = getVerifyUrl(data.receiptNo);
+  try {
+    const qrDataUrl = await generateQRDataUrl(thermalVerifyUrl);
+    const qrS = 22;
+    doc.addImage(qrDataUrl, "PNG", cx - qrS / 2, y, qrS, qrS);
+    y += qrS + 2;
+  } catch {
+    y += 2;
+  }
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5.5);
+  doc.setTextColor(80);
+  doc.text("Scan to verify receipt", cx, y, { align: "center" });
+  y += 4;
+
+  if (data.verificationHash) {
+    doc.setFontSize(5);
+    const hashLines = doc.splitTextToSize(`Hash: ${formatHash(data.verificationHash)}`, pw - margin * 2) as string[];
+    hashLines.forEach((line) => {
+      doc.text(line, margin, y);
+      y += 3.2;
+    });
+  }
+
+  const verifyLines = doc.splitTextToSize(`Verify: ${thermalVerifyUrl}`, pw - margin * 2) as string[];
+  doc.setFontSize(5);
+  verifyLines.forEach((line) => {
+    doc.text(line, margin, y);
+    y += 3.2;
+  });
+
+  dashed(y);
+  y += 4;
+
+  doc.setFontSize(5);
+  doc.setTextColor(120);
+  doc.text("This receipt is cryptographically", cx, y, { align: "center" });
+  y += 2.5;
+  doc.text("signed. Keep for your records.", cx, y, { align: "center" });
+  y += 4;
+  doc.text("Thank you for your payment!", cx, y, { align: "center" });
+  y += 4;
+
   dashed(y);
   y += 2;
 
-  // Keep a fixed page height because runtime resizing can blank thermal PDFs in some viewers.
   if (mode === "print") {
     doc.autoPrint();
     const blob = doc.output("blob");
