@@ -86,13 +86,20 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
   doc.text("PROGRESS CHRISTIAN CENTRE  |  info@pcc.ac.zw  |  +263 786 133 259", pw / 2, y + 6.5, { align: "center" });
-  y += 18;
+  y += 12;
+
+  // ── Address line ──
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text("11729 Mkoba 14 Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, y, { align: "center" });
+  y += 10;
 
   // ── Title ──
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(30, 30, 30);
-  doc.text("School Fees Receipt", pw / 2, y, { align: "center" });
+  doc.text("Fees Invoice", pw / 2, y, { align: "center" });
   y += 5;
 
   // ── Security document ID ──
@@ -321,6 +328,8 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6);
   doc.text("info@pcc.ac.zw | +263 786 133 259", cx, y, { align: "center" });
+  y += 3;
+  doc.text("11729 Mkoba 14 Gweru | +263 77 400 0143", cx, y, { align: "center" });
   y += 5;
 
   dashed(y);
@@ -328,7 +337,7 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text("PAYMENT RECEIPT", cx, y, { align: "center" });
+  doc.text("FEES INVOICE", cx, y, { align: "center" });
   y += 5;
 
   dashed(y);
@@ -461,11 +470,14 @@ export const printReceipt = async (data: ReceiptData) => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.text("info@pcc.ac.zw | +263 786 133 259", pw / 2, y, { align: "center" });
+  y += 4;
+  doc.setFontSize(7);
+  doc.text("11729 Mkoba 14 Gweru, Zimbabwe | +263 77 400 0143", pw / 2, y, { align: "center" });
   y += 10;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("School Fees Receipt", pw / 2, y, { align: "center" });
+  doc.text("Fees Invoice", pw / 2, y, { align: "center" });
   y += 10;
 
   doc.setFontSize(10);
