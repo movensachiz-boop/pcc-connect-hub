@@ -161,6 +161,7 @@ const StudentPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,
+      description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Thermal Receipt Downloaded" });
@@ -174,6 +175,7 @@ const StudentPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,
+      description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
     });
   };
