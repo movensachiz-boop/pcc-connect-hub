@@ -111,6 +111,7 @@ const AdminPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
+      description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Receipt Downloaded" });
@@ -124,6 +125,7 @@ const AdminPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
+      description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
     });
     toast({ title: "Thermal Receipt Downloaded" });
@@ -137,6 +139,7 @@ const AdminPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
+      description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
     });
   };
@@ -149,6 +152,7 @@ const AdminPayments = () => {
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
+      description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
     }, "print");
   };
