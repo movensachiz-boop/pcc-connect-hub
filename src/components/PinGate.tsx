@@ -74,7 +74,7 @@ const PinGate = ({ children, variant = "admin", title }: PinGateProps) => {
           <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
             <Shield className="w-7 h-7 text-primary" />
           </div>
-          <CardTitle className="text-xl">Admin Access</CardTitle>
+          <CardTitle className="text-xl">{title || (variant === "dashboard" ? "Dashboard Access" : "Admin Access")}</CardTitle>
           <p className="text-sm text-muted-foreground">Enter the 4-digit PIN to continue</p>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
