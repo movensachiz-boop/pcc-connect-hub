@@ -5,19 +5,24 @@ import { Shield, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ──────────────────────────────────────────────
-// 🔐  ADMIN DASHBOARD PIN  –  Change it here
+// 🔐  PIN CODES  –  Change them here
 // ──────────────────────────────────────────────
-const ADMIN_PIN = "7291";
+const DEFAULT_ADMIN_PIN = "7291";       // Other admin modules
+const DASHBOARD_PIN = "4830";           // Admin Dashboard only
 // ──────────────────────────────────────────────
 
-const SESSION_KEY = "pcc_admin_unlocked";
 const SESSION_TTL = 15 * 60 * 1000; // 15 minutes
 
 interface PinGateProps {
   children: React.ReactNode;
+  /** Use a separate PIN + session for the dashboard */
+  variant?: "admin" | "dashboard";
+  title?: string;
 }
 
-const PinGate = ({ children }: PinGateProps) => {
+const PinGate = ({ children, variant = "admin", title }: PinGateProps) => {
+  const ADMIN_PIN = variant === "dashboard" ? DASHBOARD_PIN : DEFAULT_ADMIN_PIN;
+  const SESSION_KEY = variant === "dashboard" ? "pcc_dashboard_unlocked" : "pcc_admin_unlocked";
   const [unlocked, setUnlocked] = useState(false);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
