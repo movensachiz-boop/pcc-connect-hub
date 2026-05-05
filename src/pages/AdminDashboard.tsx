@@ -136,7 +136,7 @@ const AdminDashboard = () => {
     : 0;
 
   return (
-    <PinGate>
+    <PinGate variant="dashboard">
       <DashboardLayout role="admin">
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
