@@ -449,29 +449,33 @@ const renderThermalReceipt = async (doc: jsPDF, data: ReceiptData, logo: HTMLIma
   return y;
 };
 
-const openPdfForAutomaticPrint = (doc: jsPDF, fallbackName: string) => {
+const openPdfForAutomaticPrint = (doc: jsPDF, fallbackName: string, printWindow?: Window | null) => {
   doc.autoPrint();
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
-  const printWindow = window.open(url, "_blank");
+  const targetWindow = printWindow || window.open(url, "_blank");
 
-  if (!printWindow) {
+  if (!targetWindow) {
     URL.revokeObjectURL(url);
     doc.save(fallbackName);
     return;
+  }
+
+  if (printWindow) {
+    targetWindow.location.href = url;
   }
 
   let started = false;
   const startPrint = () => {
     if (started) return;
     started = true;
-    printWindow.focus();
-    printWindow.print();
+    targetWindow.focus();
+    targetWindow.print();
   };
 
-  printWindow.onload = () => window.setTimeout(startPrint, 350);
-  printWindow.onafterprint = () => {
-    printWindow.close();
+  targetWindow.onload = () => window.setTimeout(startPrint, 350);
+  targetWindow.onafterprint = () => {
+    targetWindow.close();
     URL.revokeObjectURL(url);
   };
   window.setTimeout(startPrint, 900);
@@ -480,6 +484,7 @@ const openPdfForAutomaticPrint = (doc: jsPDF, fallbackName: string) => {
 
 // ── Thermal Receipt for XP80Q / XP80C 80mm printer ──
 export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "print" = "save") => {
+  const printWindow = mode === "print" ? window.open("", "_blank") : null;
   const logo = await loadReceiptLogo();
   const measuringDoc = new jsPDF({ unit: "mm", format: [XP80_WIDTH_MM, XP80_MEASURE_HEIGHT_MM] });
   const measuredHeight = await renderThermalReceipt(measuringDoc, data, logo);
@@ -491,7 +496,7 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   const fileName = `Fees_Invoice_Thermal_${safeName}.pdf`;
 
   if (mode === "print") {
-    openPdfForAutomaticPrint(doc, fileName);
+    openPdfForAutomaticPrint(doc, fileName, printWindow);
   } else {
     doc.save(fileName);
   }
