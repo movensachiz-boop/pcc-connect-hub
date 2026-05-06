@@ -278,6 +278,61 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (action === "create_staff") {
+      const { fullName, password, role } = payload;
+      const allowedRoles = ["admin", "cashier", "timetable_manager", "teacher", "owner"];
+      if (!fullName || !password || !role) {
+        return new Response(JSON.stringify({ error: "Full name, password, and role are required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!allowedRoles.includes(role)) {
+        return new Response(JSON.stringify({ error: "Invalid role" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (typeof password !== "string" || password.length < 4) {
+        return new Response(JSON.stringify({ error: "Password must be at least 4 characters" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const slug = String(fullName).toLowerCase().trim().replace(/\s+/g, ".").replace(/[^a-z0-9.]/g, "");
+      if (!slug) {
+        return new Response(JSON.stringify({ error: "Invalid full name" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const email = `${slug}@pcc.local`;
+
+      const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: { full_name: fullName, role },
+      });
+      if (createErr || !created.user) {
+        return new Response(JSON.stringify({ error: createErr?.message || "Failed to create user" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Grant admin role for admin-portal staff so they pass admin RLS, plus their sub-role.
+      const rolesToInsert: { user_id: string; role: string }[] = [];
+      if (role === "cashier" || role === "timetable_manager" || role === "admin") {
+        rolesToInsert.push({ user_id: created.user.id, role: "admin" });
+      }
+      if (role !== "admin") {
+        rolesToInsert.push({ user_id: created.user.id, role });
+      }
+      const { error: roleErr } = await supabaseAdmin.from("user_roles").insert(rolesToInsert);
+      if (roleErr) {
+        return new Response(JSON.stringify({ error: roleErr.message }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ success: true, staff: { id: created.user.id, fullName, loginName: fullName, role } }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

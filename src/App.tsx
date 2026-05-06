@@ -33,6 +33,11 @@ import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import StaffGuard from "./components/StaffGuard";
+
+// Sub-roles
+const DENY_TM_AND_CASHIER: ("cashier" | "timetable_manager")[] = ["cashier", "timetable_manager"];
+const DENY_TM: ("timetable_manager")[] = ["timetable_manager"];
 
 const queryClient = new QueryClient();
 
@@ -53,20 +58,20 @@ const App = () => (
             <Route path="/student/courses" element={<StudentCourses />} />
             <Route path="/student/announcements" element={<AnnouncementsPage role="student" />} />
             <Route path="/student/requirements" element={<StudentRequirements />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/students" element={<AdminStudents />} />
-            <Route path="/admin/payments" element={<AdminPayments />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/announcements" element={<AnnouncementsPage role="admin" />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminDashboard /></StaffGuard>} />
+            <Route path="/admin/students" element={<StaffGuard deny={DENY_TM}><AdminStudents /></StaffGuard>} />
+            <Route path="/admin/payments" element={<StaffGuard deny={DENY_TM}><AdminPayments /></StaffGuard>} />
+            <Route path="/admin/reports" element={<StaffGuard deny={DENY_TM}><AdminReports /></StaffGuard>} />
+            <Route path="/admin/announcements" element={<StaffGuard deny={DENY_TM}><AnnouncementsPage role="admin" /></StaffGuard>} />
+            <Route path="/admin/settings" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminSettings /></StaffGuard>} />
             <Route path="/admin/subjects" element={<AdminSubjects />} />
             <Route path="/admin/teachers" element={<AdminTeachers />} />
             <Route path="/admin/classes" element={<AdminClasses />} />
             <Route path="/admin/timetable" element={<AdminTimetableGenerate />} />
             <Route path="/admin/timetable/view" element={<AdminTimetableView />} />
             <Route path="/admin/timetable/master" element={<AdminMasterTimetable />} />
-            <Route path="/admin/roster" element={<AdminClassRoster />} />
-            <Route path="/admin/fees" element={<AdminFees />} />
+            <Route path="/admin/roster" element={<StaffGuard deny={DENY_TM}><AdminClassRoster /></StaffGuard>} />
+            <Route path="/admin/fees" element={<StaffGuard deny={DENY_TM}><AdminFees /></StaffGuard>} />
             <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
             <Route path="/teacher/roster" element={<TeacherClassRoster />} />

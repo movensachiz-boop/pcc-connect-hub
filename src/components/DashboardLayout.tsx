@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -54,11 +55,23 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const links =
+  const { role: actualRole } = useUserRole();
+  let links =
     role === "admin" ? adminLinks
     : role === "teacher" ? teacherLinks
     : role === "owner" ? ownerLinks
     : studentLinks;
+
+  // Apply staff sub-role restrictions on admin layout
+  if (role === "admin") {
+    if (actualRole === "cashier") {
+      // Hide Dashboard + Settings; allow everything else
+      links = adminLinks.filter(l => l.path !== "/admin" && l.path !== "/admin/settings");
+    } else if (actualRole === "timetable_manager") {
+      const allowed = ["/admin/timetable", "/admin/timetable/master", "/admin/subjects", "/admin/teachers", "/admin/classes"];
+      links = adminLinks.filter(l => allowed.includes(l.path));
+    }
+  }
 
   return (
     <div className="min-h-screen flex bg-background">

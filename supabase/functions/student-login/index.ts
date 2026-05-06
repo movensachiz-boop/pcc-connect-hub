@@ -69,10 +69,17 @@ Deno.serve(async (req) => {
     }
 
     // If the input looks like an email (e.g. owner accounts), use it directly.
+    // If it contains a space (e.g. "Mavunga Mitchell"), treat as a staff name → firstname.lastname@pcc.local
     // Otherwise treat it as a registration number and map to the virtual email.
-    const email = cleanInput.includes("@")
-      ? cleanInput.toLowerCase()
-      : `${cleanInput.toUpperCase().toLowerCase()}@pcc.local`;
+    let email: string;
+    if (cleanInput.includes("@")) {
+      email = cleanInput.toLowerCase();
+    } else if (/\s/.test(cleanInput)) {
+      const slug = cleanInput.toLowerCase().trim().replace(/\s+/g, ".").replace(/[^a-z0-9.]/g, "");
+      email = `${slug}@pcc.local`;
+    } else {
+      email = `${cleanInput.toUpperCase().toLowerCase()}@pcc.local`;
+    }
 
     const supabase = createClient(supabaseUrl, anonKey);
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -121,16 +128,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get role
-    const { data: roleData } = await supabaseAdmin
+    // Get all roles, prefer most specific
+    const { data: roleRows } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
+      .eq("user_id", data.user.id);
+    const roles = (roleRows || []).map((r: any) => r.role);
+    const preferred =
+      roles.find((r: string) => r === "cashier" || r === "timetable_manager") ||
+      roles.find((r: string) => r === "owner" || r === "teacher") ||
+      roles.find((r: string) => r === "admin") ||
+      "student";
 
     return new Response(JSON.stringify({
       session: data.session,
-      role: roleData?.role || "student",
+      role: preferred,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
