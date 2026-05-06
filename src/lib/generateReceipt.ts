@@ -366,6 +366,7 @@ const renderThermalReceipt = async (doc: jsPDF, data: ReceiptData, logo: HTMLIma
   row("Date:", data.date);
   row("Student:", data.studentName);
   row("Reg No:", data.regNo);
+  row("Class:", data.studentClass || "—");
   row("Method:", data.method);
   row("Status:", "PAID");
   row("Desc:", data.description || "Tuition Fee");
