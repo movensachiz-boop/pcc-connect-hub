@@ -22,6 +22,42 @@ const AdminSettings = () => {
   const [password, setPassword] = useState("");
   const [creating, setCreating] = useState(false);
 
+  // Staff creation
+  const [staffName, setStaffName] = useState("");
+  const [staffPassword, setStaffPassword] = useState("");
+  const [staffRole, setStaffRole] = useState("cashier");
+  const [creatingStaff, setCreatingStaff] = useState(false);
+
+  const handleCreateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffName.trim() || !staffPassword.trim() || !staffRole) return;
+    setCreatingStaff(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-students", {
+        body: { action: "create_staff", fullName: staffName.trim(), password: staffPassword, role: staffRole },
+      });
+      if (error || data?.error) {
+        let msg = data?.error || "Failed to create staff account";
+        try {
+          if (error?.context?.json) {
+            const body = await error.context.json();
+            if (body?.error) msg = body.error;
+          }
+        } catch {}
+        toast({ title: "Error", description: msg, variant: "destructive" });
+        return;
+      }
+      toast({
+        title: "Staff account created",
+        description: `${staffName} can now sign in by typing their full name and password.`,
+      });
+      setStaffName("");
+      setStaffPassword("");
+    } finally {
+      setCreatingStaff(false);
+    }
+  };
+
   const handleCreateOwner = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
