@@ -141,7 +141,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg"
-            onClick={() => navigate("/")}
+            onClick={async () => {
+              await logActivity("logout");
+              await supabase.auth.signOut();
+              navigate("/");
+            }}
           >
             <LogOut size={18} />
             Sign Out
