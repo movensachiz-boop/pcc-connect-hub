@@ -87,7 +87,47 @@ const AdminAuditTrail = () => {
         setProfiles(map);
       }
     }
+    const { data: act } = await supabase
+      .from("activity_log")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (act) setActivity(act as ActivityEntry[]);
     setLoading(false);
+  };
+
+  const filteredActivity = useMemo(() => {
+    return activity.filter(a => {
+      if (activityFilter !== "all" && a.action !== activityFilter) return false;
+      if (!activitySearch.trim()) return true;
+      const q = activitySearch.trim().toLowerCase();
+      return (
+        (a.actor_email || "").toLowerCase().includes(q) ||
+        (a.actor_label || "").toLowerCase().includes(q) ||
+        (a.action || "").toLowerCase().includes(q) ||
+        JSON.stringify(a.details || {}).toLowerCase().includes(q)
+      );
+    });
+  }, [activity, activitySearch, activityFilter]);
+
+  const exportActivityCsv = () => {
+    const rows = [
+      ["Timestamp", "Action", "User", "Email", "Details", "User Agent"],
+      ...filteredActivity.map(a => [
+        new Date(a.created_at).toISOString(),
+        a.action,
+        a.actor_label || "",
+        a.actor_email || "",
+        a.details ? JSON.stringify(a.details) : "",
+        a.user_agent || "",
+      ]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `activity-log-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const filtered = useMemo(() => {
