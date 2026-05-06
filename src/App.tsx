@@ -61,6 +61,7 @@ const App = () => (
             <Route path="/student/courses" element={<StudentCourses />} />
             <Route path="/student/announcements" element={<AnnouncementsPage role="student" />} />
             <Route path="/student/requirements" element={<StudentRequirements />} />
+            <Route path="/student/shop" element={<StudentInventory />} />
             <Route path="/admin" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminDashboard /></StaffGuard>} />
             <Route path="/admin/students" element={<StaffGuard deny={DENY_TM}><AdminStudents /></StaffGuard>} />
             <Route path="/admin/payments" element={<StaffGuard deny={DENY_TM}><AdminPayments /></StaffGuard>} />
