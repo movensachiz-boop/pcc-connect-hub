@@ -1091,6 +1091,14 @@ const AdminStudents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CameraCaptureDialog
+        open={bulkCameraOpen}
+        onOpenChange={setBulkCameraOpen}
+        onCapture={processScannedImage}
+        title="Scan Class List"
+        description="Hold the device steady over the printed list and capture a clear, well-lit photo."
+      />
     </DashboardLayout>
   );
 };
