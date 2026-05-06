@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Eye, EyeOff, LogIn, Loader2, GraduationCap, Shield, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { logActivity } from "@/lib/activityLog";
 import pccLogo from "@/assets/pcc-logo.png";
 
 const Login = () => {
