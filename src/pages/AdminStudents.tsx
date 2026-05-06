@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { generateStudentID, generateBulkStudentIDs } from "@/lib/generateStudentID";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import CameraCaptureDialog from "@/components/CameraCaptureDialog";
 
 interface Student {
   id: string;
@@ -62,19 +63,12 @@ const AdminStudents = () => {
   const [bulkNames, setBulkNames] = useState("");
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [bulkScanning, setBulkScanning] = useState(false);
+  const [bulkCameraOpen, setBulkCameraOpen] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleBulkScanFromPicture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processScannedImage = async (base64: string) => {
     setBulkScanning(true);
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = (ev) => resolve(ev.target?.result as string);
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
       const { data, error } = await supabase.functions.invoke("extract-students", {
         body: { imageBase64: base64 },
       });
@@ -95,6 +89,21 @@ const AdminStudents = () => {
       toast({ title: "Error", description: "Failed to scan image.", variant: "destructive" });
     } finally {
       setBulkScanning(false);
+    }
+  };
+
+  const handleBulkScanFromPicture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = (ev) => resolve(ev.target?.result as string);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      await processScannedImage(base64);
+    } finally {
       if (bulkFileInputRef.current) bulkFileInputRef.current.value = "";
     }
   };
@@ -1027,27 +1036,39 @@ const AdminStudents = () => {
               <Label htmlFor="bulkBeginner" className="text-sm font-normal">Mark all as Beginner / New / Transferred</Label>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label>Names (one per line) *</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  disabled={bulkScanning}
-                  onClick={() => bulkFileInputRef.current?.click()}
-                >
-                  {bulkScanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-                  Scan from picture
-                </Button>
-                <input
-                  ref={bulkFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handleBulkScanFromPicture}
-                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="gap-2"
+                    disabled={bulkScanning}
+                    onClick={() => setBulkCameraOpen(true)}
+                  >
+                    {bulkScanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                    Use Camera
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled={bulkScanning}
+                    onClick={() => bulkFileInputRef.current?.click()}
+                  >
+                    <ImagePlus size={14} />
+                    Upload Photo
+                  </Button>
+                  <input
+                    ref={bulkFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleBulkScanFromPicture}
+                  />
+                </div>
               </div>
               <Textarea
                 value={bulkNames}
@@ -1070,6 +1091,14 @@ const AdminStudents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CameraCaptureDialog
+        open={bulkCameraOpen}
+        onOpenChange={setBulkCameraOpen}
+        onCapture={processScannedImage}
+        title="Scan Class List"
+        description="Hold the device steady over the printed list and capture a clear, well-lit photo."
+      />
     </DashboardLayout>
   );
 };
