@@ -33,6 +33,7 @@ import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import AdminAuditTrail from "./pages/AdminAuditTrail";
 import StaffGuard from "./components/StaffGuard";
 
 // Sub-roles
