@@ -238,6 +238,58 @@ const AdminStudents = () => {
     }
   };
 
+  const handleBulkClassRegister = async () => {
+    if (!bulkForm || !bulkStream) {
+      toast({ title: "Missing Class", description: "Select form and stream.", variant: "destructive" });
+      return;
+    }
+    const lines = bulkNames
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^\s*\d+[\).\s-]+/, "").trim()) // strip leading "1. " / "1) "
+      .filter((l) => l.length > 0);
+    if (lines.length === 0) {
+      toast({ title: "No Names", description: "Paste at least one name.", variant: "destructive" });
+      return;
+    }
+
+    setBulkSubmitting(true);
+    let registered = 0;
+    let failed = 0;
+
+    for (const line of lines) {
+      const parts = line.split(/\s+/);
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(" ") || parts[0];
+      try {
+        const { data, error } = await supabase.functions.invoke("manage-students", {
+          body: {
+            action: "create_student",
+            firstName,
+            lastName,
+            form: bulkForm,
+            stream: bulkStream,
+            gender: bulkGender,
+            isBeginner: bulkIsBeginner,
+          },
+        });
+        if (error || data?.error) failed++;
+        else registered++;
+      } catch {
+        failed++;
+      }
+    }
+
+    toast({
+      title: "Bulk Class Entry Complete",
+      description: `${registered} ${bulkGender === "male" ? "boys" : "girls"} registered to Form ${bulkForm} ${bulkStream}${failed ? `, ${failed} failed` : ""}.`,
+    });
+
+    setBulkSubmitting(false);
+    setBulkNames("");
+    setBulkOpen(false);
+    fetchStudents();
+  };
+
   const handleResetPassword = async () => {
     if (!resetRegNumber.trim() || !newPassword) {
       toast({ title: "Missing Fields", description: "Please enter the registration number and new password.", variant: "destructive" });
