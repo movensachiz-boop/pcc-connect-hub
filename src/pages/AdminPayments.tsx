@@ -30,6 +30,7 @@ interface PaymentRow {
   verification_hash: string | null;
   studentName?: string;
   regNo?: string;
+  studentClass?: string;
 }
 
 interface StudentProfile {
