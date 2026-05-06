@@ -53,7 +53,11 @@ const Login = () => {
         });
       }
 
-      if (data.role === "admin") {
+      if (data.role === "cashier") {
+        navigate("/admin/students");
+      } else if (data.role === "timetable_manager") {
+        navigate("/admin/timetable");
+      } else if (data.role === "admin") {
         navigate("/admin");
       } else if (data.role === "teacher") {
         navigate("/teacher");
