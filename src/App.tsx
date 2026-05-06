@@ -33,6 +33,11 @@ import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import StaffGuard from "./components/StaffGuard";
+
+// Sub-roles
+const DENY_TM_AND_CASHIER: ("cashier" | "timetable_manager")[] = ["cashier", "timetable_manager"];
+const DENY_TM: ("timetable_manager")[] = ["timetable_manager"];
 
 const queryClient = new QueryClient();
 
