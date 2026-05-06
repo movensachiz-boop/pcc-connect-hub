@@ -215,12 +215,51 @@ const AdminPayments = () => {
   };
 
   const handleSavePayment = async () => {
-    if (!selectedStudentId || !manualAmount) {
-      toast({ title: "Missing Info", description: "Select a student and enter amount.", variant: "destructive" });
+    if (!manualAmount) {
+      toast({ title: "Missing Info", description: "Enter amount.", variant: "destructive" });
+      return;
+    }
+    if (!selectedStudentId && (!newFirstName.trim() || !newLastName.trim())) {
+      toast({ title: "Missing Info", description: "Enter student first and last name.", variant: "destructive" });
       return;
     }
 
     setSaving(true);
+
+    // Auto-register student if none selected
+    let studentId = selectedStudentId;
+    if (!studentId) {
+      try {
+        const { data, error: regErr } = await supabase.functions.invoke("manage-students", {
+          body: {
+            action: "create_student",
+            firstName: newFirstName.trim(),
+            lastName: newLastName.trim(),
+            form: newForm || null,
+            gender: newGender,
+          },
+        });
+        if (regErr) throw regErr;
+        if (data?.error) throw new Error(data.error);
+        const { data: newStudents } = await supabase.from("profiles")
+          .select("id, first_name, last_name, registration_number, guardian_phone")
+          .ilike("first_name", newFirstName.trim())
+          .ilike("last_name", newLastName.trim())
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (newStudents && newStudents.length > 0) {
+          studentId = newStudents[0].id;
+          setStudents(prev => prev.find(s => s.id === studentId) ? prev : [...prev, newStudents[0]]);
+        } else {
+          throw new Error("Failed to create student record");
+        }
+      } catch (err: any) {
+        toast({ title: "Auto-register failed", description: err.message, variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+    }
+
     let depositSlipUrl: string | null = null;
 
     // Upload deposit slip image to storage
@@ -241,7 +280,7 @@ const AdminPayments = () => {
     }
 
     const { data: paymentData, error } = await supabase.from("payments").insert({
-      student_profile_id: selectedStudentId,
+      student_profile_id: studentId,
       amount: parseFloat(manualAmount),
       method: manualMethod || "Bank Deposit",
       status: "paid",
