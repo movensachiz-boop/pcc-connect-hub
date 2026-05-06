@@ -87,7 +87,7 @@ const AdminPayments = () => {
       const profileIds = [...new Set(paymentData.map(p => p.student_profile_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, registration_number")
+        .select("id, first_name, last_name, registration_number, form, stream")
         .in("id", profileIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -97,6 +97,7 @@ const AdminPayments = () => {
           ...p,
           studentName: prof ? `${prof.first_name} ${prof.last_name}` : "Unknown",
           regNo: prof?.registration_number || "N/A",
+          studentClass: prof?.form ? `Form ${prof.form}${prof.stream ? ` ${prof.stream}` : ""}` : "—",
         };
       });
       setPayments(enriched);
