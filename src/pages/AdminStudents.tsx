@@ -419,6 +419,7 @@ const AdminStudents = () => {
     }
   };
 
+  const handleSendNotification = async (student: Student) => {
     if (!student.guardian_phone) {
       toast({ title: "No Phone Number", description: "This student has no guardian phone number on file.", variant: "destructive" });
       return;
