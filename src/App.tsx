@@ -34,6 +34,8 @@ import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import AdminAuditTrail from "./pages/AdminAuditTrail";
+import AdminInventory from "./pages/AdminInventory";
+import StudentInventory from "./pages/StudentInventory";
 import StaffGuard from "./components/StaffGuard";
 
 // Sub-roles
