@@ -180,14 +180,14 @@ const AdminAuditTrail = () => {
       <PinGate>
         <div className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                <ShieldCheck className="text-primary" size={24} />
-                Finance Audit Trail
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Immutable record of every payment created, edited, voided or refunded — including who, when, and what changed.
-              </p>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <ShieldCheck className="text-primary" size={24} />
+              Audit Trail
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Immutable record of finance changes and every user login, logout and key action — including who, when, and what.
+            </p>
           </div>
 
           <Tabs defaultValue="finance">
@@ -196,96 +196,176 @@ const AdminAuditTrail = () => {
               <TabsTrigger value="activity" className="gap-2"><Activity size={14} /> Activity (Login/Logout)</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="finance">
+            <TabsContent value="finance" className="mt-4">
               <div className="flex justify-end mb-3">
                 <Button onClick={exportCsv} variant="outline" size="sm" className="gap-2">
                   <Download size={14} /> Export CSV
                 </Button>
               </div>
-          </div>
-
-          <Card className="shadow-card">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative flex-1 min-w-[240px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                  <Input
-                    placeholder="Search receipt, student, reg#, actor, method..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Select value={actionFilter} onValueChange={setActionFilter}>
-                  <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All actions</SelectItem>
-                    <SelectItem value="created">Created</SelectItem>
-                    <SelectItem value="updated">Updated</SelectItem>
-                    <SelectItem value="status_changed">Status changed</SelectItem>
-                    <SelectItem value="voided">Voided</SelectItem>
-                    <SelectItem value="refunded">Refunded</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Badge variant="secondary">{filtered.length} entries</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
-              {loading ? (
-                <div className="p-4 space-y-2">
-                  {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                </div>
-              ) : filtered.length === 0 ? (
-                <p className="p-8 text-center text-muted-foreground text-sm">No audit entries found.</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Timestamp</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Actor</TableHead>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Receipt</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map(e => {
-                      const p = e.student_profile_id ? profiles[e.student_profile_id] : null;
-                      return (
-                        <TableRow key={e.id}>
-                          <TableCell className="text-xs whitespace-nowrap">
-                            {new Date(e.created_at).toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className={ACTION_COLORS[e.action] || ""}>
-                              {e.action.replace("_", " ")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-xs">{e.actor_email || <span className="text-muted-foreground italic">system</span>}</TableCell>
-                          <TableCell className="text-sm">
-                            {p ? <>{p.first_name} {p.last_name} <span className="text-xs text-muted-foreground">({p.registration_number})</span></> : <span className="text-muted-foreground">—</span>}
-                          </TableCell>
-                          <TableCell className="text-xs font-mono">{e.receipt_number || "—"}</TableCell>
-                          <TableCell className="text-right text-sm font-medium">
-                            {e.amount != null ? `${e.currency || "USD"} ${Number(e.amount).toFixed(2)}` : "—"}
-                          </TableCell>
-                          <TableCell className="text-xs">{e.status || "—"}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" onClick={() => setSelected(e)}>
-                              <Eye size={16} />
-                            </Button>
-                          </TableCell>
+              <Card className="shadow-card">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[240px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                      <Input
+                        placeholder="Search receipt, student, reg#, actor, method..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={actionFilter} onValueChange={setActionFilter}>
+                      <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All actions</SelectItem>
+                        <SelectItem value="created">Created</SelectItem>
+                        <SelectItem value="updated">Updated</SelectItem>
+                        <SelectItem value="status_changed">Status changed</SelectItem>
+                        <SelectItem value="voided">Voided</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Badge variant="secondary">{filtered.length} entries</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 overflow-x-auto">
+                  {loading ? (
+                    <div className="p-4 space-y-2">
+                      {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                    </div>
+                  ) : filtered.length === 0 ? (
+                    <p className="p-8 text-center text-muted-foreground text-sm">No audit entries found.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Timestamp</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead>Actor</TableHead>
+                          <TableHead>Student</TableHead>
+                          <TableHead>Receipt</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead></TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.map(e => {
+                          const p = e.student_profile_id ? profiles[e.student_profile_id] : null;
+                          return (
+                            <TableRow key={e.id}>
+                              <TableCell className="text-xs whitespace-nowrap">
+                                {new Date(e.created_at).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className={ACTION_COLORS[e.action] || ""}>
+                                  {e.action.replace("_", " ")}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs">{e.actor_email || <span className="text-muted-foreground italic">system</span>}</TableCell>
+                              <TableCell className="text-sm">
+                                {p ? <>{p.first_name} {p.last_name} <span className="text-xs text-muted-foreground">({p.registration_number})</span></> : <span className="text-muted-foreground">—</span>}
+                              </TableCell>
+                              <TableCell className="text-xs font-mono">{e.receipt_number || "—"}</TableCell>
+                              <TableCell className="text-right text-sm font-medium">
+                                {e.amount != null ? `${e.currency || "USD"} ${Number(e.amount).toFixed(2)}` : "—"}
+                              </TableCell>
+                              <TableCell className="text-xs">{e.status || "—"}</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon" onClick={() => setSelected(e)}>
+                                  <Eye size={16} />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="activity" className="mt-4">
+              <div className="flex justify-end mb-3">
+                <Button onClick={exportActivityCsv} variant="outline" size="sm" className="gap-2">
+                  <Download size={14} /> Export CSV
+                </Button>
+              </div>
+              <Card className="shadow-card">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[240px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                      <Input
+                        placeholder="Search user, email, action..."
+                        value={activitySearch}
+                        onChange={(e) => setActivitySearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={activityFilter} onValueChange={setActivityFilter}>
+                      <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All actions</SelectItem>
+                        <SelectItem value="login">Login</SelectItem>
+                        <SelectItem value="logout">Logout</SelectItem>
+                        <SelectItem value="login_failed">Failed login</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Badge variant="secondary">{filteredActivity.length} entries</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 overflow-x-auto">
+                  {loading ? (
+                    <div className="p-4 space-y-2">
+                      {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                    </div>
+                  ) : filteredActivity.length === 0 ? (
+                    <p className="p-8 text-center text-muted-foreground text-sm">No activity recorded yet.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Timestamp</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Details</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredActivity.map(a => (
+                          <TableRow key={a.id}>
+                            <TableCell className="text-xs whitespace-nowrap">
+                              {new Date(a.created_at).toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={
+                                a.action === "login" ? "bg-success/15 text-success" :
+                                a.action === "logout" ? "bg-muted text-foreground" :
+                                a.action === "login_failed" ? "bg-destructive/15 text-destructive" :
+                                "bg-primary/10 text-primary"
+                              }>
+                                {a.action === "login" && <LogIn size={12} className="mr-1 inline" />}
+                                {a.action === "logout" && <LogOut size={12} className="mr-1 inline" />}
+                                {a.action.replace("_", " ")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">{a.actor_label || <span className="text-muted-foreground">—</span>}</TableCell>
+                            <TableCell className="text-xs">{a.actor_email || <span className="text-muted-foreground italic">anonymous</span>}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-md truncate">
+                              {a.details ? JSON.stringify(a.details) : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
