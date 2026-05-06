@@ -62,6 +62,7 @@ const AdminPayments = () => {
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [newForm, setNewForm] = useState("");
+  const [newStream, setNewStream] = useState("");
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
 
@@ -236,6 +237,7 @@ const AdminPayments = () => {
             firstName: newFirstName.trim(),
             lastName: newLastName.trim(),
             form: newForm || null,
+            stream: newStream || null,
             gender: newGender,
           },
         });
@@ -322,6 +324,7 @@ const AdminPayments = () => {
       setNewFirstName("");
       setNewLastName("");
       setNewForm("");
+      setNewStream("");
       setNewGender("male");
       setManualAmount("");
       setManualMethod("");
@@ -344,6 +347,7 @@ const AdminPayments = () => {
           firstName: newFirstName.trim(),
           lastName: newLastName.trim(),
           form: newForm || null,
+          stream: newStream || null,
           gender: newGender,
         },
       });
@@ -370,6 +374,7 @@ const AdminPayments = () => {
       setNewFirstName("");
       setNewLastName("");
       setNewForm("");
+      setNewStream("");
       setNewGender("male");
     } catch (err: any) {
       toast({ title: "Registration Failed", description: err.message, variant: "destructive" });
@@ -597,32 +602,58 @@ const AdminPayments = () => {
                   </div>
                 </div>
                 {!selectedStudentId && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Form</Label>
-                      <Select value={newForm} onValueChange={setNewForm}>
-                        <SelectTrigger><SelectValue placeholder="Select form" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Form 1">Form 1</SelectItem>
-                          <SelectItem value="Form 2">Form 2</SelectItem>
-                          <SelectItem value="Form 3">Form 3</SelectItem>
-                          <SelectItem value="Form 4">Form 4</SelectItem>
-                          <SelectItem value="Form 5">Form 5</SelectItem>
-                          <SelectItem value="Form 6">Form 6</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Form</Label>
+                        <Select value={newForm} onValueChange={(v) => { setNewForm(v); setNewStream(""); }}>
+                          <SelectTrigger><SelectValue placeholder="Select form" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Form 1">Form 1</SelectItem>
+                            <SelectItem value="Form 2">Form 2</SelectItem>
+                            <SelectItem value="Form 3">Form 3</SelectItem>
+                            <SelectItem value="Form 4">Form 4</SelectItem>
+                            <SelectItem value="Form 5">Form 5</SelectItem>
+                            <SelectItem value="Form 6">Form 6</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Stream</Label>
+                        <Select value={newStream} onValueChange={setNewStream} disabled={!newForm}>
+                          <SelectTrigger><SelectValue placeholder={newForm ? "Select stream" : "Pick form first"} /></SelectTrigger>
+                          <SelectContent>
+                            {(newForm === "Form 5" || newForm === "Form 6") ? (
+                              <>
+                                <SelectItem value="Sciences">Sciences</SelectItem>
+                                <SelectItem value="Commercials">Commercials</SelectItem>
+                                <SelectItem value="Arts">Arts</SelectItem>
+                              </>
+                            ) : (
+                              <>
+                                <SelectItem value="G1">G1</SelectItem>
+                                <SelectItem value="G2">G2</SelectItem>
+                                <SelectItem value="G22">G22</SelectItem>
+                                <SelectItem value="Blue">Blue</SelectItem>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-xs">Gender</Label>
-                      <Select value={newGender} onValueChange={setNewGender}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Gender</Label>
+                        <Select value={newGender} onValueChange={setNewGender}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
                 <div className="space-y-1">
                   <Label className="text-xs">Or link to existing student</Label>
