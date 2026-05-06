@@ -146,10 +146,8 @@ export const generateInventoryReceipt = async (data: InventoryReceiptData, mode:
   else doc.save(fileName);
 };
 
-export const generateInventoryThermalReceipt = async (data: InventoryReceiptData, mode: "save" | "print" = "print") => {
-
 // 80mm thermal
-export const generateInventoryThermalReceipt = async (data: InventoryReceiptData) => {
+export const generateInventoryThermalReceipt = async (data: InventoryReceiptData, mode: "save" | "print" = "print") => {
   const W = 80, M = 4;
   const measure = new jsPDF({ unit: "mm", format: [W, 500] });
   const cur = data.currency || "USD";
