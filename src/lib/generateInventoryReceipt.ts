@@ -140,8 +140,13 @@ export const generateInventoryReceipt = async (data: InventoryReceiptData, mode:
   doc.text("Thank you for your purchase. Items sold are non-refundable unless faulty.", pw / 2, y, { align: "center" });
 
   const safe = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-  doc.save(`Inventory_Receipt_${safe}_${data.receiptNo}.pdf`);
+  const safe = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
+  const fileName = `Inventory_Receipt_${safe}_${data.receiptNo}.pdf`;
+  if (mode === "print") openPdfForAutomaticPrint(doc, fileName);
+  else doc.save(fileName);
 };
+
+export const generateInventoryThermalReceipt = async (data: InventoryReceiptData, mode: "save" | "print" = "print") => {
 
 // 80mm thermal
 export const generateInventoryThermalReceipt = async (data: InventoryReceiptData) => {
