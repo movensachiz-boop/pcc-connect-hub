@@ -173,7 +173,7 @@ export const generateInventoryThermalReceipt = async (data: InventoryReceiptData
     center("PROGRESS CHRISTIAN CENTRE", 9, "bold", 4);
     center("Mkoba 14 Gweru | +263 77 400 0143", 6, "normal", 3.4);
     y += 1; dashed(y); y += 4;
-    center("INVENTORY RECEIPT", 10, "bold", 4.8);
+    center("THERMAL RECEIPT", 10, "bold", 4.8);
     dashed(y); y += 4;
 
     doc.setFont("helvetica", "normal"); doc.setFontSize(7);
@@ -186,6 +186,7 @@ export const generateInventoryThermalReceipt = async (data: InventoryReceiptData
     row("Date:", data.date);
     row("Customer:", data.studentName);
     row("Reg No:", data.regNo);
+    row("Class:", data.studentClass || "—");
     row("Method:", data.method);
     y += 1; dashed(y); y += 4;
 
