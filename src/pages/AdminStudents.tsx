@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download, Pencil } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,6 +56,11 @@ const AdminStudents = () => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editStudent, setEditStudent] = useState<Student | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
 
@@ -375,6 +380,42 @@ const AdminStudents = () => {
       toast({ title: "Error", description: "Failed to reset password.", variant: "destructive" });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openEditStudent = (s: Student) => {
+    setEditStudent(s);
+    setEditFirstName(s.first_name || "");
+    setEditLastName(s.last_name || "");
+    setEditOpen(true);
+  };
+
+  const handleSaveEditStudent = async () => {
+    if (!editStudent) return;
+    const fn = editFirstName.trim();
+    const ln = editLastName.trim();
+    if (!fn || !ln) {
+      toast({ title: "Missing Fields", description: "First and last name are required.", variant: "destructive" });
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ first_name: fn, last_name: ln })
+        .eq("id", editStudent.id);
+      if (error) {
+        toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Student Updated", description: `Name changed to ${fn} ${ln}.` });
+      setEditOpen(false);
+      setEditStudent(null);
+      fetchStudents();
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message || "Failed to update.", variant: "destructive" });
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -721,7 +762,14 @@ const AdminStudents = () => {
                   {filtered.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">{s.registration_number}</TableCell>
-                      <TableCell>{s.first_name} {s.last_name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span>{s.first_name} {s.last_name}</span>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditStudent(s)} title="Edit name">
+                            <Pencil size={12} />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{s.form || "—"}</TableCell>
                       <TableCell>{s.stream || "—"}</TableCell>
                       <TableCell>
@@ -899,6 +947,35 @@ const AdminStudents = () => {
             <Button onClick={handleRegister} disabled={submitting}>
               {submitting ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
               Register Student
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Student Name Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { if (!editSaving) setEditOpen(v); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Student Name</DialogTitle>
+            <DialogDescription>
+              {editStudent ? `Reg No: ${editStudent.registration_number}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>First Name *</Label>
+              <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Last Name *</Label>
+              <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={editSaving}>Cancel</Button>
+            <Button onClick={handleSaveEditStudent} disabled={editSaving}>
+              {editSaving ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
