@@ -61,6 +61,43 @@ const AdminStudents = () => {
   const [bulkIsBeginner, setBulkIsBeginner] = useState(true);
   const [bulkNames, setBulkNames] = useState("");
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkScanning, setBulkScanning] = useState(false);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBulkScanFromPicture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBulkScanning(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = (ev) => resolve(ev.target?.result as string);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      const { data, error } = await supabase.functions.invoke("extract-students", {
+        body: { imageBase64: base64 },
+      });
+      if (error || data?.error) {
+        toast({ title: "Scan Failed", description: data?.error || "Could not process the image.", variant: "destructive" });
+        return;
+      }
+      const names = (data.students || [])
+        .map((s: any) => `${s.first_name || ""} ${s.last_name || ""}`.trim())
+        .filter((n: string) => n.length > 0);
+      if (names.length === 0) {
+        toast({ title: "No Names Found", description: "Try a clearer photo.", variant: "destructive" });
+        return;
+      }
+      setBulkNames((prev) => (prev.trim() ? prev.replace(/\s+$/, "") + "\n" : "") + names.join("\n"));
+      toast({ title: "Scan Complete", description: `Added ${names.length} name(s) from the picture.` });
+    } catch {
+      toast({ title: "Error", description: "Failed to scan image.", variant: "destructive" });
+    } finally {
+      setBulkScanning(false);
+      if (bulkFileInputRef.current) bulkFileInputRef.current.value = "";
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
