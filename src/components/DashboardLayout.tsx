@@ -29,6 +29,7 @@ const adminLinks = [
   { label: "Timetable", icon: Calendar, path: "/admin/timetable" },
   { label: "Master Timetable", icon: CalendarDays, path: "/admin/timetable/master" },
   { label: "Reports", icon: FileText, path: "/admin/reports" },
+  { label: "Audit Trail", icon: ShieldCheck, path: "/admin/audit" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
   { label: "Fees & Requirements", icon: Receipt, path: "/admin/fees" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
