@@ -215,6 +215,60 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          after_data: Json | null
+          amount: number | null
+          before_data: Json | null
+          created_at: string
+          currency: string | null
+          id: string
+          method: string | null
+          note: string | null
+          payment_id: string | null
+          receipt_number: string | null
+          status: string | null
+          student_profile_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_data?: Json | null
+          amount?: number | null
+          before_data?: Json | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          method?: string | null
+          note?: string | null
+          payment_id?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          student_profile_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_data?: Json | null
+          amount?: number | null
+          before_data?: Json | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          method?: string | null
+          note?: string | null
+          payment_id?: string | null
+          receipt_number?: string | null
+          status?: string | null
+          student_profile_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
