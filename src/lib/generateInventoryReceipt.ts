@@ -226,5 +226,7 @@ export const generateInventoryThermalReceipt = async (data: InventoryReceiptData
   const doc = new jsPDF({ unit: "mm", format: [W, h] });
   await render(doc);
   const safe = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-  doc.save(`Inventory_Receipt_Thermal_${safe}_${data.receiptNo}.pdf`);
+  const fileName = `Inventory_Receipt_Thermal_${safe}_${data.receiptNo}.pdf`;
+  if (mode === "print") openPdfForAutomaticPrint(doc, fileName);
+  else doc.save(fileName);
 };
