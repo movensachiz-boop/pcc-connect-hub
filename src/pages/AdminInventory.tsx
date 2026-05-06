@@ -46,6 +46,7 @@ export default function AdminInventory() {
   const [saleStudent, setSaleStudent] = useState<string>("");
   const [saleMethod, setSaleMethod] = useState("cash");
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [itemSearch, setItemSearch] = useState("");
 
   const fetchAll = async () => {
     const [it, sa, pr] = await Promise.all([
