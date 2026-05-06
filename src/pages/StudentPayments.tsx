@@ -32,6 +32,8 @@ interface Profile {
   last_name: string;
   registration_number: string;
   balance: number;
+  form?: string | null;
+  stream?: string | null;
 }
 
 const StudentPayments = () => {
