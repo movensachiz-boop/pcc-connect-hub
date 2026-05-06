@@ -128,16 +128,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get role
-    const { data: roleData } = await supabaseAdmin
+    // Get all roles, prefer most specific
+    const { data: roleRows } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
+      .eq("user_id", data.user.id);
+    const roles = (roleRows || []).map((r: any) => r.role);
+    const preferred =
+      roles.find((r: string) => r === "cashier" || r === "timetable_manager") ||
+      roles.find((r: string) => r === "owner" || r === "teacher") ||
+      roles.find((r: string) => r === "admin") ||
+      "student";
 
     return new Response(JSON.stringify({
       session: data.session,
-      role: roleData?.role || "student",
+      role: preferred,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
