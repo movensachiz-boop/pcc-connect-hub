@@ -938,6 +938,80 @@ const AdminStudents = () => {
           )}
         </DialogContent>
       </Dialog>
+      {/* Bulk Class Entry Dialog */}
+      <Dialog open={bulkOpen} onOpenChange={(v) => { if (!bulkSubmitting) setBulkOpen(v); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk Class Entry</DialogTitle>
+            <DialogDescription>
+              Pick a class and gender, then paste names (one per line). Useful for entering boys or girls of a class from a printed list.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Form *</Label>
+                <Select value={bulkForm} onValueChange={(v) => { setBulkForm(v); setBulkStream(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Form" /></SelectTrigger>
+                  <SelectContent>
+                    {["1", "2", "3", "4", "5", "6"].map((f) => (
+                      <SelectItem key={f} value={f}>Form {f}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Stream *</Label>
+                <Select value={bulkStream} onValueChange={setBulkStream}>
+                  <SelectTrigger><SelectValue placeholder="Stream" /></SelectTrigger>
+                  <SelectContent>
+                    {(parseInt(bulkForm) >= 5
+                      ? ["Sciences", "Commercials", "Arts"]
+                      : ["G1", "G2", "G22", "Blue"]
+                    ).map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Gender *</Label>
+                <Select value={bulkGender} onValueChange={setBulkGender}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Boys</SelectItem>
+                    <SelectItem value="female">Girls</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="bulkBeginner" checked={bulkIsBeginner} onCheckedChange={(v) => setBulkIsBeginner(!!v)} />
+              <Label htmlFor="bulkBeginner" className="text-sm font-normal">Mark all as Beginner / New / Transferred</Label>
+            </div>
+            <div className="space-y-2">
+              <Label>Names (one per line) *</Label>
+              <Textarea
+                value={bulkNames}
+                onChange={(e) => setBulkNames(e.target.value)}
+                placeholder={"John Doe\nJane Smith\nPeter Moyo\n..."}
+                rows={10}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                {bulkNames.split(/\r?\n/).filter((l) => l.trim()).length} name(s) detected. Numbering like "1." or "1)" will be stripped automatically. First word = first name, the rest = last name.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)} disabled={bulkSubmitting}>Cancel</Button>
+            <Button onClick={handleBulkClassRegister} disabled={bulkSubmitting} className="gap-2">
+              {bulkSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              Register All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
