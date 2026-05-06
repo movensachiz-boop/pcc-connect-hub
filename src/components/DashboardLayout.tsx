@@ -32,6 +32,7 @@ const adminLinks = [
   { label: "Audit Trail", icon: ShieldCheck, path: "/admin/audit" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
   { label: "Fees & Requirements", icon: Receipt, path: "/admin/fees" },
+  { label: "Inventory", icon: Package, path: "/admin/inventory" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
