@@ -1036,27 +1036,39 @@ const AdminStudents = () => {
               <Label htmlFor="bulkBeginner" className="text-sm font-normal">Mark all as Beginner / New / Transferred</Label>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label>Names (one per line) *</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  disabled={bulkScanning}
-                  onClick={() => bulkFileInputRef.current?.click()}
-                >
-                  {bulkScanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-                  Scan from picture
-                </Button>
-                <input
-                  ref={bulkFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handleBulkScanFromPicture}
-                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="gap-2"
+                    disabled={bulkScanning}
+                    onClick={() => setBulkCameraOpen(true)}
+                  >
+                    {bulkScanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                    Use Camera
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled={bulkScanning}
+                    onClick={() => bulkFileInputRef.current?.click()}
+                  >
+                    <ImagePlus size={14} />
+                    Upload Photo
+                  </Button>
+                  <input
+                    ref={bulkFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleBulkScanFromPicture}
+                  />
+                </div>
               </div>
               <Textarea
                 value={bulkNames}
