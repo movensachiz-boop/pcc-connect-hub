@@ -59,12 +59,14 @@ const Login = () => {
           }
         } catch {}
         setError(errorMsg);
+        await logActivity("login_failed", { identifier, mode, reason: errorMsg });
         setLoading(false);
         return;
       }
 
       if (data?.error) {
         setError(data.error);
+        await logActivity("login_failed", { identifier, mode, reason: data.error });
         setLoading(false);
         return;
       }
@@ -75,6 +77,8 @@ const Login = () => {
           refresh_token: data.session.refresh_token,
         });
       }
+
+      await logActivity("login", { identifier, mode, role: data.role });
 
       if (data.role === "cashier") navigate("/admin/students");
       else if (data.role === "timetable_manager") navigate("/admin/timetable");
