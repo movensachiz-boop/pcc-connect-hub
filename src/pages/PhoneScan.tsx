@@ -183,8 +183,8 @@ const PhoneScan = () => {
             >
               <RefreshCw size={14} /> Flip
             </Button>
-            <Button onClick={snap} disabled={!ready || !connected} className="gap-2 px-6">
-              <Camera size={18} /> Capture
+            <Button onClick={snap} disabled={!ready} className="gap-2 px-6">
+              <Camera size={18} /> {ready ? "Capture" : "Loading camera…"}
             </Button>
             <div className="w-[88px]" />
           </>
