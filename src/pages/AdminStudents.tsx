@@ -498,6 +498,9 @@ const AdminStudents = () => {
             <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
               <Camera size={16} /> Scan List
             </Button>
+            <Button variant="outline" className="gap-2" onClick={() => setBulkOpen(true)}>
+              <Users size={16} /> Bulk Class Entry
+            </Button>
             <Button variant="outline" className="gap-2" onClick={async () => {
               const year = new Date().getFullYear().toString();
               const ids = filtered.map(s => ({
