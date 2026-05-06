@@ -85,7 +85,8 @@ export const generateInventoryReceipt = async (data: InventoryReceiptData, mode:
     body: [
       [`Receipt No.: ${data.receiptNo}`, `Name: ${data.studentName}`],
       [`Date: ${data.date}`, `Reg No: ${data.regNo}`],
-      [`Payment Method: ${data.method}`, `Status: PAID`],
+      [`Payment Method: ${data.method}`, `Class: ${data.studentClass || "—"}`],
+      [`Status: PAID`, ``],
     ],
     headStyles: { fillColor: [255, 255, 255], textColor: blue, fontStyle: "italic", fontSize: 10 },
     bodyStyles: { fontSize: 9.5, cellPadding: 4 },
