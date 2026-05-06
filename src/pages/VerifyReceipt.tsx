@@ -152,6 +152,16 @@ const VerifyReceipt = () => {
                     <p className="font-semibold">{result.studentName}</p>
                   </div>
                   <div>
+                    <p className="text-muted-foreground">Class</p>
+                    <p className="font-semibold">{result.studentClass || "—"}</p>
+                  </div>
+                  {result.regNumber && (
+                    <div>
+                      <p className="text-muted-foreground">Reg. No.</p>
+                      <p className="font-semibold">{result.regNumber}</p>
+                    </div>
+                  )}
+                  <div>
                     <p className="text-muted-foreground">Date</p>
                     <p className="font-semibold">{result.date}</p>
                   </div>
