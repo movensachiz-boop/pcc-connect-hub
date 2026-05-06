@@ -27,7 +27,21 @@ const qr = (text: string) => QRCode.toDataURL(text, { width: 200, margin: 1, err
 
 const fmt = (n: number, c = "USD") => `${c === "USD" ? "US$" : c} ${n.toFixed(2)}`;
 
-export const generateInventoryReceipt = async (data: InventoryReceiptData) => {
+const openPdfForAutomaticPrint = (doc: jsPDF, fallbackName: string) => {
+  doc.autoPrint();
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank");
+  if (!w) { URL.revokeObjectURL(url); doc.save(fallbackName); return; }
+  let started = false;
+  const startPrint = () => { if (started) return; started = true; w.focus(); w.print(); };
+  w.onload = () => window.setTimeout(startPrint, 350);
+  w.onafterprint = () => { w.close(); URL.revokeObjectURL(url); };
+  window.setTimeout(startPrint, 900);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+};
+
+export const generateInventoryReceipt = async (data: InventoryReceiptData, mode: "save" | "print" = "print") => {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pw = 210;
   const margin = 20;
@@ -126,11 +140,13 @@ export const generateInventoryReceipt = async (data: InventoryReceiptData) => {
   doc.text("Thank you for your purchase. Items sold are non-refundable unless faulty.", pw / 2, y, { align: "center" });
 
   const safe = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-  doc.save(`Inventory_Receipt_${safe}_${data.receiptNo}.pdf`);
+  const fileName = `Inventory_Receipt_${safe}_${data.receiptNo}.pdf`;
+  if (mode === "print") openPdfForAutomaticPrint(doc, fileName);
+  else doc.save(fileName);
 };
 
 // 80mm thermal
-export const generateInventoryThermalReceipt = async (data: InventoryReceiptData) => {
+export const generateInventoryThermalReceipt = async (data: InventoryReceiptData, mode: "save" | "print" = "print") => {
   const W = 80, M = 4;
   const measure = new jsPDF({ unit: "mm", format: [W, 500] });
   const cur = data.currency || "USD";
@@ -210,5 +226,7 @@ export const generateInventoryThermalReceipt = async (data: InventoryReceiptData
   const doc = new jsPDF({ unit: "mm", format: [W, h] });
   await render(doc);
   const safe = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-  doc.save(`Inventory_Receipt_Thermal_${safe}_${data.receiptNo}.pdf`);
+  const fileName = `Inventory_Receipt_Thermal_${safe}_${data.receiptNo}.pdf`;
+  if (mode === "print") openPdfForAutomaticPrint(doc, fileName);
+  else doc.save(fileName);
 };
