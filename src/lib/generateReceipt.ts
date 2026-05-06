@@ -6,6 +6,7 @@ interface ReceiptData {
   receiptNo: string;
   studentName: string;
   regNo: string;
+  studentClass?: string;
   date: string;
   amount: string;
   method: string;
