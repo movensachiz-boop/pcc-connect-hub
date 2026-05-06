@@ -20,7 +20,7 @@ interface Item {
   form_levels: string[]; notes: string | null; is_active: boolean; sort_order: number;
 }
 
-interface Profile { id: string; first_name: string; last_name: string; registration_number: string; }
+interface Profile { id: string; first_name: string; last_name: string; registration_number: string; form: string | null; stream: string | null; }
 interface Sale {
   id: string; receipt_number: string; student_profile_id: string | null;
   total_amount: number; method: string; status: string; items: any; created_at: string;
@@ -50,7 +50,7 @@ export default function AdminInventory() {
     const [it, sa, pr] = await Promise.all([
       supabase.from("inventory_items").select("*").order("category").order("name"),
       supabase.from("inventory_sales").select("*").order("created_at", { ascending: false }).limit(200),
-      supabase.from("profiles").select("id, first_name, last_name, registration_number").order("first_name"),
+      supabase.from("profiles").select("id, first_name, last_name, registration_number, form, stream").order("first_name"),
     ]);
     setItems((it.data as any) || []);
     setSales((sa.data as any) || []);
@@ -114,6 +114,7 @@ export default function AdminInventory() {
       receiptNo: data.receipt_number,
       studentName: stu ? `${stu.first_name} ${stu.last_name}` : "Customer",
       regNo: stu?.registration_number || "—",
+      studentClass: stu ? [stu.form, stu.stream].filter(Boolean).join(" ") || "—" : "—",
       date: new Date().toLocaleDateString(),
       method: saleMethod,
       items: receiptItems,
@@ -129,6 +130,7 @@ export default function AdminInventory() {
       receiptNo: sale.receipt_number,
       studentName: stu ? `${stu.first_name} ${stu.last_name}` : "Customer",
       regNo: stu?.registration_number || "—",
+      studentClass: stu ? [stu.form, stu.stream].filter(Boolean).join(" ") || "—" : "—",
       date: new Date(sale.created_at).toLocaleDateString(),
       method: sale.method,
       items,
