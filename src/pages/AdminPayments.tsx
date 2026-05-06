@@ -191,7 +191,17 @@ const AdminPayments = () => {
           const match = students.find(s =>
             name.includes(s.first_name.toLowerCase()) || name.includes(s.last_name.toLowerCase())
           );
-          if (match) setSelectedStudentId(match.id);
+          if (match) {
+            setSelectedStudentId(match.id);
+            setNewFirstName(match.first_name);
+            setNewLastName(match.last_name);
+          } else {
+            // Auto-split depositor name for editable registration
+            const parts = (payment.depositor_name || "").trim().split(/\s+/);
+            setNewFirstName(parts[0] || "");
+            setNewLastName(parts.slice(1).join(" ") || "");
+            setSelectedStudentId("");
+          }
           setConfirmDialogOpen(true);
         }
       } catch (err: any) {
