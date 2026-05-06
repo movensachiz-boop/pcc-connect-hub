@@ -27,7 +27,21 @@ const qr = (text: string) => QRCode.toDataURL(text, { width: 200, margin: 1, err
 
 const fmt = (n: number, c = "USD") => `${c === "USD" ? "US$" : c} ${n.toFixed(2)}`;
 
-export const generateInventoryReceipt = async (data: InventoryReceiptData) => {
+const openPdfForAutomaticPrint = (doc: jsPDF, fallbackName: string) => {
+  doc.autoPrint();
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank");
+  if (!w) { URL.revokeObjectURL(url); doc.save(fallbackName); return; }
+  let started = false;
+  const startPrint = () => { if (started) return; started = true; w.focus(); w.print(); };
+  w.onload = () => window.setTimeout(startPrint, 350);
+  w.onafterprint = () => { w.close(); URL.revokeObjectURL(url); };
+  window.setTimeout(startPrint, 900);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+};
+
+export const generateInventoryReceipt = async (data: InventoryReceiptData, mode: "save" | "print" = "print") => {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pw = 210;
   const margin = 20;
