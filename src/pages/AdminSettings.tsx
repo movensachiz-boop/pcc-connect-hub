@@ -4,9 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Crown } from "lucide-react";
+import { Loader2, Crown, UserPlus } from "lucide-react";
+
+const STAFF_ROLES = [
+  { value: "admin", label: "Full Admin (Mrs Sibanda / Mr Cal / Developer)" },
+  { value: "cashier", label: "Cashier (no Dashboard, no Settings)" },
+  { value: "timetable_manager", label: "Timetable Manager (timetable + classes only)" },
+];
 
 const AdminSettings = () => {
   const { toast } = useToast();
