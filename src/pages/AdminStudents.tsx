@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { generateStudentID, generateBulkStudentIDs } from "@/lib/generateStudentID";
 import { useToast } from "@/hooks/use-toast";
@@ -568,6 +568,44 @@ const AdminStudents = () => {
               toast({ title: "IDs Generated", description: `${ids.length} student ID card(s) saved as PDF.` });
             }}>
               <CreditCard size={16} /> Generate All IDs
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => {
+              if (filtered.length === 0) {
+                toast({ title: "No Students", description: "No students to print.", variant: "destructive" });
+                return;
+              }
+              const rows = filtered
+                .slice()
+                .sort((a, b) => {
+                  const f = (a.form || "").localeCompare(b.form || "");
+                  if (f !== 0) return f;
+                  const s = (a.stream || "").localeCompare(b.stream || "");
+                  if (s !== 0) return s;
+                  return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`);
+                })
+                .map((s, i) => `<tr><td>${i + 1}</td><td>${s.registration_number}</td><td>${s.last_name} ${s.first_name}</td><td>${s.form || "—"}</td><td>${s.stream || "—"}</td><td>${s.gender || "—"}</td><td>${s.guardian_phone || "—"}</td></tr>`)
+                .join("");
+              const html = `<!doctype html><html><head><title>Student List</title><style>
+                @page { size: A4; margin: 12mm; }
+                body { font-family: Arial, sans-serif; color: #000; }
+                h1 { text-align: center; margin: 0 0 4px; font-size: 18px; }
+                .meta { text-align: center; font-size: 11px; margin-bottom: 12px; color: #444; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; }
+                th { background: #003366; color: #fff; }
+                tr:nth-child(even) td { background: #f4f4f4; }
+              </style></head><body>
+                <h1>Progress Centre College — Student List</h1>
+                <div class="meta">Total: ${filtered.length} · Printed: ${new Date().toLocaleString()}</div>
+                <table><thead><tr><th>#</th><th>Reg No.</th><th>Name</th><th>Form</th><th>Stream</th><th>Gender</th><th>Guardian Phone</th></tr></thead><tbody>${rows}</tbody></table>
+                <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300);}</script>
+              </body></html>`;
+              const w = window.open("", "_blank");
+              if (!w) { toast({ title: "Popup blocked", description: "Allow popups to print.", variant: "destructive" }); return; }
+              w.document.write(html);
+              w.document.close();
+            }}>
+              <Printer size={16} /> Print List
             </Button>
             <Button className="gap-2" onClick={() => setOpen(true)}>
               <UserPlus size={16} /> Register Student
