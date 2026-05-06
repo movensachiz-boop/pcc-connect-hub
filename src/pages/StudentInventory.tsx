@@ -40,7 +40,7 @@ export default function StudentInventory() {
       receiptNo: sale.receipt_number,
       studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Customer",
       regNo: profile?.registration_number || "—",
-      studentClass: profile?.form ? `Form ${profile.form}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
+      studentClass: profile?.form ? `${String(profile.form).replace(/^Form\s*/i,"Form ")}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
       date: new Date(sale.created_at).toLocaleDateString(),
       method: sale.method,
       items: receiptItems,

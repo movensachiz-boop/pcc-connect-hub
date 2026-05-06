@@ -98,7 +98,7 @@ const AdminPayments = () => {
           ...p,
           studentName: prof ? `${prof.first_name} ${prof.last_name}` : "Unknown",
           regNo: prof?.registration_number || "N/A",
-          studentClass: prof?.form ? `Form ${prof.form}${prof.stream ? ` ${prof.stream}` : ""}` : "—",
+          studentClass: prof?.form ? `${String(prof.form).replace(/^Form\s*/i,"Form ")}${prof.stream ? ` ${prof.stream}` : ""}` : "—",
         };
       });
       setPayments(enriched);
