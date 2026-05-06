@@ -114,7 +114,7 @@ const Login = () => {
                 <Label htmlFor="regNumber" className="text-sm font-medium">Registration Number, Name, or Email</Label>
                 <Input
                   id="regNumber"
-                  placeholder="e.g. K0023T or owner@school.com"
+                  placeholder="e.g. K0023T or Mavunga Mitchell"
                   value={regNumber}
                   onChange={(e) => setRegNumber(e.target.value)}
                   required
