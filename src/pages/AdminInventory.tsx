@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatClass, titleCaseName } from "@/lib/normalize";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,9 +113,9 @@ export default function AdminInventory() {
     const receiptItems: InventoryReceiptItem[] = cartItems.map(c => ({ name: c.name, quantity: c.qty, unit_price: c.price, subtotal: c.subtotal }));
     await generateInventoryReceipt({
       receiptNo: data.receipt_number,
-      studentName: stu ? `${stu.first_name} ${stu.last_name}` : "Customer",
+      studentName: stu ? titleCaseName(`${stu.first_name} ${stu.last_name}`) : "Customer",
       regNo: stu?.registration_number || "—",
-      studentClass: stu?.form ? `${String(stu.form).replace(/^Form\s*/i,"Form ")}${stu.stream ? ` ${stu.stream}` : ""}` : "—",
+      studentClass: formatClass(stu),
       date: new Date().toLocaleDateString(),
       method: saleMethod,
       items: receiptItems,
@@ -128,9 +129,9 @@ export default function AdminInventory() {
     const items: InventoryReceiptItem[] = (sale.items as any[]).map(i => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, subtotal: i.subtotal }));
     const data = {
       receiptNo: sale.receipt_number,
-      studentName: stu ? `${stu.first_name} ${stu.last_name}` : "Customer",
+      studentName: stu ? titleCaseName(`${stu.first_name} ${stu.last_name}`) : "Customer",
       regNo: stu?.registration_number || "—",
-      studentClass: stu?.form ? `${String(stu.form).replace(/^Form\s*/i,"Form ")}${stu.stream ? ` ${stu.stream}` : ""}` : "—",
+      studentClass: formatClass(stu),
       date: new Date(sale.created_at).toLocaleDateString(),
       method: sale.method,
       items,
@@ -224,7 +225,7 @@ export default function AdminInventory() {
                           <TableRow key={s.id}>
                             <TableCell className="font-mono text-xs">{s.receipt_number}</TableCell>
                             <TableCell>{new Date(s.created_at).toLocaleDateString()}</TableCell>
-                            <TableCell>{stu ? `${stu.first_name} ${stu.last_name}` : "—"}</TableCell>
+                            <TableCell>{stu ? titleCaseName(`${stu.first_name} ${stu.last_name}`) : "—"}</TableCell>
                             <TableCell className="text-xs">{itemsArr.map(i => `${i.name} x${i.quantity}`).join(", ")}</TableCell>
                             <TableCell className="font-semibold">US${Number(s.total_amount).toFixed(2)}</TableCell>
                             <TableCell className="text-right">

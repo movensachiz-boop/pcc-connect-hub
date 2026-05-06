@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatClass, titleCaseName } from "@/lib/normalize";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -144,9 +145,9 @@ const StudentPayments = () => {
   const handleDownloadReceipt = (p: Payment) => {
     generateReceipt({
       receiptNo: p.receipt_number || p.id.slice(0, 8),
-      studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
+      studentName: profile ? titleCaseName(`${profile.first_name} ${profile.last_name}`) : "Student",
       regNo: profile?.registration_number || "N/A",
-      studentClass: profile?.form ? `${String(profile.form).replace(/^Form\s*/i,"Form ")}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
+      studentClass: formatClass(profile),
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,
@@ -159,9 +160,9 @@ const StudentPayments = () => {
   const handleDownloadThermal = (p: Payment) => {
     generateThermalReceipt({
       receiptNo: p.receipt_number || p.id.slice(0, 8),
-      studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
+      studentName: profile ? titleCaseName(`${profile.first_name} ${profile.last_name}`) : "Student",
       regNo: profile?.registration_number || "N/A",
-      studentClass: profile?.form ? `${String(profile.form).replace(/^Form\s*/i,"Form ")}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
+      studentClass: formatClass(profile),
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,
@@ -174,9 +175,9 @@ const StudentPayments = () => {
   const handlePrint = (p: Payment) => {
     printReceipt({
       receiptNo: p.receipt_number || p.id.slice(0, 8),
-      studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
+      studentName: profile ? titleCaseName(`${profile.first_name} ${profile.last_name}`) : "Student",
       regNo: profile?.registration_number || "N/A",
-      studentClass: profile?.form ? `${String(profile.form).replace(/^Form\s*/i,"Form ")}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
+      studentClass: formatClass(profile),
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,

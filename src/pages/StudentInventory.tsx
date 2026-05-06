@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatClass, titleCaseName } from "@/lib/normalize";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +39,9 @@ export default function StudentInventory() {
     const receiptItems: InventoryReceiptItem[] = (sale.items as any[]).map(i => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, subtotal: i.subtotal }));
     await generateInventoryReceipt({
       receiptNo: sale.receipt_number,
-      studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Customer",
+      studentName: profile ? titleCaseName(`${profile.first_name} ${profile.last_name}`) : "Customer",
       regNo: profile?.registration_number || "—",
-      studentClass: profile?.form ? `${String(profile.form).replace(/^Form\s*/i,"Form ")}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
+      studentClass: formatClass(profile),
       date: new Date(sale.created_at).toLocaleDateString(),
       method: sale.method,
       items: receiptItems,
