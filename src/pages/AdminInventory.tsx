@@ -96,9 +96,6 @@ export default function AdminInventory() {
   const completeSale = async () => {
     if (!saleStudent) return toast.error("Select a student");
     if (cartItems.length === 0) return toast.error("Cart is empty");
-    for (const c of cartItems) {
-      if (c.qty > c.stock) return toast.error(`Not enough stock for ${c.name} (only ${c.stock} left)`);
-    }
     const itemsJson = cartItems.map(c => ({ item_id: c.id, name: c.name, quantity: c.qty, unit_price: c.price, subtotal: c.subtotal }));
     const { data, error } = await supabase.from("inventory_sales").insert({
       student_profile_id: saleStudent,
@@ -324,12 +321,12 @@ export default function AdminInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.filter(i => i.is_active && i.stock_quantity > 0).map(i => (
+                  {items.filter(i => i.is_active).map(i => (
                     <TableRow key={i.id}>
                       <TableCell className="text-sm">{i.name} <Badge variant="outline" className="ml-1 text-xs capitalize">{i.category}</Badge></TableCell>
                       <TableCell>US${Number(i.price).toFixed(2)}</TableCell>
                       <TableCell>{i.stock_quantity}</TableCell>
-                      <TableCell><Input type="number" min={0} max={i.stock_quantity} value={cart[i.id] || 0} onChange={e => setQty(i.id, Number(e.target.value))} className="h-8" /></TableCell>
+                      <TableCell><Input type="number" min={0} value={cart[i.id] || 0} onChange={e => setQty(i.id, Number(e.target.value))} className="h-8" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
