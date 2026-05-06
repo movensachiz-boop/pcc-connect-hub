@@ -41,12 +41,26 @@ const ACTION_COLORS: Record<string, string> = {
   refunded: "bg-warning/15 text-warning-foreground",
 };
 
+interface ActivityEntry {
+  id: string;
+  user_id: string | null;
+  actor_email: string | null;
+  actor_label: string | null;
+  action: string;
+  details: any;
+  user_agent: string | null;
+  created_at: string;
+}
+
 const AdminAuditTrail = () => {
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [activitySearch, setActivitySearch] = useState("");
+  const [activityFilter, setActivityFilter] = useState<string>("all");
   const [selected, setSelected] = useState<AuditEntry | null>(null);
 
   useEffect(() => {
