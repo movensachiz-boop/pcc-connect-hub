@@ -109,7 +109,7 @@ export default function AdminInventory() {
     toast.success(`Sale recorded: ${data.receipt_number}`);
     const stu = profiles.find(p => p.id === saleStudent);
     const receiptItems: InventoryReceiptItem[] = cartItems.map(c => ({ name: c.name, quantity: c.qty, unit_price: c.price, subtotal: c.subtotal }));
-    await generateInventoryReceipt({
+    await generateInventoryThermalReceipt({
       receiptNo: data.receipt_number,
       studentName: stu ? titleCaseName(`${stu.first_name} ${stu.last_name}`) : "Customer",
       regNo: stu?.registration_number || "—",
