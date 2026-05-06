@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { generateStudentID, generateBulkStudentIDs } from "@/lib/generateStudentID";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +52,15 @@ const AdminStudents = () => {
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  // Bulk class entry state
+  const [bulkForm, setBulkForm] = useState("");
+  const [bulkStream, setBulkStream] = useState("");
+  const [bulkGender, setBulkGender] = useState("male");
+  const [bulkIsBeginner, setBulkIsBeginner] = useState(true);
+  const [bulkNames, setBulkNames] = useState("");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -226,6 +236,58 @@ const AdminStudents = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleBulkClassRegister = async () => {
+    if (!bulkForm || !bulkStream) {
+      toast({ title: "Missing Class", description: "Select form and stream.", variant: "destructive" });
+      return;
+    }
+    const lines = bulkNames
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^\s*\d+[\).\s-]+/, "").trim()) // strip leading "1. " / "1) "
+      .filter((l) => l.length > 0);
+    if (lines.length === 0) {
+      toast({ title: "No Names", description: "Paste at least one name.", variant: "destructive" });
+      return;
+    }
+
+    setBulkSubmitting(true);
+    let registered = 0;
+    let failed = 0;
+
+    for (const line of lines) {
+      const parts = line.split(/\s+/);
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(" ") || parts[0];
+      try {
+        const { data, error } = await supabase.functions.invoke("manage-students", {
+          body: {
+            action: "create_student",
+            firstName,
+            lastName,
+            form: bulkForm,
+            stream: bulkStream,
+            gender: bulkGender,
+            isBeginner: bulkIsBeginner,
+          },
+        });
+        if (error || data?.error) failed++;
+        else registered++;
+      } catch {
+        failed++;
+      }
+    }
+
+    toast({
+      title: "Bulk Class Entry Complete",
+      description: `${registered} ${bulkGender === "male" ? "boys" : "girls"} registered to Form ${bulkForm} ${bulkStream}${failed ? `, ${failed} failed` : ""}.`,
+    });
+
+    setBulkSubmitting(false);
+    setBulkNames("");
+    setBulkOpen(false);
+    fetchStudents();
   };
 
   const handleResetPassword = async () => {
@@ -435,6 +497,9 @@ const AdminStudents = () => {
             </Button>
             <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
               <Camera size={16} /> Scan List
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => setBulkOpen(true)}>
+              <Users size={16} /> Bulk Class Entry
             </Button>
             <Button variant="outline" className="gap-2" onClick={async () => {
               const year = new Date().getFullYear().toString();
@@ -871,6 +936,80 @@ const AdminStudents = () => {
               </Button>
             </DialogFooter>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Bulk Class Entry Dialog */}
+      <Dialog open={bulkOpen} onOpenChange={(v) => { if (!bulkSubmitting) setBulkOpen(v); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk Class Entry</DialogTitle>
+            <DialogDescription>
+              Pick a class and gender, then paste names (one per line). Useful for entering boys or girls of a class from a printed list.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Form *</Label>
+                <Select value={bulkForm} onValueChange={(v) => { setBulkForm(v); setBulkStream(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Form" /></SelectTrigger>
+                  <SelectContent>
+                    {["1", "2", "3", "4", "5", "6"].map((f) => (
+                      <SelectItem key={f} value={f}>Form {f}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Stream *</Label>
+                <Select value={bulkStream} onValueChange={setBulkStream}>
+                  <SelectTrigger><SelectValue placeholder="Stream" /></SelectTrigger>
+                  <SelectContent>
+                    {(parseInt(bulkForm) >= 5
+                      ? ["Sciences", "Commercials", "Arts"]
+                      : ["G1", "G2", "G22", "Blue"]
+                    ).map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Gender *</Label>
+                <Select value={bulkGender} onValueChange={setBulkGender}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Boys</SelectItem>
+                    <SelectItem value="female">Girls</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="bulkBeginner" checked={bulkIsBeginner} onCheckedChange={(v) => setBulkIsBeginner(!!v)} />
+              <Label htmlFor="bulkBeginner" className="text-sm font-normal">Mark all as Beginner / New / Transferred</Label>
+            </div>
+            <div className="space-y-2">
+              <Label>Names (one per line) *</Label>
+              <Textarea
+                value={bulkNames}
+                onChange={(e) => setBulkNames(e.target.value)}
+                placeholder={"John Doe\nJane Smith\nPeter Moyo\n..."}
+                rows={10}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                {bulkNames.split(/\r?\n/).filter((l) => l.trim()).length} name(s) detected. Numbering like "1." or "1)" will be stripped automatically. First word = first name, the rest = last name.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)} disabled={bulkSubmitting}>Cancel</Button>
+            <Button onClick={handleBulkClassRegister} disabled={bulkSubmitting} className="gap-2">
+              {bulkSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              Register All
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
