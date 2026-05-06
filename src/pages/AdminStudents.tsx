@@ -655,27 +655,37 @@ const AdminStudents = () => {
                 toast({ title: "No Students", description: "No students to download.", variant: "destructive" });
                 return;
               }
-              const sorted = filtered.slice().sort((a, b) => {
-                const f = (a.form || "").localeCompare(b.form || "");
-                if (f !== 0) return f;
-                const s = (a.stream || "").localeCompare(b.stream || "");
-                if (s !== 0) return s;
-                return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`);
-              });
-              const doc = new jsPDF({ unit: "mm", format: "a4" });
-              doc.setFontSize(14);
-              doc.text("Progress Centre College — Student List", 105, 14, { align: "center" });
-              doc.setFontSize(9);
-              doc.text(`Total: ${sorted.length} · Generated: ${new Date().toLocaleString()}`, 105, 20, { align: "center" });
-              autoTable(doc, {
-                startY: 25,
-                head: [["#", "Reg No.", "Name", "Form", "Stream", "Gender", "Guardian Phone"]],
-                body: sorted.map((s, i) => [i + 1, s.registration_number, `${s.last_name} ${s.first_name}`, s.form || "—", s.stream || "—", s.gender || "—", s.guardian_phone || "—"]),
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [0, 51, 102], textColor: 255 },
-              });
-              doc.save(`student-list-${new Date().toISOString().split("T")[0]}.pdf`);
-              toast({ title: "Downloaded", description: `${sorted.length} student(s) exported.` });
+              // Group students by class (form + stream); generate a separate PDF per class
+              const groups = new Map<string, typeof filtered>();
+              for (const s of filtered) {
+                const key = `Form ${s.form || "—"} ${s.stream || "—"}`;
+                if (!groups.has(key)) groups.set(key, [] as any);
+                (groups.get(key) as any).push(s);
+              }
+              const sortedKeys = Array.from(groups.keys()).sort();
+              const dateStr = new Date().toISOString().split("T")[0];
+              for (const key of sortedKeys) {
+                const list = (groups.get(key) || []).slice().sort((a, b) =>
+                  `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`)
+                );
+                const doc = new jsPDF({ unit: "mm", format: "a4" });
+                doc.setFontSize(14);
+                doc.text("Progress Centre College — Student List", 105, 14, { align: "center" });
+                doc.setFontSize(11);
+                doc.text(`Class: ${key}`, 105, 21, { align: "center" });
+                doc.setFontSize(9);
+                doc.text(`Total: ${list.length} · Generated: ${new Date().toLocaleString()}`, 105, 27, { align: "center" });
+                autoTable(doc, {
+                  startY: 32,
+                  head: [["#", "Reg No.", "Name", "Gender", "Guardian Phone"]],
+                  body: list.map((s, i) => [i + 1, s.registration_number, `${s.last_name} ${s.first_name}`, s.gender || "—", s.guardian_phone || "—"]),
+                  styles: { fontSize: 8 },
+                  headStyles: { fillColor: [0, 51, 102], textColor: 255 },
+                });
+                const safeKey = key.replace(/[^a-z0-9]+/gi, "-");
+                doc.save(`student-list-${safeKey}-${dateStr}.pdf`);
+              }
+              toast({ title: "Downloaded", description: `${sortedKeys.length} class PDF(s) exported.` });
             }}>
               <Download size={16} /> Download PDF
             </Button>
