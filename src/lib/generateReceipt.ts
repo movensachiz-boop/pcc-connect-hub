@@ -113,7 +113,8 @@ export const generateReceipt = async (data: ReceiptData) => {
     body: [
       [`Receipt No.: ${data.receiptNo}`, `Student Name: ${data.studentName}`],
       [`Receipt Date: ${data.date}`, `Reg. Number: ${data.regNo}`],
-      [`Payment Method: ${data.method}`, `Status: PAID`],
+      [`Payment Method: ${data.method}`, `Class: ${data.studentClass || "—"}`],
+      [`Status: PAID`, ``],
     ],
     headStyles: {
       fillColor: [255, 255, 255],
