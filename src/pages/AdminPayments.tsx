@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { formatClass, titleCaseName } from "@/lib/normalize";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -96,9 +97,9 @@ const AdminPayments = () => {
         const prof = profileMap.get(p.student_profile_id);
         return {
           ...p,
-          studentName: prof ? `${prof.first_name} ${prof.last_name}` : "Unknown",
+          studentName: prof ? titleCaseName(`${prof.first_name} ${prof.last_name}`) : "Unknown",
           regNo: prof?.registration_number || "N/A",
-          studentClass: prof?.form ? `${String(prof.form).replace(/^Form\s*/i,"Form ")}${prof.stream ? ` ${prof.stream}` : ""}` : "—",
+          studentClass: formatClass(prof),
         };
       });
       setPayments(enriched);
@@ -311,7 +312,7 @@ const AdminPayments = () => {
             body: {
               type: "payment",
               guardianPhone: student.guardian_phone,
-              studentName: `${student.first_name} ${student.last_name}`,
+              studentName: titleCaseName(`${student.first_name} ${student.last_name}`),
               amount: manualAmount,
               receiptNumber: paymentData?.receipt_number,
               method: manualMethod || "Bank Deposit",
