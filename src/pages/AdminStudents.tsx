@@ -15,6 +15,8 @@ import { generateStudentID, generateBulkStudentIDs } from "@/lib/generateStudent
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
+import PhoneCameraPairDialog from "@/components/PhoneCameraPairDialog";
+import { Smartphone } from "lucide-react";
 
 interface Student {
   id: string;
@@ -64,6 +66,7 @@ const AdminStudents = () => {
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [bulkScanning, setBulkScanning] = useState(false);
   const [bulkCameraOpen, setBulkCameraOpen] = useState(false);
+  const [bulkPhoneOpen, setBulkPhoneOpen] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   const processScannedImage = async (base64: string) => {
@@ -1052,6 +1055,17 @@ const AdminStudents = () => {
                   </Button>
                   <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2"
+                    disabled={bulkScanning}
+                    onClick={() => setBulkPhoneOpen(true)}
+                  >
+                    <Smartphone size={14} />
+                    Use Phone (QR)
+                  </Button>
+                  <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     className="gap-2"
@@ -1098,6 +1112,17 @@ const AdminStudents = () => {
         onCapture={processScannedImage}
         title="Scan Class List"
         description="Hold the device steady over the printed list and capture a clear, well-lit photo."
+      />
+
+      <PhoneCameraPairDialog
+        open={bulkPhoneOpen}
+        onOpenChange={setBulkPhoneOpen}
+        onPhotos={async (photos) => {
+          for (const p of photos) {
+            await processScannedImage(p);
+          }
+        }}
+        title="Scan Class List with Phone"
       />
     </DashboardLayout>
   );

@@ -37,6 +37,7 @@ import AdminAuditTrail from "./pages/AdminAuditTrail";
 import AdminInventory from "./pages/AdminInventory";
 import StudentInventory from "./pages/StudentInventory";
 import StaffGuard from "./components/StaffGuard";
+import PhoneScan from "./pages/PhoneScan";
 
 // Sub-roles
 const DENY_TM_AND_CASHIER: ("cashier" | "timetable_manager")[] = ["cashier", "timetable_manager"];
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
             <Route path="/owner" element={<OwnerDashboard />} />
             <Route path="/verify" element={<VerifyReceipt />} />
+            <Route path="/phone-scan/:sessionId" element={<PhoneScan />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
