@@ -20,7 +20,7 @@ interface Item {
   form_levels: string[]; notes: string | null; is_active: boolean; sort_order: number;
 }
 
-interface Profile { id: string; first_name: string; last_name: string; registration_number: string; }
+interface Profile { id: string; first_name: string; last_name: string; registration_number: string; form: string | null; stream: string | null; }
 interface Sale {
   id: string; receipt_number: string; student_profile_id: string | null;
   total_amount: number; method: string; status: string; items: any; created_at: string;
