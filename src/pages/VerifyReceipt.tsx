@@ -15,7 +15,10 @@ interface VerifyResult {
   currency?: string;
   date?: string;
   studentName?: string;
+  studentClass?: string;
+  regNumber?: string;
   method?: string;
+  status?: string;
 }
 
 const VerifyReceipt = () => {
