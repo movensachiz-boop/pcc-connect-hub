@@ -296,7 +296,7 @@ const AdminPayments = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       // Send SMS notification to guardian
-      const student = students.find(s => s.id === selectedStudentId);
+      const student = students.find(s => s.id === studentId);
       if (student?.guardian_phone) {
         try {
           await supabase.functions.invoke("send-notification", {
@@ -313,12 +313,16 @@ const AdminPayments = () => {
           // Payment saved, notification failed silently
         }
       }
-      toast({ title: "Payment Recorded", description: "Payment saved with deposit slip attached." });
+      toast({ title: "Payment Recorded", description: "Payment saved successfully." });
       setConfirmDialogOpen(false);
       setScannedData(null);
       setSlipFile(null);
       setPatternWarnings([]);
       setSelectedStudentId("");
+      setNewFirstName("");
+      setNewLastName("");
+      setNewForm("");
+      setNewGender("male");
       setManualAmount("");
       setManualMethod("");
       setManualRef("");
