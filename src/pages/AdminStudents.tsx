@@ -52,6 +52,15 @@ const AdminStudents = () => {
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  // Bulk class entry state
+  const [bulkForm, setBulkForm] = useState("");
+  const [bulkStream, setBulkStream] = useState("");
+  const [bulkGender, setBulkGender] = useState("male");
+  const [bulkIsBeginner, setBulkIsBeginner] = useState(true);
+  const [bulkNames, setBulkNames] = useState("");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
