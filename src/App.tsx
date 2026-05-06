@@ -73,6 +73,7 @@ const App = () => (
             <Route path="/admin/timetable/master" element={<AdminMasterTimetable />} />
             <Route path="/admin/roster" element={<StaffGuard deny={DENY_TM}><AdminClassRoster /></StaffGuard>} />
             <Route path="/admin/fees" element={<StaffGuard deny={DENY_TM}><AdminFees /></StaffGuard>} />
+            <Route path="/admin/audit" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminAuditTrail /></StaffGuard>} />
             <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
             <Route path="/teacher/roster" element={<TeacherClassRoster />} />
