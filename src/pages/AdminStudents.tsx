@@ -1027,7 +1027,28 @@ const AdminStudents = () => {
               <Label htmlFor="bulkBeginner" className="text-sm font-normal">Mark all as Beginner / New / Transferred</Label>
             </div>
             <div className="space-y-2">
-              <Label>Names (one per line) *</Label>
+              <div className="flex items-center justify-between">
+                <Label>Names (one per line) *</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={bulkScanning}
+                  onClick={() => bulkFileInputRef.current?.click()}
+                >
+                  {bulkScanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                  Scan from picture
+                </Button>
+                <input
+                  ref={bulkFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleBulkScanFromPicture}
+                />
+              </div>
               <Textarea
                 value={bulkNames}
                 onChange={(e) => setBulkNames(e.target.value)}
@@ -1036,7 +1057,7 @@ const AdminStudents = () => {
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                {bulkNames.split(/\r?\n/).filter((l) => l.trim()).length} name(s) detected. Numbering like "1." or "1)" will be stripped automatically. First word = first name, the rest = last name.
+                {bulkNames.split(/\r?\n/).filter((l) => l.trim()).length} name(s) detected. Use "Scan from picture" to auto-fill from a photo of the class list. Numbering like "1." or "1)" is stripped. First word = first name, rest = last name.
               </p>
             </div>
           </div>
