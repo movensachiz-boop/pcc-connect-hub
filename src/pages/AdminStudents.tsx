@@ -56,6 +56,11 @@ const AdminStudents = () => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editStudent, setEditStudent] = useState<Student | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
 
