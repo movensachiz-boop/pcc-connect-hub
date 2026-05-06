@@ -43,6 +43,7 @@ const studentLinks = [
   { label: "Courses", icon: BookOpen, path: "/student/courses" },
   { label: "Announcements", icon: Bell, path: "/student/announcements" },
   { label: "Fees & Requirements", icon: FileText, path: "/student/requirements" },
+  { label: "School Shop", icon: ShoppingBag, path: "/student/shop" },
 ];
 
 const teacherLinks = [
