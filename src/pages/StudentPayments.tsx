@@ -64,7 +64,7 @@ const StudentPayments = () => {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, registration_number, balance")
+      .select("id, first_name, last_name, registration_number, balance, form, stream")
       .eq("user_id", user.id)
       .maybeSingle();
     if (profileData) setProfile(profileData);
