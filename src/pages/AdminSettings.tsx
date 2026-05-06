@@ -118,6 +118,60 @@ const AdminSettings = () => {
           </CardContent>
         </Card>
 
+        <Card className="shadow-card max-w-lg border-l-4 border-l-primary">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <UserPlus size={18} className="text-primary" />
+              Create Staff Account
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Staff sign in by typing their full name (e.g. "Mavunga Mitchell") and password — no email needed.
+              Choose the role to control which pages they can access.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateStaff} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="staffName">Full Name</Label>
+                <Input
+                  id="staffName"
+                  value={staffName}
+                  onChange={(e) => setStaffName(e.target.value)}
+                  placeholder="e.g. Mavunga Mitchell"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="staffRole">Role</Label>
+                <Select value={staffRole} onValueChange={setStaffRole}>
+                  <SelectTrigger id="staffRole"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STAFF_ROLES.map(r => (
+                      <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="staffPassword">Password</Label>
+                <Input
+                  id="staffPassword"
+                  type="text"
+                  value={staffPassword}
+                  onChange={(e) => setStaffPassword(e.target.value)}
+                  placeholder="e.g. final"
+                  minLength={4}
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={creatingStaff} className="gap-2">
+                {creatingStaff && <Loader2 size={16} className="animate-spin" />}
+                Create Staff Account
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
         <Card className="shadow-card max-w-lg border-l-4 border-l-accent">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
