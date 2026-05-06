@@ -225,8 +225,8 @@ export default function AdminClasses() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Stream / Class Name</label>
-                  <Input placeholder="e.g. Grey, Blue, G1..." value={editing.stream} onChange={e => setEditing(prev => prev ? { ...prev, stream: e.target.value } : prev)} disabled={!!editing.id} className="h-9" />
-                  {!editing.id && <p className="text-[10px] text-muted-foreground mt-1">Class ID: <span className="font-mono font-semibold">{editing.form}{editing.stream.trim() || '...'}</span></p>}
+                  <Input placeholder="e.g. Grey, Blue, G1..." value={editing.stream} onChange={e => setEditing(prev => prev ? { ...prev, stream: e.target.value } : prev)} className="h-9" />
+                  <p className="text-[10px] text-muted-foreground mt-1">Class ID: <span className="font-mono font-semibold">{editing.form}{editing.stream.trim() || '...'}</span></p>
                 </div>
                 {editing.form >= 5 && (
                   <div>
