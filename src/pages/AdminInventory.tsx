@@ -96,9 +96,6 @@ export default function AdminInventory() {
   const completeSale = async () => {
     if (!saleStudent) return toast.error("Select a student");
     if (cartItems.length === 0) return toast.error("Cart is empty");
-    for (const c of cartItems) {
-      if (c.qty > c.stock) return toast.error(`Not enough stock for ${c.name} (only ${c.stock} left)`);
-    }
     const itemsJson = cartItems.map(c => ({ item_id: c.id, name: c.name, quantity: c.qty, unit_price: c.price, subtotal: c.subtotal }));
     const { data, error } = await supabase.from("inventory_sales").insert({
       student_profile_id: saleStudent,
