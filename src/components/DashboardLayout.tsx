@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { logActivity } from "@/lib/activityLog";
 import {
   LayoutDashboard, Users, Receipt, Bell, FileText, Settings,
   LogOut, Menu, X, BookOpen, CalendarDays, ChevronRight, GraduationCap, School, Calendar, ClipboardList, HelpCircle, ShieldCheck, Package, ShoppingBag
@@ -139,7 +141,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg"
-            onClick={() => navigate("/")}
+            onClick={async () => {
+              await logActivity("logout");
+              await supabase.auth.signOut();
+              navigate("/");
+            }}
           >
             <LogOut size={18} />
             Sign Out

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Eye, EyeOff, LogIn, Loader2, GraduationCap, Shield, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { logActivity } from "@/lib/activityLog";
 import pccLogo from "@/assets/pcc-logo.png";
 
 const Login = () => {
@@ -58,12 +59,14 @@ const Login = () => {
           }
         } catch {}
         setError(errorMsg);
+        await logActivity("login_failed", { identifier, mode, reason: errorMsg });
         setLoading(false);
         return;
       }
 
       if (data?.error) {
         setError(data.error);
+        await logActivity("login_failed", { identifier, mode, reason: data.error });
         setLoading(false);
         return;
       }
@@ -74,6 +77,8 @@ const Login = () => {
           refresh_token: data.session.refresh_token,
         });
       }
+
+      await logActivity("login", { identifier, mode, role: data.role });
 
       if (data.role === "cashier") navigate("/admin/students");
       else if (data.role === "timetable_manager") navigate("/admin/timetable");
