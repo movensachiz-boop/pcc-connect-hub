@@ -49,7 +49,55 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    const { registrationNumber, password } = await req.json();
+    const body = await req.json();
+
+    // Public action: list staff names so the Admin login dropdown can be populated
+    if (body?.action === "list_staff") {
+      const adminClient = createClient(supabaseUrl, serviceRoleKey);
+      const { data: roleRows } = await adminClient
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "cashier", "timetable_manager"]);
+      const userIds = Array.from(new Set((roleRows || []).map((r: any) => r.user_id)));
+      const rolesByUser = new Map<string, string[]>();
+      for (const r of (roleRows || [])) {
+        const arr = rolesByUser.get(r.user_id) || [];
+        arr.push(r.role);
+        rolesByUser.set(r.user_id, arr);
+      }
+      const staff: { name: string; role: string }[] = [];
+      // Page through admin.listUsers
+      let page = 1;
+      while (true) {
+        const { data: list, error: lerr } = await adminClient.auth.admin.listUsers({ page, perPage: 200 });
+        if (lerr) break;
+        for (const u of list.users) {
+          if (!userIds.includes(u.id)) continue;
+          const meta: any = u.user_metadata || {};
+          const name = meta.full_name || (u.email || "").split("@")[0];
+          if (!name) continue;
+          const userRoles = rolesByUser.get(u.id) || [];
+          const sub = userRoles.find(r => r === "cashier" || r === "timetable_manager") || "admin";
+          staff.push({ name, role: sub });
+        }
+        if (list.users.length < 200) break;
+        page++;
+        if (page > 20) break;
+      }
+      // Sort alphabetically and dedupe
+      const seen = new Set<string>();
+      const unique = staff.filter(s => {
+        const k = s.name.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).sort((a, b) => a.name.localeCompare(b.name));
+      return new Response(JSON.stringify({ staff: unique }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { registrationNumber, password } = body;
 
     if (!registrationNumber || !password || typeof registrationNumber !== "string" || typeof password !== "string") {
       return new Response(JSON.stringify({ error: "Registration number and password required" }), {
