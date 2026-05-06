@@ -310,7 +310,15 @@ export default function AdminInventory() {
           </div>
 
           <div className="mt-4">
-            <h4 className="font-semibold mb-2">Items</h4>
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <h4 className="font-semibold">Items</h4>
+              <Input
+                placeholder="Search items by name or category..."
+                value={itemSearch}
+                onChange={e => setItemSearch(e.target.value)}
+                className="h-8 max-w-xs"
+              />
+            </div>
             <div className="border rounded-lg max-h-72 overflow-y-auto">
               <Table>
                 <TableHeader>
@@ -322,14 +330,28 @@ export default function AdminInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.filter(i => i.is_active).map(i => (
-                    <TableRow key={i.id}>
-                      <TableCell className="text-sm">{i.name} <Badge variant="outline" className="ml-1 text-xs capitalize">{i.category}</Badge></TableCell>
-                      <TableCell>US${Number(i.price).toFixed(2)}</TableCell>
-                      <TableCell>{i.stock_quantity}</TableCell>
-                      <TableCell><Input type="number" min={0} value={cart[i.id] || 0} onChange={e => setQty(i.id, Number(e.target.value))} className="h-8" /></TableCell>
-                    </TableRow>
-                  ))}
+                  {(() => {
+                    const q = itemSearch.trim().toLowerCase();
+                    const filtered = items.filter(i =>
+                      i.is_active && (
+                        !q ||
+                        i.name.toLowerCase().includes(q) ||
+                        i.category.toLowerCase().includes(q) ||
+                        (i.notes || "").toLowerCase().includes(q)
+                      )
+                    );
+                    if (filtered.length === 0) return (
+                      <TableRow><TableCell colSpan={4} className="text-center py-4 text-muted-foreground text-sm">No items match "{itemSearch}"</TableCell></TableRow>
+                    );
+                    return filtered.map(i => (
+                      <TableRow key={i.id}>
+                        <TableCell className="text-sm">{i.name} <Badge variant="outline" className="ml-1 text-xs capitalize">{i.category}</Badge></TableCell>
+                        <TableCell>US${Number(i.price).toFixed(2)}</TableCell>
+                        <TableCell>{i.stock_quantity}</TableCell>
+                        <TableCell><Input type="number" min={0} value={cart[i.id] || 0} onChange={e => setQty(i.id, Number(e.target.value))} className="h-8" /></TableCell>
+                      </TableRow>
+                    ));
+                  })()}
                 </TableBody>
               </Table>
             </div>
