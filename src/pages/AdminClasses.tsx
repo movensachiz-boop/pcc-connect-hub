@@ -138,7 +138,7 @@ export default function AdminClasses() {
 
   const handleSave = () => {
     if (!editing || !editing.stream.trim()) { toast.error('Stream name is required'); return; }
-    const classId = editing.id || `${editing.form}${editing.stream.trim()}`;
+    const classId = `${editing.form}${editing.stream.trim()}`;
     if (classes.some(c => c.id === classId && c.id !== editing.id)) { toast.error(`Class ${classId} already exists`); return; }
     const updated: SchoolClass = { id: classId, form: editing.form, stream: editing.stream.trim(), learningArea: editing.form >= 5 ? editing.learningArea : undefined, subjectIds: editing.subjectIds };
     if (editing.id) { setClasses(classes.map(c => c.id === editing.id ? updated : c)); toast.success('Class updated'); }
@@ -225,8 +225,8 @@ export default function AdminClasses() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Stream / Class Name</label>
-                  <Input placeholder="e.g. Grey, Blue, G1..." value={editing.stream} onChange={e => setEditing(prev => prev ? { ...prev, stream: e.target.value } : prev)} disabled={!!editing.id} className="h-9" />
-                  {!editing.id && <p className="text-[10px] text-muted-foreground mt-1">Class ID: <span className="font-mono font-semibold">{editing.form}{editing.stream.trim() || '...'}</span></p>}
+                  <Input placeholder="e.g. Grey, Blue, G1..." value={editing.stream} onChange={e => setEditing(prev => prev ? { ...prev, stream: e.target.value } : prev)} className="h-9" />
+                  <p className="text-[10px] text-muted-foreground mt-1">Class ID: <span className="font-mono font-semibold">{editing.form}{editing.stream.trim() || '...'}</span></p>
                 </div>
                 {editing.form >= 5 && (
                   <div>
