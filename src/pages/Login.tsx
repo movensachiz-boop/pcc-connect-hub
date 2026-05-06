@@ -111,7 +111,7 @@ const Login = () => {
           <CardContent className="px-8 pb-8">
             <form onSubmit={handleLogin} className="space-y-5 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="regNumber" className="text-sm font-medium">Registration Number or Email</Label>
+                <Label htmlFor="regNumber" className="text-sm font-medium">Registration Number, Name, or Email</Label>
                 <Input
                   id="regNumber"
                   placeholder="e.g. K0023T or owner@school.com"
