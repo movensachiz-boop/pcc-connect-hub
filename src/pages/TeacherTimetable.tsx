@@ -94,17 +94,24 @@ export default function TeacherTimetable() {
             <h2 className="text-2xl font-bold text-foreground">My Timetable</h2>
             <p className="text-sm text-muted-foreground">View your weekly lesson schedule</p>
           </div>
-          {teachers.length > 1 && (
-            <Select value={teacherId || ""} onValueChange={setTeacherId}>
-              <SelectTrigger className="w-48"><SelectValue placeholder="Select teacher" /></SelectTrigger>
-              <SelectContent>
-                {teachers.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {selectedTeacher && (
+            <Badge variant="secondary" className="text-sm py-1.5 px-3">
+              {selectedTeacher.name}
+            </Badge>
           )}
         </div>
+
+        {unmatched && (
+          <Card className="border-l-4 border-l-destructive">
+            <CardContent className="py-4 text-sm">
+              <p className="font-semibold mb-1">No teacher record matched your account.</p>
+              <p className="text-muted-foreground">
+                Ask the admin to add you in <em>Teachers</em> using a name that matches your login name
+                (e.g. login <code>jane.doe</code> → teacher "Jane Doe").
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Summary */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
