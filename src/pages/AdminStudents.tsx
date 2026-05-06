@@ -952,6 +952,35 @@ const AdminStudents = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Student Name Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { if (!editSaving) setEditOpen(v); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Student Name</DialogTitle>
+            <DialogDescription>
+              {editStudent ? `Reg No: ${editStudent.registration_number}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>First Name *</Label>
+              <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Last Name *</Label>
+              <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={editSaving}>Cancel</Button>
+            <Button onClick={handleSaveEditStudent} disabled={editSaving}>
+              {editSaving ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Reset Password Dialog */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
         <DialogContent className="sm:max-w-md">
