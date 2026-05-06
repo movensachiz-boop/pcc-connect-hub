@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, DollarSign, AlertTriangle, TrendingUp } from "lucide-react";
+import { Users, DollarSign, AlertTriangle, TrendingUp, ShoppingBag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,6 +26,7 @@ const AdminDashboard = () => {
   const [totalStudents, setTotalStudents] = useState(0);
   const [feesCollected, setFeesCollected] = useState(0);
   const [outstanding, setOutstanding] = useState(0);
+  const [inventoryRevenue, setInventoryRevenue] = useState(0);
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
@@ -51,6 +52,14 @@ const AdminDashboard = () => {
       const totalOutstanding = Math.max(totalFees - totalPaid, 0);
       setFeesCollected(totalPaid);
       setOutstanding(totalOutstanding);
+
+      // Inventory sales (separate from fees)
+      const { data: invSales } = await supabase
+        .from("inventory_sales")
+        .select("total_amount, status")
+        .in("status", ["paid", "completed", "confirmed"]);
+      const invTotal = (invSales || []).reduce((s, r) => s + Number(r.total_amount || 0), 0);
+      setInventoryRevenue(invTotal);
 
       // Bar data per form
       const { data: profiles } = await supabase
@@ -146,9 +155,10 @@ const AdminDashboard = () => {
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               <StatCard title="Total Students" value={totalStudents.toLocaleString()} subtitle="Registered" icon={Users} variant="primary" />
-              <StatCard title="Fees Collected" value={`$${feesCollected.toLocaleString()}`} subtitle="All terms" icon={DollarSign} variant="success" />
+              <StatCard title="Fees Collected" value={`$${feesCollected.toLocaleString()}`} subtitle="School fees only" icon={DollarSign} variant="success" />
+              <StatCard title="Inventory Sales" value={`$${inventoryRevenue.toLocaleString()}`} subtitle="Shop revenue" icon={ShoppingBag} variant="accent" />
               <StatCard title="Outstanding" value={`$${outstanding.toLocaleString()}`} subtitle={totalStudents > 0 ? `${Math.round((outstanding / (feesCollected + outstanding || 1)) * 100)}% of total` : "—"} icon={AlertTriangle} variant="warning" />
               <StatCard title="Collection Rate" value={`${collectionRate}%`} subtitle="Based on fee requirements" icon={TrendingUp} variant="accent" />
             </div>
