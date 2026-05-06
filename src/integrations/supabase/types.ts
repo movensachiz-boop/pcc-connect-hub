@@ -215,6 +215,128 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_items: {
+        Row: {
+          category: string
+          created_at: string
+          currency: string
+          fee_requirement_id: string | null
+          form_levels: string[]
+          gender: string
+          id: string
+          is_active: boolean
+          low_stock_threshold: number
+          name: string
+          notes: string | null
+          price: number
+          sort_order: number
+          stock_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          currency?: string
+          fee_requirement_id?: string | null
+          form_levels?: string[]
+          gender?: string
+          id?: string
+          is_active?: boolean
+          low_stock_threshold?: number
+          name: string
+          notes?: string | null
+          price?: number
+          sort_order?: number
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          currency?: string
+          fee_requirement_id?: string | null
+          form_levels?: string[]
+          gender?: string
+          id?: string
+          is_active?: boolean
+          low_stock_threshold?: number
+          name?: string
+          notes?: string | null
+          price?: number
+          sort_order?: number
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_fee_requirement_id_fkey"
+            columns: ["fee_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "fee_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_sales: {
+        Row: {
+          cashier_user_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          items: Json
+          method: string
+          notes: string | null
+          receipt_number: string | null
+          status: string
+          student_profile_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          cashier_user_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          items?: Json
+          method?: string
+          notes?: string | null
+          receipt_number?: string | null
+          status?: string
+          student_profile_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          cashier_user_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          items?: Json
+          method?: string
+          notes?: string | null
+          receipt_number?: string | null
+          status?: string
+          student_profile_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sales_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_sales_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "student_roster"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_audit_log: {
         Row: {
           action: string

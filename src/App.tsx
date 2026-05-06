@@ -34,6 +34,8 @@ import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import AdminAuditTrail from "./pages/AdminAuditTrail";
+import AdminInventory from "./pages/AdminInventory";
+import StudentInventory from "./pages/StudentInventory";
 import StaffGuard from "./components/StaffGuard";
 
 // Sub-roles
@@ -59,6 +61,7 @@ const App = () => (
             <Route path="/student/courses" element={<StudentCourses />} />
             <Route path="/student/announcements" element={<AnnouncementsPage role="student" />} />
             <Route path="/student/requirements" element={<StudentRequirements />} />
+            <Route path="/student/shop" element={<StudentInventory />} />
             <Route path="/admin" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminDashboard /></StaffGuard>} />
             <Route path="/admin/students" element={<StaffGuard deny={DENY_TM}><AdminStudents /></StaffGuard>} />
             <Route path="/admin/payments" element={<StaffGuard deny={DENY_TM}><AdminPayments /></StaffGuard>} />
@@ -73,6 +76,7 @@ const App = () => (
             <Route path="/admin/timetable/master" element={<AdminMasterTimetable />} />
             <Route path="/admin/roster" element={<StaffGuard deny={DENY_TM}><AdminClassRoster /></StaffGuard>} />
             <Route path="/admin/fees" element={<StaffGuard deny={DENY_TM}><AdminFees /></StaffGuard>} />
+            <Route path="/admin/inventory" element={<StaffGuard deny={DENY_TM}><AdminInventory /></StaffGuard>} />
             <Route path="/admin/audit" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminAuditTrail /></StaffGuard>} />
             <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />

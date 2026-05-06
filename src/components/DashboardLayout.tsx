@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, Receipt, Bell, FileText, Settings,
-  LogOut, Menu, X, BookOpen, CalendarDays, ChevronRight, GraduationCap, School, Calendar, ClipboardList, HelpCircle, ShieldCheck
+  LogOut, Menu, X, BookOpen, CalendarDays, ChevronRight, GraduationCap, School, Calendar, ClipboardList, HelpCircle, ShieldCheck, Package, ShoppingBag
 } from "lucide-react";
 import pccLogo from "@/assets/pcc-logo.png";
 
@@ -32,6 +32,7 @@ const adminLinks = [
   { label: "Audit Trail", icon: ShieldCheck, path: "/admin/audit" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
   { label: "Fees & Requirements", icon: Receipt, path: "/admin/fees" },
+  { label: "Inventory", icon: Package, path: "/admin/inventory" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
@@ -42,6 +43,7 @@ const studentLinks = [
   { label: "Courses", icon: BookOpen, path: "/student/courses" },
   { label: "Announcements", icon: Bell, path: "/student/announcements" },
   { label: "Fees & Requirements", icon: FileText, path: "/student/requirements" },
+  { label: "School Shop", icon: ShoppingBag, path: "/student/shop" },
 ];
 
 const teacherLinks = [
