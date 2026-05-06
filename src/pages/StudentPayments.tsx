@@ -32,6 +32,8 @@ interface Profile {
   last_name: string;
   registration_number: string;
   balance: number;
+  form?: string | null;
+  stream?: string | null;
 }
 
 const StudentPayments = () => {
@@ -62,7 +64,7 @@ const StudentPayments = () => {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, registration_number, balance")
+      .select("id, first_name, last_name, registration_number, balance, form, stream")
       .eq("user_id", user.id)
       .maybeSingle();
     if (profileData) setProfile(profileData);
@@ -144,6 +146,7 @@ const StudentPayments = () => {
       receiptNo: p.receipt_number || p.id.slice(0, 8),
       studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
       regNo: profile?.registration_number || "N/A",
+      studentClass: profile?.form ? `Form ${profile.form}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,
@@ -158,6 +161,7 @@ const StudentPayments = () => {
       receiptNo: p.receipt_number || p.id.slice(0, 8),
       studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
       regNo: profile?.registration_number || "N/A",
+      studentClass: profile?.form ? `Form ${profile.form}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,
@@ -172,6 +176,7 @@ const StudentPayments = () => {
       receiptNo: p.receipt_number || p.id.slice(0, 8),
       studentName: profile ? `${profile.first_name} ${profile.last_name}` : "Student",
       regNo: profile?.registration_number || "N/A",
+      studentClass: profile?.form ? `Form ${profile.form}${profile.stream ? ` ${profile.stream}` : ""}` : "—",
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount.toFixed(2)}`,
       method: p.method,

@@ -30,6 +30,7 @@ interface PaymentRow {
   verification_hash: string | null;
   studentName?: string;
   regNo?: string;
+  studentClass?: string;
 }
 
 interface StudentProfile {
@@ -87,7 +88,7 @@ const AdminPayments = () => {
       const profileIds = [...new Set(paymentData.map(p => p.student_profile_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, registration_number")
+        .select("id, first_name, last_name, registration_number, form, stream")
         .in("id", profileIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -97,6 +98,7 @@ const AdminPayments = () => {
           ...p,
           studentName: prof ? `${prof.first_name} ${prof.last_name}` : "Unknown",
           regNo: prof?.registration_number || "N/A",
+          studentClass: prof?.form ? `Form ${prof.form}${prof.stream ? ` ${prof.stream}` : ""}` : "—",
         };
       });
       setPayments(enriched);
@@ -109,6 +111,7 @@ const AdminPayments = () => {
       receiptNo: p.receipt_number || p.id.slice(0, 12),
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
+      studentClass: p.studentClass,
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
@@ -123,6 +126,7 @@ const AdminPayments = () => {
       receiptNo: p.receipt_number || p.id.slice(0, 12),
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
+      studentClass: p.studentClass,
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
@@ -137,6 +141,7 @@ const AdminPayments = () => {
       receiptNo: p.receipt_number || p.id.slice(0, 12),
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
+      studentClass: p.studentClass,
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,
@@ -150,6 +155,7 @@ const AdminPayments = () => {
       receiptNo: p.receipt_number || p.id.slice(0, 12),
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
+      studentClass: p.studentClass,
       date: new Date(p.created_at).toLocaleDateString(),
       amount: `$${p.amount}`,
       method: p.method,

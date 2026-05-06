@@ -6,6 +6,7 @@ interface ReceiptData {
   receiptNo: string;
   studentName: string;
   regNo: string;
+  studentClass?: string;
   date: string;
   amount: string;
   method: string;
@@ -112,7 +113,8 @@ export const generateReceipt = async (data: ReceiptData) => {
     body: [
       [`Receipt No.: ${data.receiptNo}`, `Student Name: ${data.studentName}`],
       [`Receipt Date: ${data.date}`, `Reg. Number: ${data.regNo}`],
-      [`Payment Method: ${data.method}`, `Status: PAID`],
+      [`Payment Method: ${data.method}`, `Class: ${data.studentClass || "—"}`],
+      [`Status: PAID`, ``],
     ],
     headStyles: {
       fillColor: [255, 255, 255],
@@ -364,6 +366,7 @@ const renderThermalReceipt = async (doc: jsPDF, data: ReceiptData, logo: HTMLIma
   row("Date:", data.date);
   row("Student:", data.studentName);
   row("Reg No:", data.regNo);
+  row("Class:", data.studentClass || "—");
   row("Method:", data.method);
   row("Status:", "PAID");
   row("Desc:", data.description || "Tuition Fee");
