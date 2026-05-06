@@ -15,6 +15,8 @@ import { generateStudentID, generateBulkStudentIDs } from "@/lib/generateStudent
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
+import PhoneCameraPairDialog from "@/components/PhoneCameraPairDialog";
+import { Smartphone } from "lucide-react";
 
 interface Student {
   id: string;
@@ -64,6 +66,7 @@ const AdminStudents = () => {
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [bulkScanning, setBulkScanning] = useState(false);
   const [bulkCameraOpen, setBulkCameraOpen] = useState(false);
+  const [bulkPhoneOpen, setBulkPhoneOpen] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   const processScannedImage = async (base64: string) => {
@@ -1049,6 +1052,17 @@ const AdminStudents = () => {
                   >
                     {bulkScanning ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
                     Use Camera
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2"
+                    disabled={bulkScanning}
+                    onClick={() => setBulkPhoneOpen(true)}
+                  >
+                    <Smartphone size={14} />
+                    Use Phone (QR)
                   </Button>
                   <Button
                     type="button"
