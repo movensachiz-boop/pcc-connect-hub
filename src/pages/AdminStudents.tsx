@@ -609,6 +609,58 @@ const AdminStudents = () => {
             }}>
               <Printer size={16} /> Print List
             </Button>
+            <Button variant="outline" className="gap-2" onClick={() => {
+              if (filtered.length === 0) {
+                toast({ title: "No Students", description: "No students to download.", variant: "destructive" });
+                return;
+              }
+              const sorted = filtered.slice().sort((a, b) => {
+                const f = (a.form || "").localeCompare(b.form || "");
+                if (f !== 0) return f;
+                const s = (a.stream || "").localeCompare(b.stream || "");
+                if (s !== 0) return s;
+                return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`);
+              });
+              const doc = new jsPDF({ unit: "mm", format: "a4" });
+              doc.setFontSize(14);
+              doc.text("Progress Centre College — Student List", 105, 14, { align: "center" });
+              doc.setFontSize(9);
+              doc.text(`Total: ${sorted.length} · Generated: ${new Date().toLocaleString()}`, 105, 20, { align: "center" });
+              autoTable(doc, {
+                startY: 25,
+                head: [["#", "Reg No.", "Name", "Form", "Stream", "Gender", "Guardian Phone"]],
+                body: sorted.map((s, i) => [i + 1, s.registration_number, `${s.last_name} ${s.first_name}`, s.form || "—", s.stream || "—", s.gender || "—", s.guardian_phone || "—"]),
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [0, 51, 102], textColor: 255 },
+              });
+              doc.save(`student-list-${new Date().toISOString().split("T")[0]}.pdf`);
+              toast({ title: "Downloaded", description: `${sorted.length} student(s) exported.` });
+            }}>
+              <Download size={16} /> Download PDF
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => {
+              if (filtered.length === 0) {
+                toast({ title: "No Students", description: "No students to download.", variant: "destructive" });
+                return;
+              }
+              const sorted = filtered.slice().sort((a, b) =>
+                `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`)
+              );
+              const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+              const header = ["#", "Reg No.", "First Name", "Last Name", "Form", "Stream", "Gender", "Guardian Name", "Guardian Phone"];
+              const csv = [header.join(",")]
+                .concat(sorted.map((s, i) => [i + 1, s.registration_number, s.first_name, s.last_name, s.form || "", s.stream || "", s.gender || "", s.guardian_name || "", s.guardian_phone || ""].map(esc).join(",")))
+                .join("\n");
+              const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `student-list-${new Date().toISOString().split("T")[0]}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}>
+              <Download size={16} /> CSV
+            </Button>
             <Button className="gap-2" onClick={() => setOpen(true)}>
               <UserPlus size={16} /> Register Student
             </Button>
