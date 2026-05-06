@@ -67,7 +67,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   if (role === "admin") {
     if (actualRole === "cashier") {
       // Hide Dashboard + Settings; allow everything else
-      links = adminLinks.filter(l => l.path !== "/admin" && l.path !== "/admin/settings");
+      links = adminLinks.filter(l => l.path !== "/admin" && l.path !== "/admin/settings" && l.path !== "/admin/audit");
     } else if (actualRole === "timetable_manager") {
       const allowed = ["/admin/timetable", "/admin/timetable/master", "/admin/subjects", "/admin/teachers", "/admin/classes"];
       links = adminLinks.filter(l => allowed.includes(l.path));
