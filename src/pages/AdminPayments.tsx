@@ -237,6 +237,7 @@ const AdminPayments = () => {
             firstName: newFirstName.trim(),
             lastName: newLastName.trim(),
             form: newForm || null,
+            stream: newStream || null,
             gender: newGender,
           },
         });
@@ -323,6 +324,7 @@ const AdminPayments = () => {
       setNewFirstName("");
       setNewLastName("");
       setNewForm("");
+      setNewStream("");
       setNewGender("male");
       setManualAmount("");
       setManualMethod("");
@@ -345,6 +347,7 @@ const AdminPayments = () => {
           firstName: newFirstName.trim(),
           lastName: newLastName.trim(),
           form: newForm || null,
+          stream: newStream || null,
           gender: newGender,
         },
       });
@@ -371,6 +374,7 @@ const AdminPayments = () => {
       setNewFirstName("");
       setNewLastName("");
       setNewForm("");
+      setNewStream("");
       setNewGender("male");
     } catch (err: any) {
       toast({ title: "Registration Failed", description: err.message, variant: "destructive" });
