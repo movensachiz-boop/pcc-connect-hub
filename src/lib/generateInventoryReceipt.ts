@@ -13,6 +13,7 @@ export interface InventoryReceiptData {
   receiptNo: string;
   studentName: string;
   regNo: string;
+  studentClass?: string;
   date: string;
   method: string;
   items: InventoryReceiptItem[];
