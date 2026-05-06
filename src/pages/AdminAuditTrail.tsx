@@ -188,10 +188,20 @@ const AdminAuditTrail = () => {
               <p className="text-sm text-muted-foreground">
                 Immutable record of every payment created, edited, voided or refunded — including who, when, and what changed.
               </p>
-            </div>
-            <Button onClick={exportCsv} variant="outline" className="gap-2">
-              <Download size={16} /> Export CSV
-            </Button>
+          </div>
+
+          <Tabs defaultValue="finance">
+            <TabsList>
+              <TabsTrigger value="finance" className="gap-2"><ShieldCheck size={14} /> Finance</TabsTrigger>
+              <TabsTrigger value="activity" className="gap-2"><Activity size={14} /> Activity (Login/Logout)</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="finance">
+              <div className="flex justify-end mb-3">
+                <Button onClick={exportCsv} variant="outline" size="sm" className="gap-2">
+                  <Download size={14} /> Export CSV
+                </Button>
+              </div>
           </div>
 
           <Card className="shadow-card">
