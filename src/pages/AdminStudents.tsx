@@ -762,7 +762,14 @@ const AdminStudents = () => {
                   {filtered.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">{s.registration_number}</TableCell>
-                      <TableCell>{s.first_name} {s.last_name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span>{s.first_name} {s.last_name}</span>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditStudent(s)} title="Edit name">
+                            <Pencil size={12} />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{s.form || "—"}</TableCell>
                       <TableCell>{s.stream || "—"}</TableCell>
                       <TableCell>
