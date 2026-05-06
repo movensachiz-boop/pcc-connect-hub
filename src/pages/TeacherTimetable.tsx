@@ -19,22 +19,32 @@ const slotColor = (type: string) => {
 export default function TeacherTimetable() {
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [unmatched, setUnmatched] = useState(false);
   const { timetable, teachers, subjects, classes, config } = useTimetable();
 
-  // Try to match logged-in user to a teacher record
+  // Match logged-in user to a teacher record by email/full_name slug
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && teachers.length > 0) {
-        // Match by email prefix or name — fallback to first teacher for demo
-        const email = user.email || "";
-        const match = teachers.find(t =>
-          email.toLowerCase().includes(t.name.split(" ")[0].toLowerCase())
-        );
-        setTeacherId(match?.id || teachers[0]?.id || null);
-      } else if (teachers.length > 0) {
-        setTeacherId(teachers[0].id);
-      }
+      if (!user) { setLoading(false); setUnmatched(true); return; }
+      if (teachers.length === 0) { setLoading(false); return; }
+
+      const email = (user.email || "").toLowerCase();
+      const metaName = String((user.user_metadata as any)?.full_name || "").toLowerCase();
+      const localPart = email.split("@")[0] || "";
+      const nameParts = (metaName || localPart)
+        .replace(/[._-]+/g, " ")
+        .split(/\s+/)
+        .filter(Boolean);
+
+      const match = teachers.find(t => {
+        const tParts = t.name.toLowerCase().split(/\s+/);
+        if (nameParts.length === 0) return false;
+        return nameParts.every(p => tParts.some(tp => tp === p || tp.startsWith(p) || p.startsWith(tp)));
+      });
+
+      if (match) setTeacherId(match.id);
+      else setUnmatched(true);
       setLoading(false);
     })();
   }, [teachers]);
