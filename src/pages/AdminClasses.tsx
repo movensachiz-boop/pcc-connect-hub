@@ -138,7 +138,7 @@ export default function AdminClasses() {
 
   const handleSave = () => {
     if (!editing || !editing.stream.trim()) { toast.error('Stream name is required'); return; }
-    const classId = editing.id || `${editing.form}${editing.stream.trim()}`;
+    const classId = `${editing.form}${editing.stream.trim()}`;
     if (classes.some(c => c.id === classId && c.id !== editing.id)) { toast.error(`Class ${classId} already exists`); return; }
     const updated: SchoolClass = { id: classId, form: editing.form, stream: editing.stream.trim(), learningArea: editing.form >= 5 ? editing.learningArea : undefined, subjectIds: editing.subjectIds };
     if (editing.id) { setClasses(classes.map(c => c.id === editing.id ? updated : c)); toast.success('Class updated'); }
