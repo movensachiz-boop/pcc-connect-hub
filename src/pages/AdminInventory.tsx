@@ -321,12 +321,12 @@ export default function AdminInventory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.filter(i => i.is_active && i.stock_quantity > 0).map(i => (
+                  {items.filter(i => i.is_active).map(i => (
                     <TableRow key={i.id}>
                       <TableCell className="text-sm">{i.name} <Badge variant="outline" className="ml-1 text-xs capitalize">{i.category}</Badge></TableCell>
                       <TableCell>US${Number(i.price).toFixed(2)}</TableCell>
                       <TableCell>{i.stock_quantity}</TableCell>
-                      <TableCell><Input type="number" min={0} max={i.stock_quantity} value={cart[i.id] || 0} onChange={e => setQty(i.id, Number(e.target.value))} className="h-8" /></TableCell>
+                      <TableCell><Input type="number" min={0} value={cart[i.id] || 0} onChange={e => setQty(i.id, Number(e.target.value))} className="h-8" /></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
