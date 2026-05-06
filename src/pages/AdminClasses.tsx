@@ -136,12 +136,32 @@ export default function AdminClasses() {
     setEditing(prev => prev ? { ...prev, subjectIds: prev.subjectIds.includes(sId) ? prev.subjectIds.filter(id => id !== sId) : [...prev.subjectIds, sId] } : prev);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editing || !editing.stream.trim()) { toast.error('Stream name is required'); return; }
-    const classId = `${editing.form}${editing.stream.trim()}`;
+    const newStream = editing.stream.trim();
+    const classId = `${editing.form}${newStream}`;
     if (classes.some(c => c.id === classId && c.id !== editing.id)) { toast.error(`Class ${classId} already exists`); return; }
-    const updated: SchoolClass = { id: classId, form: editing.form, stream: editing.stream.trim(), learningArea: editing.form >= 5 ? editing.learningArea : undefined, subjectIds: editing.subjectIds };
-    if (editing.id) { setClasses(classes.map(c => c.id === editing.id ? updated : c)); toast.success('Class updated'); }
+    const updated: SchoolClass = { id: classId, form: editing.form, stream: newStream, learningArea: editing.form >= 5 ? editing.learningArea : undefined, subjectIds: editing.subjectIds };
+    if (editing.id) {
+      const original = classes.find(c => c.id === editing.id);
+      setClasses(classes.map(c => c.id === editing.id ? updated : c));
+      // Propagate rename to student registrations
+      if (original && (original.stream !== newStream || original.form !== editing.form)) {
+        try {
+          const { error, count } = await supabase
+            .from('profiles')
+            .update({ form: String(editing.form), stream: newStream }, { count: 'exact' })
+            .eq('form', String(original.form))
+            .eq('stream', original.stream);
+          if (error) throw error;
+          toast.success(`Class updated · ${count ?? 0} student(s) re-assigned`);
+        } catch (e: any) {
+          toast.error('Class saved, but failed to update students: ' + e.message);
+        }
+      } else {
+        toast.success('Class updated');
+      }
+    }
     else { setClasses([...classes, updated]); toast.success('Class added'); }
     closeDialog();
   };
