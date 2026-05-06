@@ -1113,6 +1113,17 @@ const AdminStudents = () => {
         title="Scan Class List"
         description="Hold the device steady over the printed list and capture a clear, well-lit photo."
       />
+
+      <PhoneCameraPairDialog
+        open={bulkPhoneOpen}
+        onOpenChange={setBulkPhoneOpen}
+        onPhotos={async (photos) => {
+          for (const p of photos) {
+            await processScannedImage(p);
+          }
+        }}
+        title="Scan Class List with Phone"
+      />
     </DashboardLayout>
   );
 };
