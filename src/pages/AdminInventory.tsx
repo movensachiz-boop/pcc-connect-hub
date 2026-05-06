@@ -50,7 +50,7 @@ export default function AdminInventory() {
     const [it, sa, pr] = await Promise.all([
       supabase.from("inventory_items").select("*").order("category").order("name"),
       supabase.from("inventory_sales").select("*").order("created_at", { ascending: false }).limit(200),
-      supabase.from("profiles").select("id, first_name, last_name, registration_number").order("first_name"),
+      supabase.from("profiles").select("id, first_name, last_name, registration_number, form, stream").order("first_name"),
     ]);
     setItems((it.data as any) || []);
     setSales((sa.data as any) || []);
