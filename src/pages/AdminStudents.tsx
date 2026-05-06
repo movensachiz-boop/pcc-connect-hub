@@ -383,7 +383,42 @@ const AdminStudents = () => {
     }
   };
 
-  const handleSendNotification = async (student: Student) => {
+  const openEditStudent = (s: Student) => {
+    setEditStudent(s);
+    setEditFirstName(s.first_name || "");
+    setEditLastName(s.last_name || "");
+    setEditOpen(true);
+  };
+
+  const handleSaveEditStudent = async () => {
+    if (!editStudent) return;
+    const fn = editFirstName.trim();
+    const ln = editLastName.trim();
+    if (!fn || !ln) {
+      toast({ title: "Missing Fields", description: "First and last name are required.", variant: "destructive" });
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ first_name: fn, last_name: ln })
+        .eq("id", editStudent.id);
+      if (error) {
+        toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Student Updated", description: `Name changed to ${fn} ${ln}.` });
+      setEditOpen(false);
+      setEditStudent(null);
+      fetchStudents();
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message || "Failed to update.", variant: "destructive" });
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
     if (!student.guardian_phone) {
       toast({ title: "No Phone Number", description: "This student has no guardian phone number on file.", variant: "destructive" });
       return;
