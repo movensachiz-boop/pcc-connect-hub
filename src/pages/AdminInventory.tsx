@@ -114,7 +114,7 @@ export default function AdminInventory() {
       receiptNo: data.receipt_number,
       studentName: stu ? `${stu.first_name} ${stu.last_name}` : "Customer",
       regNo: stu?.registration_number || "—",
-      studentClass: stu ? [stu.form, stu.stream].filter(Boolean).join(" ") || "—" : "—",
+      studentClass: stu?.form ? `Form ${stu.form}${stu.stream ? ` ${stu.stream}` : ""}` : "—",
       date: new Date().toLocaleDateString(),
       method: saleMethod,
       items: receiptItems,
