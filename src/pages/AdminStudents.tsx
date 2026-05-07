@@ -700,7 +700,7 @@ const AdminStudents = () => {
               const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
               const header = ["#", "Reg No.", "First Name", "Last Name", "Form", "Stream", "Gender", "Guardian Name", "Guardian Phone"];
               const csv = [header.join(",")]
-                .concat(sorted.map((s, i) => [i + 1, s.registration_number, s.first_name, s.last_name, s.form || "", s.stream || "", s.gender || "", s.guardian_name || "", s.guardian_phone || ""].map(esc).join(",")))
+                .concat(sorted.map((s, i) => [i + 1, s.registration_number, (s.first_name || "").toUpperCase(), (s.last_name || "").toUpperCase(), s.form || "", s.stream || "", s.gender || "", s.guardian_name || "", s.guardian_phone || ""].map(esc).join(",")))
                 .join("\n");
               const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
               const url = URL.createObjectURL(blob);
