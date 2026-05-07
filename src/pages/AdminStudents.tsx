@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
 import PhoneCameraPairDialog from "@/components/PhoneCameraPairDialog";
 import { Smartphone } from "lucide-react";
+import { useTimetable } from "@/context/TimetableContext";
 
 interface Student {
   id: string;
