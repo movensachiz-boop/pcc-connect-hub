@@ -678,7 +678,7 @@ const AdminStudents = () => {
                 autoTable(doc, {
                   startY: 32,
                   head: [["#", "Reg No.", "Name", "Gender", "Guardian Phone"]],
-                  body: list.map((s, i) => [i + 1, s.registration_number, `${s.last_name} ${s.first_name}`, s.gender || "—", s.guardian_phone || "—"]),
+                  body: list.map((s, i) => [i + 1, s.registration_number, `${s.last_name} ${s.first_name}`.toUpperCase(), s.gender || "—", s.guardian_phone || "—"]),
                   styles: { fontSize: 8 },
                   headStyles: { fillColor: [0, 51, 102], textColor: 255 },
                 });
