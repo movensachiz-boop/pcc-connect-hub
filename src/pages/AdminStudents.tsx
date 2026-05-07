@@ -929,10 +929,7 @@ const AdminStudents = () => {
                 <Select value={stream} onValueChange={setStream}>
                   <SelectTrigger><SelectValue placeholder="Select stream" /></SelectTrigger>
                   <SelectContent>
-                    {(parseInt(form) >= 5
-                      ? ["Sciences", "Commercials", "Arts"]
-                      : ["G1", "G2", "G22", "Blue"]
-                    ).map((s) => (
+                    {streamsForForm(form).map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
