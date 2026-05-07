@@ -626,7 +626,7 @@ const AdminStudents = () => {
                   if (s !== 0) return s;
                   return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`);
                 })
-                .map((s, i) => `<tr><td>${i + 1}</td><td>${s.registration_number}</td><td>${s.last_name} ${s.first_name}</td><td>${s.form || "—"}</td><td>${s.stream || "—"}</td><td>${s.gender || "—"}</td><td>${s.guardian_phone || "—"}</td></tr>`)
+                .map((s, i) => `<tr><td>${i + 1}</td><td>${s.registration_number}</td><td>${`${s.last_name} ${s.first_name}`.toUpperCase()}</td><td>${s.form || "—"}</td><td>${s.stream || "—"}</td><td>${s.gender || "—"}</td><td>${s.guardian_phone || "—"}</td></tr>`)
                 .join("");
               const html = `<!doctype html><html><head><title>Student List</title><style>
                 @page { size: A4; margin: 12mm; }
