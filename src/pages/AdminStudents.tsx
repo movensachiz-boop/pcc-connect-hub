@@ -626,7 +626,7 @@ const AdminStudents = () => {
                   if (s !== 0) return s;
                   return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`);
                 })
-                .map((s, i) => `<tr><td>${i + 1}</td><td>${s.registration_number}</td><td>${s.last_name} ${s.first_name}</td><td>${s.form || "—"}</td><td>${s.stream || "—"}</td><td>${s.gender || "—"}</td><td>${s.guardian_phone || "—"}</td></tr>`)
+                .map((s, i) => `<tr><td>${i + 1}</td><td>${s.registration_number}</td><td>${`${s.last_name} ${s.first_name}`.toUpperCase()}</td><td>${s.form || "—"}</td><td>${s.stream || "—"}</td><td>${s.gender || "—"}</td><td>${s.guardian_phone || "—"}</td></tr>`)
                 .join("");
               const html = `<!doctype html><html><head><title>Student List</title><style>
                 @page { size: A4; margin: 12mm; }
@@ -678,7 +678,7 @@ const AdminStudents = () => {
                 autoTable(doc, {
                   startY: 32,
                   head: [["#", "Reg No.", "Name", "Gender", "Guardian Phone"]],
-                  body: list.map((s, i) => [i + 1, s.registration_number, `${s.last_name} ${s.first_name}`, s.gender || "—", s.guardian_phone || "—"]),
+                  body: list.map((s, i) => [i + 1, s.registration_number, `${s.last_name} ${s.first_name}`.toUpperCase(), s.gender || "—", s.guardian_phone || "—"]),
                   styles: { fontSize: 8 },
                   headStyles: { fillColor: [0, 51, 102], textColor: 255 },
                 });
@@ -700,7 +700,7 @@ const AdminStudents = () => {
               const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
               const header = ["#", "Reg No.", "First Name", "Last Name", "Form", "Stream", "Gender", "Guardian Name", "Guardian Phone"];
               const csv = [header.join(",")]
-                .concat(sorted.map((s, i) => [i + 1, s.registration_number, s.first_name, s.last_name, s.form || "", s.stream || "", s.gender || "", s.guardian_name || "", s.guardian_phone || ""].map(esc).join(",")))
+                .concat(sorted.map((s, i) => [i + 1, s.registration_number, (s.first_name || "").toUpperCase(), (s.last_name || "").toUpperCase(), s.form || "", s.stream || "", s.gender || "", s.guardian_name || "", s.guardian_phone || ""].map(esc).join(",")))
                 .join("\n");
               const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
               const url = URL.createObjectURL(blob);
@@ -774,7 +774,7 @@ const AdminStudents = () => {
                       <TableCell className="font-medium">{s.registration_number}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span>{s.first_name} {s.last_name}</span>
+                          <span>{`${s.first_name} ${s.last_name}`.toUpperCase()}</span>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditStudent(s)} title="Edit name">
                             <Pencil size={12} />
                           </Button>
