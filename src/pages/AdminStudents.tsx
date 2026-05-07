@@ -774,7 +774,7 @@ const AdminStudents = () => {
                       <TableCell className="font-medium">{s.registration_number}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span>{s.first_name} {s.last_name}</span>
+                          <span>{`${s.first_name} ${s.last_name}`.toUpperCase()}</span>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditStudent(s)} title="Edit name">
                             <Pencil size={12} />
                           </Button>
