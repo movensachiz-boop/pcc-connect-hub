@@ -1203,10 +1203,7 @@ const AdminStudents = () => {
                 <Select value={bulkStream} onValueChange={setBulkStream}>
                   <SelectTrigger><SelectValue placeholder="Stream" /></SelectTrigger>
                   <SelectContent>
-                    {(parseInt(bulkForm) >= 5
-                      ? ["Sciences", "Commercials", "Arts"]
-                      : ["G1", "G2", "G22", "Blue"]
-                    ).map((s) => (
+                    {streamsForForm(bulkForm).map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
