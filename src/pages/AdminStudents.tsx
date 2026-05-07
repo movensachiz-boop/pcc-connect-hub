@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
 import PhoneCameraPairDialog from "@/components/PhoneCameraPairDialog";
 import { Smartphone } from "lucide-react";
+import { useTimetable } from "@/context/TimetableContext";
 
 interface Student {
   id: string;
@@ -130,6 +131,21 @@ const AdminStudents = () => {
   const [guardianPhone, setGuardianPhone] = useState("");
   const [isBeginner, setIsBeginner] = useState(true);
   const [gender, setGender] = useState("male");
+
+  // Pull live class definitions so any class edits made in Admin → Classes
+  // appear here in registration as well.
+  const { classes: schoolClasses } = useTimetable();
+  const streamsForForm = (f: string): string[] => {
+    const fn = parseInt(f);
+    if (!fn) return [];
+    const fromClasses = schoolClasses
+      .filter((c) => c.form === fn)
+      .map((c) => (fn >= 5 ? (c.learningArea || c.stream) : c.stream));
+    const fallback = fn >= 5 ? ["Sciences", "Commercials", "Arts"] : ["G1", "G2", "G22", "Blue"];
+    const merged = Array.from(new Set([...fromClasses, ...fallback])).filter(Boolean);
+    return merged;
+  };
+
 
   // Reset password form
   const [resetRegNumber, setResetRegNumber] = useState("");
@@ -913,10 +929,7 @@ const AdminStudents = () => {
                 <Select value={stream} onValueChange={setStream}>
                   <SelectTrigger><SelectValue placeholder="Select stream" /></SelectTrigger>
                   <SelectContent>
-                    {(parseInt(form) >= 5
-                      ? ["Sciences", "Commercials", "Arts"]
-                      : ["G1", "G2", "G22", "Blue"]
-                    ).map((s) => (
+                    {streamsForForm(form).map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
@@ -1087,10 +1100,7 @@ const AdminStudents = () => {
                         <Select value={s.stream} onValueChange={(v) => updateExtractedStudent(i, "stream", v)}>
                           <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Stream" /></SelectTrigger>
                           <SelectContent>
-                            {(parseInt(s.form) >= 5
-                              ? ["Sciences", "Commercials", "Arts"]
-                              : ["G1", "G2", "G22", "Blue"]
-                            ).map((st) => (
+                            {streamsForForm(s.form).map((st) => (
                               <SelectItem key={st} value={st}>{st}</SelectItem>
                             ))}
                           </SelectContent>
@@ -1193,10 +1203,7 @@ const AdminStudents = () => {
                 <Select value={bulkStream} onValueChange={setBulkStream}>
                   <SelectTrigger><SelectValue placeholder="Stream" /></SelectTrigger>
                   <SelectContent>
-                    {(parseInt(bulkForm) >= 5
-                      ? ["Sciences", "Commercials", "Arts"]
-                      : ["G1", "G2", "G22", "Blue"]
-                    ).map((s) => (
+                    {streamsForForm(bulkForm).map((s) => (
                       <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
