@@ -1100,10 +1100,7 @@ const AdminStudents = () => {
                         <Select value={s.stream} onValueChange={(v) => updateExtractedStudent(i, "stream", v)}>
                           <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Stream" /></SelectTrigger>
                           <SelectContent>
-                            {(parseInt(s.form) >= 5
-                              ? ["Sciences", "Commercials", "Arts"]
-                              : ["G1", "G2", "G22", "Blue"]
-                            ).map((st) => (
+                            {streamsForForm(s.form).map((st) => (
                               <SelectItem key={st} value={st}>{st}</SelectItem>
                             ))}
                           </SelectContent>
