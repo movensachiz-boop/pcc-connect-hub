@@ -19,12 +19,25 @@ interface TimetableContextType {
 
 const TimetableContext = createContext<TimetableContextType | undefined>(undefined);
 
+const loadLS = <T,>(key: string, fallback: T): T => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch { return fallback; }
+};
+
 export function TimetableProvider({ children }: { children: React.ReactNode }) {
-  const [config, setConfig] = useState<SchoolConfig>(defaultConfig);
-  const [subjects, setSubjects] = useState<Subject[]>(defaultSubjects);
-  const [teachers, setTeachers] = useState<Teacher[]>(generateDefaultTeachers());
-  const [classes, setClasses] = useState<SchoolClass[]>(generateDefaultClasses());
-  const [timetable, setTimetable] = useState<Timetable | null>(null);
+  const [config, _setConfig] = useState<SchoolConfig>(() => loadLS('tt_config', defaultConfig));
+  const [subjects, _setSubjects] = useState<Subject[]>(() => loadLS('tt_subjects', defaultSubjects));
+  const [teachers, _setTeachers] = useState<Teacher[]>(() => loadLS('tt_teachers', generateDefaultTeachers()));
+  const [classes, _setClasses] = useState<SchoolClass[]>(() => loadLS('tt_classes', generateDefaultClasses()));
+  const [timetable, setTimetable] = useState<Timetable | null>(() => loadLS<Timetable | null>('tt_timetable', null));
+
+  const setConfig = (v: SchoolConfig) => { _setConfig(v); try { localStorage.setItem('tt_config', JSON.stringify(v)); } catch {} };
+  const setSubjects = (v: Subject[]) => { _setSubjects(v); try { localStorage.setItem('tt_subjects', JSON.stringify(v)); } catch {} };
+  const setTeachers = (v: Teacher[]) => { _setTeachers(v); try { localStorage.setItem('tt_teachers', JSON.stringify(v)); } catch {} };
+  const setClasses = (v: SchoolClass[]) => { _setClasses(v); try { localStorage.setItem('tt_classes', JSON.stringify(v)); } catch {} };
+
 
   const isSportsPeriod = useCallback((day: DayOfWeek, period: number) => {
     return config.sportsDays.includes(day) && period >= config.sportsStartPeriod;
