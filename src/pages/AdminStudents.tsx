@@ -132,6 +132,21 @@ const AdminStudents = () => {
   const [isBeginner, setIsBeginner] = useState(true);
   const [gender, setGender] = useState("male");
 
+  // Pull live class definitions so any class edits made in Admin → Classes
+  // appear here in registration as well.
+  const { classes: schoolClasses } = useTimetable();
+  const streamsForForm = (f: string): string[] => {
+    const fn = parseInt(f);
+    if (!fn) return [];
+    const fromClasses = schoolClasses
+      .filter((c) => c.form === fn)
+      .map((c) => (fn >= 5 ? (c.learningArea || c.stream) : c.stream));
+    const fallback = fn >= 5 ? ["Sciences", "Commercials", "Arts"] : ["G1", "G2", "G22", "Blue"];
+    const merged = Array.from(new Set([...fromClasses, ...fallback])).filter(Boolean);
+    return merged;
+  };
+
+
   // Reset password form
   const [resetRegNumber, setResetRegNumber] = useState("");
   const [newPassword, setNewPassword] = useState("");
