@@ -162,7 +162,13 @@ export default function AdminInventory() {
 
           <TabsContent value="items">
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-3 sm:p-4">
+                <Input
+                  placeholder="Search items by name, category, or notes..."
+                  value={listSearch}
+                  onChange={e => setListSearch(e.target.value)}
+                  className="mb-3 max-w-md"
+                />
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -175,9 +181,18 @@ export default function AdminInventory() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading ? <TableRow><TableCell colSpan={6} className="text-center py-6">Loading...</TableCell></TableRow> :
-                      items.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No items yet</TableCell></TableRow> :
-                      items.map(i => (
+                    {(() => {
+                      if (loading) return <TableRow><TableCell colSpan={6} className="text-center py-6">Loading...</TableCell></TableRow>;
+                      const q = listSearch.trim().toLowerCase();
+                      const list = items.filter(i =>
+                        !q ||
+                        i.name.toLowerCase().includes(q) ||
+                        i.category.toLowerCase().includes(q) ||
+                        (i.notes || "").toLowerCase().includes(q) ||
+                        i.gender.toLowerCase().includes(q)
+                      );
+                      if (list.length === 0) return <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No items found</TableCell></TableRow>;
+                      return list.map(i => (
                         <TableRow key={i.id}>
                           <TableCell className="font-medium">{i.name}</TableCell>
                           <TableCell><Badge variant="outline" className="capitalize">{i.category}</Badge></TableCell>
@@ -194,7 +209,8 @@ export default function AdminInventory() {
                             <Button size="sm" variant="ghost" onClick={() => deleteItem(i.id)}><Trash2 size={14} /></Button>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ));
+                    })()}
                   </TableBody>
                 </Table>
               </CardContent>
