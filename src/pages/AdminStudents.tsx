@@ -55,6 +55,7 @@ const AdminStudents = () => {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -588,11 +589,37 @@ const AdminStudents = () => {
     setBulkRegistering(false);
   };
 
-  const filtered = students.filter(
+  const baseFiltered = students.filter(
     (s) =>
       `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
       s.registration_number.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Detect duplicates across the full student list (by normalized name or reg number)
+  const duplicateIds = (() => {
+    const nameMap = new Map<string, string[]>();
+    const regMap = new Map<string, string[]>();
+    for (const s of students) {
+      const nameKey = `${(s.first_name || "").trim().toLowerCase()} ${(s.last_name || "").trim().toLowerCase()}`.replace(/\s+/g, " ").trim();
+      const regKey = (s.registration_number || "").trim().toUpperCase();
+      if (nameKey) {
+        if (!nameMap.has(nameKey)) nameMap.set(nameKey, []);
+        nameMap.get(nameKey)!.push(s.id);
+      }
+      if (regKey) {
+        if (!regMap.has(regKey)) regMap.set(regKey, []);
+        regMap.get(regKey)!.push(s.id);
+      }
+    }
+    const dups = new Set<string>();
+    for (const ids of nameMap.values()) if (ids.length > 1) ids.forEach(i => dups.add(i));
+    for (const ids of regMap.values()) if (ids.length > 1) ids.forEach(i => dups.add(i));
+    return dups;
+  })();
+
+  const filtered = showDuplicatesOnly
+    ? baseFiltered.filter(s => duplicateIds.has(s.id))
+    : baseFiltered;
 
   return (
     <DashboardLayout role="admin">
@@ -753,6 +780,16 @@ const AdminStudents = () => {
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <CardTitle className="text-base">All Students ({filtered.length})</CardTitle>
+              <Button
+                variant={showDuplicatesOnly ? "default" : "outline"}
+                size="sm"
+                className="gap-2 sm:ml-2"
+                onClick={() => setShowDuplicatesOnly(v => !v)}
+                title="Show students with matching names or registration numbers"
+              >
+                <Users size={14} />
+                {showDuplicatesOnly ? `Showing Duplicates (${duplicateIds.size})` : `Find Duplicates${duplicateIds.size > 0 ? ` (${duplicateIds.size})` : ""}`}
+              </Button>
               <div className="relative sm:ml-auto w-full sm:w-64">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -791,6 +828,9 @@ const AdminStudents = () => {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{`${s.first_name} ${s.last_name}`.toUpperCase()}</span>
+                          {duplicateIds.has(s.id) && (
+                            <Badge variant="destructive" className="text-[10px]" title="Possible duplicate (matching name or registration number)">Duplicate</Badge>
+                          )}
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditStudent(s)} title="Edit name">
                             <Pencil size={12} />
                           </Button>
