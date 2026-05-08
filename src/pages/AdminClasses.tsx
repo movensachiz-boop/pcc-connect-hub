@@ -248,9 +248,11 @@ export default function AdminClasses() {
                           <p className="text-sm font-semibold">{cls.id}</p>
                           {cls.learningArea && <p className="text-xs text-accent-foreground">{cls.learningArea}</p>}
                         </div>
-                        {studentCounts[cls.id] !== undefined && (
-                          <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            <Users className="w-3 h-3" />{studentCounts[cls.id]}
+                        {studentCounts[cls.id] && (
+                          <span className="ml-auto flex items-center gap-1.5 text-xs">
+                            <span className="flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded text-muted-foreground" title="Total"><Users className="w-3 h-3" />{studentCounts[cls.id].total}</span>
+                            <span className="bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-medium" title="Boys">♂ {studentCounts[cls.id].male}</span>
+                            <span className="bg-pink-500/10 text-pink-600 px-1.5 py-0.5 rounded font-medium" title="Girls">♀ {studentCounts[cls.id].female}</span>
                           </span>
                         )}
                       </div>
