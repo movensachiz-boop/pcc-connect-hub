@@ -818,6 +818,9 @@ const AdminStudents = () => {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{`${s.first_name} ${s.last_name}`.toUpperCase()}</span>
+                          {duplicateIds.has(s.id) && (
+                            <Badge variant="destructive" className="text-[10px]" title="Possible duplicate (matching name or registration number)">Duplicate</Badge>
+                          )}
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditStudent(s)} title="Edit name">
                             <Pencil size={12} />
                           </Button>
