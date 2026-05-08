@@ -780,6 +780,16 @@ const AdminStudents = () => {
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <CardTitle className="text-base">All Students ({filtered.length})</CardTitle>
+              <Button
+                variant={showDuplicatesOnly ? "default" : "outline"}
+                size="sm"
+                className="gap-2 sm:ml-2"
+                onClick={() => setShowDuplicatesOnly(v => !v)}
+                title="Show students with matching names or registration numbers"
+              >
+                <Users size={14} />
+                {showDuplicatesOnly ? `Showing Duplicates (${duplicateIds.size})` : `Find Duplicates${duplicateIds.size > 0 ? ` (${duplicateIds.size})` : ""}`}
+              </Button>
               <div className="relative sm:ml-auto w-full sm:w-64">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
