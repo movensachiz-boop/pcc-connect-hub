@@ -27,7 +27,6 @@ export default function AdminClasses() {
   const [syncing, setSyncing] = useState(false);
   const [studentCounts, setStudentCounts] = useState<Record<string, { total: number; male: number; female: number }>>({});
 
-  // Load gender counts on mount
   const loadCounts = async () => {
     try {
       const { data, error } = await supabase
@@ -40,8 +39,11 @@ export default function AdminClasses() {
       for (const row of data || []) {
         const formNum = parseInt(row.form!, 10);
         if (isNaN(formNum)) continue;
-        const classId = getValidClassId(formNum, row.stream!);
-        if (!classId) continue;
+        // Match against any existing class for this form (by stream OR learningArea)
+        const matched = classes.find(c =>
+          c.form === formNum && (c.stream === row.stream || c.learningArea === row.stream)
+        );
+        const classId = matched ? matched.id : `${formNum}${row.stream}`;
         if (!counts[classId]) counts[classId] = { total: 0, male: 0, female: 0 };
         counts[classId].total++;
         if (row.gender === 'female') counts[classId].female++;
@@ -51,7 +53,7 @@ export default function AdminClasses() {
     } catch (e) { /* ignore */ }
   };
 
-  useEffect(() => { loadCounts(); }, []);
+  useEffect(() => { loadCounts(); }, [classes]);
 
   // Valid class definitions matching the timetable defaults exactly
   const VALID_LOWER_STREAMS = ['G1', 'G2', 'G22', 'Blue']; // Forms 1-4
