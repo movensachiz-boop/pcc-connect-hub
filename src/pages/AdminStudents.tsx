@@ -588,11 +588,37 @@ const AdminStudents = () => {
     setBulkRegistering(false);
   };
 
-  const filtered = students.filter(
+  const baseFiltered = students.filter(
     (s) =>
       `${s.first_name} ${s.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
       s.registration_number.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Detect duplicates across the full student list (by normalized name or reg number)
+  const duplicateIds = (() => {
+    const nameMap = new Map<string, string[]>();
+    const regMap = new Map<string, string[]>();
+    for (const s of students) {
+      const nameKey = `${(s.first_name || "").trim().toLowerCase()} ${(s.last_name || "").trim().toLowerCase()}`.replace(/\s+/g, " ").trim();
+      const regKey = (s.registration_number || "").trim().toUpperCase();
+      if (nameKey) {
+        if (!nameMap.has(nameKey)) nameMap.set(nameKey, []);
+        nameMap.get(nameKey)!.push(s.id);
+      }
+      if (regKey) {
+        if (!regMap.has(regKey)) regMap.set(regKey, []);
+        regMap.get(regKey)!.push(s.id);
+      }
+    }
+    const dups = new Set<string>();
+    for (const ids of nameMap.values()) if (ids.length > 1) ids.forEach(i => dups.add(i));
+    for (const ids of regMap.values()) if (ids.length > 1) ids.forEach(i => dups.add(i));
+    return dups;
+  })();
+
+  const filtered = showDuplicatesOnly
+    ? baseFiltered.filter(s => duplicateIds.has(s.id))
+    : baseFiltered;
 
   return (
     <DashboardLayout role="admin">
