@@ -75,7 +75,7 @@ export default function AdminClasses() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('form, stream')
+        .select('form, stream, gender')
         .not('form', 'is', null)
         .not('stream', 'is', null);
       if (error) throw error;
