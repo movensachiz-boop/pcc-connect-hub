@@ -55,6 +55,7 @@ const AdminStudents = () => {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
