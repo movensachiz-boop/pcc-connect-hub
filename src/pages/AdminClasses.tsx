@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTimetable } from '@/context/TimetableContext';
 import { SchoolClass, FormLevel, LearningArea } from '@/types/school';
@@ -25,7 +25,33 @@ export default function AdminClasses() {
   const [editing, setEditing] = useState<ClassFormState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
+  const [studentCounts, setStudentCounts] = useState<Record<string, { total: number; male: number; female: number }>>({});
+
+  // Load gender counts on mount
+  const loadCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('form, stream, gender')
+        .not('form', 'is', null)
+        .not('stream', 'is', null);
+      if (error) throw error;
+      const counts: Record<string, { total: number; male: number; female: number }> = {};
+      for (const row of data || []) {
+        const formNum = parseInt(row.form!, 10);
+        if (isNaN(formNum)) continue;
+        const classId = getValidClassId(formNum, row.stream!);
+        if (!classId) continue;
+        if (!counts[classId]) counts[classId] = { total: 0, male: 0, female: 0 };
+        counts[classId].total++;
+        if (row.gender === 'female') counts[classId].female++;
+        else if (row.gender === 'male') counts[classId].male++;
+      }
+      setStudentCounts(counts);
+    } catch (e) { /* ignore */ }
+  };
+
+  useEffect(() => { loadCounts(); }, []);
 
   // Valid class definitions matching the timetable defaults exactly
   const VALID_LOWER_STREAMS = ['G1', 'G2', 'G22', 'Blue']; // Forms 1-4
@@ -49,7 +75,7 @@ export default function AdminClasses() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('form, stream')
+        .select('form, stream, gender')
         .not('form', 'is', null)
         .not('stream', 'is', null);
       if (error) throw error;
@@ -71,10 +97,21 @@ export default function AdminClasses() {
 
       let added = 0;
       const newClasses = [...classes];
-      const newCounts: Record<string, number> = {};
+      const newCounts: Record<string, { total: number; male: number; female: number }> = {};
+
+      // Re-scan with gender
+      for (const row of data || []) {
+        const formNum = parseInt(row.form!, 10);
+        if (isNaN(formNum)) continue;
+        const classId = getValidClassId(formNum, row.stream!);
+        if (!classId) continue;
+        if (!newCounts[classId]) newCounts[classId] = { total: 0, male: 0, female: 0 };
+        newCounts[classId].total++;
+        if ((row as any).gender === 'female') newCounts[classId].female++;
+        else if ((row as any).gender === 'male') newCounts[classId].male++;
+      }
 
       for (const [key, info] of Object.entries(counts)) {
-        newCounts[key] = info.count;
         if (!newClasses.some(c => c.id === key)) {
           const isUpper = info.form >= 5;
           const area = isUpper ? VALID_UPPER_AREAS.find(a => a === info.stream) : undefined;
@@ -211,9 +248,11 @@ export default function AdminClasses() {
                           <p className="text-sm font-semibold">{cls.id}</p>
                           {cls.learningArea && <p className="text-xs text-accent-foreground">{cls.learningArea}</p>}
                         </div>
-                        {studentCounts[cls.id] !== undefined && (
-                          <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            <Users className="w-3 h-3" />{studentCounts[cls.id]}
+                        {studentCounts[cls.id] && (
+                          <span className="ml-auto flex items-center gap-1.5 text-xs">
+                            <span className="flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded text-muted-foreground" title="Total"><Users className="w-3 h-3" />{studentCounts[cls.id].total}</span>
+                            <span className="bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-medium" title="Boys">♂ {studentCounts[cls.id].male}</span>
+                            <span className="bg-pink-500/10 text-pink-600 px-1.5 py-0.5 rounded font-medium" title="Girls">♀ {studentCounts[cls.id].female}</span>
                           </span>
                         )}
                       </div>
