@@ -51,7 +51,7 @@ export default function AdminClasses() {
     } catch (e) { /* ignore */ }
   };
 
-  useState(() => { loadCounts(); return undefined as any; });
+  useEffect(() => { loadCounts(); }, []);
 
   // Valid class definitions matching the timetable defaults exactly
   const VALID_LOWER_STREAMS = ['G1', 'G2', 'G22', 'Blue']; // Forms 1-4
