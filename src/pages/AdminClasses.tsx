@@ -25,7 +25,33 @@ export default function AdminClasses() {
   const [editing, setEditing] = useState<ClassFormState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
+  const [studentCounts, setStudentCounts] = useState<Record<string, { total: number; male: number; female: number }>>({});
+
+  // Load gender counts on mount
+  const loadCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('form, stream, gender')
+        .not('form', 'is', null)
+        .not('stream', 'is', null);
+      if (error) throw error;
+      const counts: Record<string, { total: number; male: number; female: number }> = {};
+      for (const row of data || []) {
+        const formNum = parseInt(row.form!, 10);
+        if (isNaN(formNum)) continue;
+        const classId = getValidClassId(formNum, row.stream!);
+        if (!classId) continue;
+        if (!counts[classId]) counts[classId] = { total: 0, male: 0, female: 0 };
+        counts[classId].total++;
+        if (row.gender === 'female') counts[classId].female++;
+        else if (row.gender === 'male') counts[classId].male++;
+      }
+      setStudentCounts(counts);
+    } catch (e) { /* ignore */ }
+  };
+
+  useState(() => { loadCounts(); return undefined as any; });
 
   // Valid class definitions matching the timetable defaults exactly
   const VALID_LOWER_STREAMS = ['G1', 'G2', 'G22', 'Blue']; // Forms 1-4
