@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTimetable } from '@/context/TimetableContext';
 import { SchoolClass, FormLevel, LearningArea } from '@/types/school';
