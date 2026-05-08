@@ -97,10 +97,21 @@ export default function AdminClasses() {
 
       let added = 0;
       const newClasses = [...classes];
-      const newCounts: Record<string, number> = {};
+      const newCounts: Record<string, { total: number; male: number; female: number }> = {};
+
+      // Re-scan with gender
+      for (const row of data || []) {
+        const formNum = parseInt(row.form!, 10);
+        if (isNaN(formNum)) continue;
+        const classId = getValidClassId(formNum, row.stream!);
+        if (!classId) continue;
+        if (!newCounts[classId]) newCounts[classId] = { total: 0, male: 0, female: 0 };
+        newCounts[classId].total++;
+        if ((row as any).gender === 'female') newCounts[classId].female++;
+        else if ((row as any).gender === 'male') newCounts[classId].male++;
+      }
 
       for (const [key, info] of Object.entries(counts)) {
-        newCounts[key] = info.count;
         if (!newClasses.some(c => c.id === key)) {
           const isUpper = info.form >= 5;
           const area = isUpper ? VALID_UPPER_AREAS.find(a => a === info.stream) : undefined;
