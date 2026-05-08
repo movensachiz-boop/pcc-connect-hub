@@ -36,20 +36,57 @@ export default function AdminClasses() {
         .not('stream', 'is', null);
       if (error) throw error;
       const counts: Record<string, { total: number; male: number; female: number }> = {};
+      const missing: Record<string, { form: FormLevel; stream: string; learningArea?: LearningArea }> = {};
       for (const row of data || []) {
         const formNum = parseInt(row.form!, 10);
-        if (isNaN(formNum)) continue;
-        // Match against any existing class for this form (by stream OR learningArea)
+        if (isNaN(formNum) || formNum < 1 || formNum > 6) continue;
         const matched = classes.find(c =>
           c.form === formNum && (c.stream === row.stream || c.learningArea === row.stream)
         );
-        const classId = matched ? matched.id : `${formNum}${row.stream}`;
+        let classId: string;
+        if (matched) {
+          classId = matched.id;
+        } else {
+          const isUpper = formNum >= 5;
+          const area = isUpper ? (LEARNING_AREAS.find(a => a === row.stream || a.charAt(0) === row.stream)) : undefined;
+          classId = isUpper && area ? `${formNum}${area.charAt(0)}` : `${formNum}${row.stream}`;
+          if (!missing[classId]) {
+            missing[classId] = {
+              form: formNum as FormLevel,
+              stream: isUpper && area ? area : row.stream!,
+              learningArea: area,
+            };
+          }
+        }
         if (!counts[classId]) counts[classId] = { total: 0, male: 0, female: 0 };
         counts[classId].total++;
         if (row.gender === 'female') counts[classId].female++;
         else if (row.gender === 'male') counts[classId].male++;
       }
       setStudentCounts(counts);
+
+      // Auto-create label entries for any registered classes not yet in the list
+      const toAdd = Object.entries(missing).filter(([id]) => !classes.some(c => c.id === id));
+      if (toAdd.length > 0) {
+        const newClasses = [...classes];
+        for (const [id, info] of toAdd) {
+          const isUpper = info.form >= 5;
+          let classSubjects: string[];
+          if (isUpper && info.learningArea) {
+            const areaSubjects = subjects
+              .filter(s => s.forms.includes(info.form) && s.learningAreas?.includes(info.learningArea!))
+              .map(s => s.id);
+            const compulsory = subjects
+              .filter(s => s.forms.includes(info.form) && s.isCompulsory)
+              .map(s => s.id);
+            classSubjects = [...new Set([...compulsory, ...areaSubjects])];
+          } else {
+            classSubjects = subjects.filter(s => s.forms.includes(info.form)).map(s => s.id);
+          }
+          newClasses.push({ id, form: info.form, stream: info.stream, learningArea: info.learningArea, subjectIds: classSubjects });
+        }
+        setClasses(newClasses);
+      }
     } catch (e) { /* ignore */ }
   };
 
