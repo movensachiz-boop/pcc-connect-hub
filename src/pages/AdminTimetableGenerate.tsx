@@ -2,14 +2,23 @@ import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTimetable } from '@/context/TimetableContext';
 import { Button } from '@/components/ui/button';
-import { Calendar, Loader2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Calendar, Loader2, CheckCircle, AlertTriangle, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import type { DayOfWeek } from '@/types/school';
+
+const ALL_DAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export default function AdminTimetableGenerate() {
-  const { teachers, subjects, classes, setClasses, config, generateTimetable, timetable } = useTimetable();
+  const { teachers, subjects, classes, setClasses, config, setConfig, generateTimetable, timetable } = useTimetable();
   const [generating, setGenerating] = useState(false);
   const navigate = useNavigate();
+
+  const toggleSportsDay = (day: DayOfWeek) => {
+    const has = config.sportsDays.includes(day);
+    setConfig({ ...config, sportsDays: has ? config.sportsDays.filter(d => d !== day) : [...config.sportsDays, day] });
+  };
 
   const syncSubjectsFromTeachers = () => {
     let updated = 0;
