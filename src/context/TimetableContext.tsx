@@ -185,7 +185,7 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
           const isEarlyDay = EARLY_DAYS.has(day);
 
           const availableSubjects = shuffle(
-            cls.subjectIds
+            (classSubjectIds[cls.id] || cls.subjectIds)
               .map(sId => subjects.find(s => s.id === sId)!)
               .filter(s => s && (classSubjectCount[cls.id][s.id] || 0) < s.periodsPerWeek)
           )
