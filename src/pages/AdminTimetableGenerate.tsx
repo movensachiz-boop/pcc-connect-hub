@@ -77,12 +77,6 @@ export default function AdminTimetableGenerate() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border p-6 text-center">
-            <Calendar className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Ready to Generate</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              The system will create optimized timetables for all {classes.length} classes, ensuring no teacher clashes and proper break enforcement.
-            </p>
           <div className="bg-card rounded-xl border p-6">
             <div className="flex items-center gap-2 mb-4">
               <SettingsIcon className="w-4 h-4 text-primary" />
