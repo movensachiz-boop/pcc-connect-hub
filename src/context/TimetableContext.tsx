@@ -251,6 +251,12 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
             continue;
           }
 
+          // Reserved free period — keep slot empty so frees are spread across the week
+          if (isPreMarkedFree(cls.id, day, slot)) {
+            slots.push({ id: v4(), day, period: slot, classId: cls.id, type: 'lesson' });
+            continue;
+          }
+
           const classDayKey = `${cls.id}-${day}`;
           if (!classSubjectDay[classDayKey]) classSubjectDay[classDayKey] = new Set();
           const scheduledToday = classSubjectDay[classDayKey];
