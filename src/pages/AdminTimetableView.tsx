@@ -185,6 +185,9 @@ export default function AdminTimetableView() {
                             {display && 'sublabel' in display && display.sublabel && (
                               <div className="text-[10px] text-muted-foreground mt-0.5">{display.sublabel}</div>
                             )}
+                            {display && 'combinedCount' in display && display.combinedCount > 0 && (
+                              <div className="text-[9px] font-semibold text-accent-foreground bg-accent/30 rounded px-1 mt-0.5 inline-block">+{display.combinedCount} combined</div>
+                            )}
                             {display?.isConflict && <AlertTriangle className="w-3 h-3 text-destructive mt-0.5 mx-auto" />}
                           </div>
                         </td>
