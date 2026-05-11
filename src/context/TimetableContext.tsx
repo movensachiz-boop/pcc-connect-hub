@@ -38,11 +38,9 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
   const setTeachers = (v: Teacher[]) => { _setTeachers(v); try { localStorage.setItem('tt_teachers', JSON.stringify(v)); } catch {} };
   const setClasses = (v: SchoolClass[]) => { _setClasses(v); try { localStorage.setItem('tt_classes', JSON.stringify(v)); } catch {} };
 
-  // Auto-sync each class's subjectIds from teacher assignments.
-  // Whenever teachers/assignments change, every class picks up the union of subjects
-  // that any teacher is registered to teach to it (compulsory subjects always retained).
+  // Strict sync: each class's subjectIds = exactly the subjects that have a teacher
+  // registered to teach that class. Subjects with no assigned teacher are removed.
   useEffect(() => {
-    const compulsoryIds = subjects.filter(s => s.isCompulsory).map(s => s.id);
     let changed = false;
     const next = classes.map(c => {
       const fromTeachers = new Set<string>();
@@ -53,16 +51,11 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
           }
         });
       });
-      compulsoryIds.forEach(id => {
-        const subj = subjects.find(s => s.id === id);
-        if (subj && subj.forms.includes(c.form)) fromTeachers.add(id);
-      });
-      if (fromTeachers.size === 0) return c;
-      const merged = [...new Set([...c.subjectIds, ...fromTeachers])];
-      const same = merged.length === c.subjectIds.length && merged.every(id => c.subjectIds.includes(id));
+      const replaced = [...fromTeachers];
+      const same = replaced.length === c.subjectIds.length && replaced.every(id => c.subjectIds.includes(id));
       if (same) return c;
       changed = true;
-      return { ...c, subjectIds: merged };
+      return { ...c, subjectIds: replaced };
     });
     if (changed) {
       _setClasses(next);
