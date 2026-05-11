@@ -73,9 +73,24 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
     const classSubjectLastSlot: Record<string, number> = {};
 
     teachers.forEach(t => { teacherLoad[t.id] = 0; });
+
+    // Auto-derive each class's subjects from teacher assignments.
+    // A class only gets a subject scheduled if at least one teacher is assigned to teach
+    // that subject to that class. Falls back to the class's configured subjectIds when no
+    // teacher assignments exist for the class (keeps legacy behavior).
+    const classSubjectIds: Record<string, string[]> = {};
     classes.forEach(c => {
+      const fromTeachers = new Set<string>();
+      teachers.forEach(t => {
+        t.assignments.forEach(a => {
+          if (a.classIds.includes(c.id) && subjects.some(s => s.id === a.subjectId)) {
+            fromTeachers.add(a.subjectId);
+          }
+        });
+      });
+      classSubjectIds[c.id] = fromTeachers.size > 0 ? [...fromTeachers] : [...c.subjectIds];
       classSubjectCount[c.id] = {};
-      c.subjectIds.forEach(sId => { classSubjectCount[c.id][sId] = 0; });
+      classSubjectIds[c.id].forEach(sId => { classSubjectCount[c.id][sId] = 0; });
     });
 
     const EARLY_DAYS = new Set(['Monday', 'Tuesday', 'Wednesday']);
