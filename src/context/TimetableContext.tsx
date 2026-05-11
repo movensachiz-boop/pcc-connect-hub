@@ -134,7 +134,10 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       for (const day of DAYS) {
         for (let slot = 1; slot <= totalSlots; slot++) {
           if (slot === breakSlot || slot === lunchSlot) continue;
-          if (isNonAcademic(day, slot)) continue;
+          // inline non-academic check (helpers below not yet in scope)
+          let ap = 0;
+          for (let i = 1; i <= slot; i++) if (i !== breakSlot && i !== lunchSlot) ap++;
+          if (isSportsPeriod(day, ap)) continue;
           academicPairs.push({ day, slot });
         }
       }
