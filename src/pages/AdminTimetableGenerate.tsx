@@ -2,14 +2,23 @@ import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTimetable } from '@/context/TimetableContext';
 import { Button } from '@/components/ui/button';
-import { Calendar, Loader2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Calendar, Loader2, CheckCircle, AlertTriangle, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import type { DayOfWeek } from '@/types/school';
+
+const ALL_DAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export default function AdminTimetableGenerate() {
-  const { teachers, subjects, classes, setClasses, config, generateTimetable, timetable } = useTimetable();
+  const { teachers, subjects, classes, setClasses, config, setConfig, generateTimetable, timetable } = useTimetable();
   const [generating, setGenerating] = useState(false);
   const navigate = useNavigate();
+
+  const toggleSportsDay = (day: DayOfWeek) => {
+    const has = config.sportsDays.includes(day);
+    setConfig({ ...config, sportsDays: has ? config.sportsDays.filter(d => d !== day) : [...config.sportsDays, day] });
+  };
 
   const syncSubjectsFromTeachers = () => {
     let updated = 0;
@@ -65,6 +74,63 @@ export default function AdminTimetableGenerate() {
                   {r.count !== null && <span className="text-sm text-muted-foreground">{r.count}</span>}
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="bg-card rounded-xl border p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <SettingsIcon className="w-4 h-4 text-primary" />
+              <h3 className="text-base font-semibold">Timetable Settings</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground mb-2 block">Sports Days</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ALL_DAYS.map(d => (
+                    <button key={d} onClick={() => toggleSportsDay(d)}
+                      className={`px-3 py-1.5 text-xs rounded-md border transition-colors ${config.sportsDays.includes(d) ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-border hover:border-primary/50'}`}
+                    >{d.slice(0, 3)}</button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5">Selected days reserve afternoon periods for sports</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Sports Starts at Period</label>
+                  <Input type="number" min={1} max={config.periodsPerDay} className="mt-1" value={config.sportsStartPeriod}
+                    onChange={e => setConfig({ ...config, sportsStartPeriod: Math.max(1, Number(e.target.value) || 1) })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Periods Per Day</label>
+                  <Input type="number" min={1} max={12} className="mt-1" value={config.periodsPerDay}
+                    onChange={e => setConfig({ ...config, periodsPerDay: Math.max(1, Number(e.target.value) || 1) })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">School Start</label>
+                  <Input type="time" className="mt-1" value={config.startTime}
+                    onChange={e => setConfig({ ...config, startTime: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">School End</label>
+                  <Input type="time" className="mt-1" value={config.endTime}
+                    onChange={e => setConfig({ ...config, endTime: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Period Duration (min)</label>
+                  <Input type="number" min={20} max={90} className="mt-1" value={config.periodDuration}
+                    onChange={e => setConfig({ ...config, periodDuration: Math.max(1, Number(e.target.value) || 1) })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Morning Break After Period</label>
+                  <Input type="number" min={1} max={config.periodsPerDay} className="mt-1" value={config.morningBreakAfterPeriod}
+                    onChange={e => setConfig({ ...config, morningBreakAfterPeriod: Math.max(1, Number(e.target.value) || 1) })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Lunch After Period</label>
+                  <Input type="number" min={1} max={config.periodsPerDay} className="mt-1" value={config.lunchAfterPeriod}
+                    onChange={e => setConfig({ ...config, lunchAfterPeriod: Math.max(1, Number(e.target.value) || 1) })} />
+                </div>
+              </div>
             </div>
           </div>
 
