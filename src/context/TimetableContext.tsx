@@ -14,7 +14,7 @@ interface TimetableContextType {
   setClasses: (classes: SchoolClass[]) => void;
   timetable: Timetable | null;
   generateTimetable: () => void;
-  updateSlot: (slotId: string, updates: Partial<TimetableSlot>) => void;
+  updateSlot: (slotId: string, updates: Partial<TimetableSlot>, combinedClassIds?: string[]) => void;
 }
 
 const TimetableContext = createContext<TimetableContextType | undefined>(undefined);
@@ -368,6 +368,12 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
     });
     Object.entries(teacherMap).forEach(([_, slotGroup]) => {
       if (slotGroup.length > 1) {
+        // Skip clash if all slots are intentionally combined together (same group)
+        const allCombined = slotGroup.every(s => {
+          const others = slotGroup.filter(o => o.id !== s.id).map(o => o.classId);
+          return others.every(cid => s.combinedClassIds?.includes(cid));
+        });
+        if (allCombined) return;
         const teacher = teachers.find(t => t.id === slotGroup[0].teacherId);
         conflicts.push({
           type: 'teacher-clash',
@@ -379,9 +385,36 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
     return conflicts;
   };
 
-  const updateSlot = useCallback((slotId: string, updates: Partial<TimetableSlot>) => {
+  const updateSlot = useCallback((slotId: string, updates: Partial<TimetableSlot>, combinedClassIds?: string[]) => {
     if (!timetable) return;
-    const newSlots = timetable.slots.map(s => s.id === slotId ? { ...s, ...updates } : s);
+    const original = timetable.slots.find(s => s.id === slotId);
+    if (!original) return;
+    const combined = combinedClassIds || updates.combinedClassIds || [];
+    let newSlots = timetable.slots.map(s => s.id === slotId ? { ...s, ...updates, combinedClassIds: combined } : s);
+    if (combined.length > 0 && updates.subjectId !== undefined) {
+      // Mirror subject/teacher to combined classes' slots at same day/period.
+      // Each combined slot records the full group (excluding itself) so the conflict
+      // detector recognizes it as an intentional joint period.
+      const groupAll = [original.classId, ...combined];
+      newSlots = newSlots.map(s => {
+        if (s.day !== original.day || s.period !== original.period) return s;
+        if (!combined.includes(s.classId)) return s;
+        return {
+          ...s,
+          subjectId: updates.subjectId,
+          teacherId: updates.teacherId,
+          combinedClassIds: groupAll.filter(id => id !== s.classId),
+        };
+      });
+    } else if (combined.length === 0 && original.combinedClassIds && original.combinedClassIds.length > 0) {
+      // Un-combine: clear sibling slots' combined flag
+      const siblings = original.combinedClassIds;
+      newSlots = newSlots.map(s => {
+        if (s.day !== original.day || s.period !== original.period) return s;
+        if (!siblings.includes(s.classId)) return s;
+        return { ...s, combinedClassIds: [] };
+      });
+    }
     setTimetable({ ...timetable, slots: newSlots, conflicts: detectConflicts(newSlots) });
   }, [timetable, teachers]);
 

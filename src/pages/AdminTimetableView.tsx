@@ -60,6 +60,7 @@ export default function AdminTimetableView() {
       sublabel: viewMode === 'class' ? teacher?.name : classes.find(c => c.id === slot.classId)?.id,
       className: isConflict ? 'bg-destructive/20 text-destructive border border-destructive/30' : subject ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
       isConflict, editable: true,
+      combinedCount: slot.combinedClassIds?.length || 0,
     };
   };
 
@@ -68,12 +69,12 @@ export default function AdminTimetableView() {
     if (slot && slot.type === 'lesson') setEditSlot(slot);
   };
 
-  const handleSlotSave = (slotId: string, updates: Partial<TimetableSlot>) => {
+  const handleSlotSave = (slotId: string, updates: Partial<TimetableSlot>, combinedClassIds?: string[]) => {
     const cleaned = { ...updates };
     if (cleaned.subjectId === '__none') cleaned.subjectId = undefined;
     if (cleaned.teacherId === '__none') cleaned.teacherId = undefined;
-    updateSlot(slotId, cleaned);
-    toast.success('Slot updated');
+    updateSlot(slotId, cleaned, combinedClassIds);
+    toast.success(combinedClassIds && combinedClassIds.length > 0 ? `Slot updated — combined with ${combinedClassIds.length} class(es)` : 'Slot updated');
   };
 
   const handleClearSlot = (day: DayOfWeek, period: number) => {
@@ -183,6 +184,9 @@ export default function AdminTimetableView() {
                             </div>
                             {display && 'sublabel' in display && display.sublabel && (
                               <div className="text-[10px] text-muted-foreground mt-0.5">{display.sublabel}</div>
+                            )}
+                            {display && 'combinedCount' in display && display.combinedCount > 0 && (
+                              <div className="text-[9px] font-semibold text-accent-foreground bg-accent/30 rounded px-1 mt-0.5 inline-block">+{display.combinedCount} combined</div>
                             )}
                             {display?.isConflict && <AlertTriangle className="w-3 h-3 text-destructive mt-0.5 mx-auto" />}
                           </div>
