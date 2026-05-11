@@ -118,6 +118,54 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       classSubjectIds[c.id].forEach(sId => { classSubjectCount[c.id][sId] = 0; });
     });
 
+    // Pre-mark "free periods" evenly across days so empty slots aren't clustered.
+    // For each class, compute total academic slots vs. total required subject periods,
+    // then reserve the difference by marking the LAST academic slot of as many days as
+    // needed (rotating through days for fairness when multiple frees per day are needed).
+    const freeSlots: Record<string, Set<string>> = {}; // classId -> Set("day-slot")
+    classes.forEach(c => {
+      freeSlots[c.id] = new Set();
+      const subs = classSubjectIds[c.id]
+        .map(id => subjects.find(s => s.id === id))
+        .filter(Boolean) as Subject[];
+      const requiredPeriods = subs.reduce((sum, s) => sum + s.periodsPerWeek, 0);
+      // Build list of academic (day, slot) pairs in order
+      const academicPairs: Array<{ day: DayOfWeek; slot: number }> = [];
+      for (const day of DAYS) {
+        for (let slot = 1; slot <= totalSlots; slot++) {
+          if (slot === breakSlot || slot === lunchSlot) continue;
+          if (isNonAcademic(day, slot)) continue;
+          academicPairs.push({ day, slot });
+        }
+      }
+      const totalAcademic = academicPairs.length;
+      const freeNeeded = Math.max(0, totalAcademic - requiredPeriods);
+      if (freeNeeded === 0) return;
+      // Group by day, take from end of each day, rotate days
+      const byDay: Record<string, number[]> = {};
+      academicPairs.forEach(p => { (byDay[p.day] ||= []).push(p.slot); });
+      Object.values(byDay).forEach(arr => arr.sort((a, b) => b - a)); // descending = last first
+      let assigned = 0;
+      let round = 0;
+      while (assigned < freeNeeded) {
+        let placedThisRound = 0;
+        for (const day of DAYS) {
+          if (assigned >= freeNeeded) break;
+          const arr = byDay[day] || [];
+          if (arr.length > round) {
+            freeSlots[c.id].add(`${day}-${arr[round]}`);
+            assigned++;
+            placedThisRound++;
+          }
+        }
+        if (placedThisRound === 0) break;
+        round++;
+      }
+    });
+
+    const isPreMarkedFree = (classId: string, day: DayOfWeek, slot: number) =>
+      freeSlots[classId]?.has(`${day}-${slot}`);
+
     const EARLY_DAYS = new Set(['Monday', 'Tuesday', 'Wednesday']);
 
     const isNonAcademic = (day: DayOfWeek, s: number) => {
@@ -200,6 +248,12 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
             slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: pa.subjectId, teacherId: pa.teacherId, type: 'lesson' });
             const t = teachers.find(t => t.id === pa.teacherId);
             recordSubjectSlot(cls.id, day, pa.subjectId, slot, pa.teacherId, t);
+            continue;
+          }
+
+          // Reserved free period — keep slot empty so frees are spread across the week
+          if (isPreMarkedFree(cls.id, day, slot)) {
+            slots.push({ id: v4(), day, period: slot, classId: cls.id, type: 'lesson' });
             continue;
           }
 
