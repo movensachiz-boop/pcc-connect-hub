@@ -79,6 +79,9 @@ export default function AdminTimetableGenerate() {
             <p className="text-sm text-muted-foreground mb-6">
               The system will create optimized timetables for all {classes.length} classes, ensuring no teacher clashes and proper break enforcement.
             </p>
+            <Button onClick={syncSubjectsFromTeachers} variant="outline" size="lg" className="w-full mb-2">
+              <RefreshCw className="w-4 h-4 mr-2" /> Sync Class Subjects from Teachers
+            </Button>
             <Button onClick={handleGenerate} disabled={!allReady || generating} size="lg" className="w-full">
               {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : 'Generate Timetable'}
             </Button>
