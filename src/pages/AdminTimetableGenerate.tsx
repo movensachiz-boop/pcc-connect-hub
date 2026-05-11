@@ -38,10 +38,11 @@ export default function AdminTimetableGenerate() {
 
   const handleGenerate = () => {
     setGenerating(true);
-    setTimeout(() => {
+    // Defer to next frame so the spinner can render before the synchronous generation runs
+    requestAnimationFrame(() => {
       generateTimetable();
       setGenerating(false);
-    }, 1500);
+    });
   };
 
   const readiness = [
