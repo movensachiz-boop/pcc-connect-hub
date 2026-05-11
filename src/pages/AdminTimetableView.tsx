@@ -60,6 +60,7 @@ export default function AdminTimetableView() {
       sublabel: viewMode === 'class' ? teacher?.name : classes.find(c => c.id === slot.classId)?.id,
       className: isConflict ? 'bg-destructive/20 text-destructive border border-destructive/30' : subject ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
       isConflict, editable: true,
+      combinedCount: slot.combinedClassIds?.length || 0,
     };
   };
 
