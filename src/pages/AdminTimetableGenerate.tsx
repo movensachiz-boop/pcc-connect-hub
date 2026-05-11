@@ -2,13 +2,35 @@ import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useTimetable } from '@/context/TimetableContext';
 import { Button } from '@/components/ui/button';
-import { Calendar, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Loader2, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function AdminTimetableGenerate() {
-  const { teachers, subjects, classes, config, generateTimetable, timetable } = useTimetable();
+  const { teachers, subjects, classes, setClasses, config, generateTimetable, timetable } = useTimetable();
   const [generating, setGenerating] = useState(false);
   const navigate = useNavigate();
+
+  const syncSubjectsFromTeachers = () => {
+    const compulsoryIds = subjects.filter(s => s.isCompulsory).map(s => s.id);
+    let updated = 0;
+    const next = classes.map(c => {
+      const set = new Set<string>();
+      teachers.forEach(t => t.assignments.forEach(a => {
+        if (a.classIds.includes(c.id) && subjects.some(s => s.id === a.subjectId)) set.add(a.subjectId);
+      }));
+      compulsoryIds.forEach(id => {
+        const subj = subjects.find(s => s.id === id);
+        if (subj && subj.forms.includes(c.form)) set.add(id);
+      });
+      const merged = [...new Set([...c.subjectIds, ...set])];
+      const same = merged.length === c.subjectIds.length && merged.every(id => c.subjectIds.includes(id));
+      if (!same) updated++;
+      return same ? c : { ...c, subjectIds: merged };
+    });
+    setClasses(next);
+    toast.success(updated === 0 ? 'All classes already in sync' : `Updated ${updated} class(es) from teacher assignments`);
+  };
 
   const handleGenerate = () => {
     setGenerating(true);
@@ -57,6 +79,9 @@ export default function AdminTimetableGenerate() {
             <p className="text-sm text-muted-foreground mb-6">
               The system will create optimized timetables for all {classes.length} classes, ensuring no teacher clashes and proper break enforcement.
             </p>
+            <Button onClick={syncSubjectsFromTeachers} variant="outline" size="lg" className="w-full mb-2">
+              <RefreshCw className="w-4 h-4 mr-2" /> Sync Class Subjects from Teachers
+            </Button>
             <Button onClick={handleGenerate} disabled={!allReady || generating} size="lg" className="w-full">
               {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</> : 'Generate Timetable'}
             </Button>
