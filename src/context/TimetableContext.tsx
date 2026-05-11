@@ -14,7 +14,7 @@ interface TimetableContextType {
   setClasses: (classes: SchoolClass[]) => void;
   timetable: Timetable | null;
   generateTimetable: () => void;
-  updateSlot: (slotId: string, updates: Partial<TimetableSlot>) => void;
+  updateSlot: (slotId: string, updates: Partial<TimetableSlot>, combinedClassIds?: string[]) => void;
 }
 
 const TimetableContext = createContext<TimetableContextType | undefined>(undefined);
