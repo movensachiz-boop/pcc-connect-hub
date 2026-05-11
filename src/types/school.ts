@@ -57,6 +57,7 @@ export interface TimetableSlot {
   subjectId?: string;
   teacherId?: string;
   type: 'lesson' | 'break' | 'lunch' | 'sports';
+  combinedClassIds?: string[]; // other class IDs taught jointly in this period
 }
 
 export interface TimetableConflict {
