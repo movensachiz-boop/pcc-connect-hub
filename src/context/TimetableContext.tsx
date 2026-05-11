@@ -279,6 +279,11 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
               return !violatesGapRule(cls.id, day, s.id, slot);
             })
             .sort((a, b) => {
+              // Highest priority: ENG/MATH must be placed before morning break
+              const isBeforeBreak = currentSection === 'before-break';
+              const aDailyBeforeBreak = isBeforeBreak && dailySubjectIds.has(a.id) && !scheduledToday.has(a.id) ? 0 : 1;
+              const bDailyBeforeBreak = isBeforeBreak && dailySubjectIds.has(b.id) && !scheduledToday.has(b.id) ? 0 : 1;
+              if (aDailyBeforeBreak !== bDailyBeforeBreak) return aDailyBeforeBreak - bDailyBeforeBreak;
               const aDailyNeeded = dailySubjectIds.has(a.id) && !scheduledToday.has(a.id) ? 0 : 1;
               const bDailyNeeded = dailySubjectIds.has(b.id) && !scheduledToday.has(b.id) ? 0 : 1;
               if (aDailyNeeded !== bDailyNeeded) return aDailyNeeded - bDailyNeeded;
