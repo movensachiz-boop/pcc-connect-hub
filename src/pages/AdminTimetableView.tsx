@@ -68,12 +68,12 @@ export default function AdminTimetableView() {
     if (slot && slot.type === 'lesson') setEditSlot(slot);
   };
 
-  const handleSlotSave = (slotId: string, updates: Partial<TimetableSlot>) => {
+  const handleSlotSave = (slotId: string, updates: Partial<TimetableSlot>, combinedClassIds?: string[]) => {
     const cleaned = { ...updates };
     if (cleaned.subjectId === '__none') cleaned.subjectId = undefined;
     if (cleaned.teacherId === '__none') cleaned.teacherId = undefined;
-    updateSlot(slotId, cleaned);
-    toast.success('Slot updated');
+    updateSlot(slotId, cleaned, combinedClassIds);
+    toast.success(combinedClassIds && combinedClassIds.length > 0 ? `Slot updated — combined with ${combinedClassIds.length} class(es)` : 'Slot updated');
   };
 
   const handleClearSlot = (day: DayOfWeek, period: number) => {
