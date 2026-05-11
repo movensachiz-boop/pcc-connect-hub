@@ -12,24 +12,19 @@ export default function AdminTimetableGenerate() {
   const navigate = useNavigate();
 
   const syncSubjectsFromTeachers = () => {
-    const compulsoryIds = subjects.filter(s => s.isCompulsory).map(s => s.id);
     let updated = 0;
     const next = classes.map(c => {
       const set = new Set<string>();
       teachers.forEach(t => t.assignments.forEach(a => {
         if (a.classIds.includes(c.id) && subjects.some(s => s.id === a.subjectId)) set.add(a.subjectId);
       }));
-      compulsoryIds.forEach(id => {
-        const subj = subjects.find(s => s.id === id);
-        if (subj && subj.forms.includes(c.form)) set.add(id);
-      });
-      const merged = [...new Set([...c.subjectIds, ...set])];
-      const same = merged.length === c.subjectIds.length && merged.every(id => c.subjectIds.includes(id));
+      const replaced = [...set];
+      const same = replaced.length === c.subjectIds.length && replaced.every(id => c.subjectIds.includes(id));
       if (!same) updated++;
-      return same ? c : { ...c, subjectIds: merged };
+      return same ? c : { ...c, subjectIds: replaced };
     });
     setClasses(next);
-    toast.success(updated === 0 ? 'All classes already in sync' : `Updated ${updated} class(es) from teacher assignments`);
+    toast.success(updated === 0 ? 'All classes already in sync' : `Synced ${updated} class(es) — subjects match teacher assignments`);
   };
 
   const handleGenerate = () => {
