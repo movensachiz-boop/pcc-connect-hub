@@ -416,12 +416,18 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
                 !teacherSchedule[teacher.id]?.[`${day}-${nextSlot}`] &&
                 (teacherLoad[teacher.id] || 0) < teacher.maxPeriodsPerWeek
               ) {
-                preAssigned[`${cls.id}-${day}-${nextSlot}`] = { subjectId: subject.id, teacherId: teacher.id };
+                preAssigned[`${cls.id}-${day}-${nextSlot}`] = { subjectId: subject.id, teacherId: teacher.id, combinedClassIds: others };
                 // Also pre-assign double for sibling combined classes
                 others.forEach(cid => {
                   if (!preAssigned[`${cid}-${day}-${nextSlot}`] &&
                       (classSubjectCount[cid]?.[subject.id] || 0) < subject.periodsPerWeek) {
-                    preAssigned[`${cid}-${day}-${nextSlot}`] = { subjectId: subject.id, teacherId: teacher.id };
+                    const otherCombined = [cls.id, ...others.filter(o => o !== cid)];
+                    preAssigned[`${cid}-${day}-${nextSlot}`] = {
+                      subjectId: subject.id,
+                      teacherId: teacher.id,
+                      combinedClassIds: otherCombined,
+                      skipTeacherLoad: true,
+                    };
                   }
                 });
                 if (!teacherSchedule[teacher.id]) teacherSchedule[teacher.id] = {};
