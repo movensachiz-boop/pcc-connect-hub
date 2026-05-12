@@ -725,7 +725,7 @@ const AdminPayments = () => {
                     <SelectContent>
                       {filteredStudents.map(s => (
                         <SelectItem key={s.id} value={s.id}>
-                          {s.first_name} {s.last_name} ({s.registration_number})
+                          {s.first_name} {s.last_name} ({s.registration_number}){s.form || s.stream ? ` — ${formatClass(s)}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
