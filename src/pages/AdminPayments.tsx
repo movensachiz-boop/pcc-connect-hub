@@ -40,7 +40,64 @@ interface StudentProfile {
   last_name: string;
   registration_number: string;
   guardian_phone: string | null;
+  form?: string | null;
+  stream?: string | null;
 }
+
+interface ScannedPayment {
+  depositor_name?: string;
+  student_name?: string;
+  possible_student_name?: string;
+  amount?: string;
+  currency?: string;
+  bank_name?: string;
+  swift_code?: string;
+  reference_number?: string;
+  transaction_id_format?: string;
+  date?: string;
+  method?: string;
+}
+
+const getErrorMessage = (err: unknown) => err instanceof Error ? err.message : "Something went wrong";
+
+const normalizeLookupText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const lookupTokens = (value: string) => normalizeLookupText(value).split(" ").filter(Boolean);
+
+const scoreStudentMatch = (rawName: string, student: StudentProfile) => {
+  const haystack = normalizeLookupText(rawName);
+  const first = normalizeLookupText(student.first_name);
+  const last = normalizeLookupText(student.last_name);
+  const reg = normalizeLookupText(student.registration_number);
+  const full = normalizeLookupText(`${student.first_name} ${student.last_name}`);
+  const reverse = normalizeLookupText(`${student.last_name} ${student.first_name}`);
+  const words = new Set(lookupTokens(rawName));
+
+  let score = 0;
+  if (reg && haystack.includes(reg)) score += 10;
+  if (full && haystack.includes(full)) score += 8;
+  if (reverse && haystack.includes(reverse)) score += 8;
+  if (first && words.has(first)) score += 3;
+  if (last && words.has(last)) score += 3;
+  return score;
+};
+
+const findStrongStudentMatch = (rawName: string, students: StudentProfile[]) => {
+  const ranked = students
+    .map((student) => ({ student, score: scoreStudentMatch(rawName, student) }))
+    .filter((item) => item.score >= 6)
+    .sort((a, b) => b.score - a.score);
+
+  if (!ranked.length) return null;
+  if (ranked[1] && ranked[1].score === ranked[0].score) return null;
+  return ranked[0].student;
+};
 
 const AdminPayments = () => {
   const { toast } = useToast();
@@ -48,7 +105,7 @@ const AdminPayments = () => {
   const [loading, setLoading] = useState(true);
   const [slipDialogOpen, setSlipDialogOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [scannedData, setScannedData] = useState<any>(null);
+  const [scannedData, setScannedData] = useState<ScannedPayment | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [students, setStudents] = useState<StudentProfile[]>([]);
@@ -74,7 +131,7 @@ const AdminPayments = () => {
   }, []);
 
   const fetchStudents = async () => {
-    const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone").order("first_name");
+    const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone, form, stream").order("first_name");
     if (data) setStudents(data);
   };
 
@@ -194,26 +251,24 @@ const AdminPayments = () => {
           setManualMethod(payment.method || "Bank Deposit");
           setManualRef(payment.reference_number || "");
 
-          // Try to match student by name
-          const name = (payment.depositor_name || "").toLowerCase();
-          const match = students.find(s =>
-            name.includes(s.first_name.toLowerCase()) || name.includes(s.last_name.toLowerCase())
-          );
+          const extractedName = payment.student_name || payment.possible_student_name || payment.depositor_name || "";
+          const match = findStrongStudentMatch(extractedName, students);
           if (match) {
             setSelectedStudentId(match.id);
             setNewFirstName(match.first_name);
             setNewLastName(match.last_name);
+            setStudentSearch(`${match.first_name} ${match.last_name}`);
           } else {
-            // Auto-split depositor name for editable registration
-            const parts = (payment.depositor_name || "").trim().split(/\s+/);
+            const parts = extractedName.trim().split(/\s+/);
             setNewFirstName(parts[0] || "");
             setNewLastName(parts.slice(1).join(" ") || "");
             setSelectedStudentId("");
+            setStudentSearch(extractedName);
           }
           setConfirmDialogOpen(true);
         }
-      } catch (err: any) {
-        toast({ title: "Scan Failed", description: err.message, variant: "destructive" });
+      } catch (err) {
+        toast({ title: "Scan Failed", description: getErrorMessage(err), variant: "destructive" });
       } finally {
         setScanning(false);
       }
@@ -251,7 +306,7 @@ const AdminPayments = () => {
         if (regErr) throw regErr;
         if (data?.error) throw new Error(data.error);
         const { data: newStudents } = await supabase.from("profiles")
-          .select("id, first_name, last_name, registration_number, guardian_phone")
+          .select("id, first_name, last_name, registration_number, guardian_phone, form, stream")
           .ilike("first_name", newFirstName.trim())
           .ilike("last_name", newLastName.trim())
           .order("created_at", { ascending: false })
@@ -262,8 +317,8 @@ const AdminPayments = () => {
         } else {
           throw new Error("Failed to create student record");
         }
-      } catch (err: any) {
-        toast({ title: "Auto-register failed", description: err.message, variant: "destructive" });
+      } catch (err) {
+        toast({ title: "Auto-register failed", description: getErrorMessage(err), variant: "destructive" });
         setSaving(false);
         return;
       }
@@ -299,7 +354,7 @@ const AdminPayments = () => {
       bank_name: scannedData?.bank_name || null,
       swift_code: scannedData?.swift_code || null,
       transaction_id_format: scannedData?.transaction_id_format || null,
-    } as any).select().single();
+    }).select().single();
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -364,7 +419,7 @@ const AdminPayments = () => {
       await fetchStudents();
       // Find the newly created student by name match (most recent)
       const { data: newStudents } = await supabase.from("profiles")
-        .select("id, first_name, last_name, registration_number, guardian_phone")
+        .select("id, first_name, last_name, registration_number, guardian_phone, form, stream")
         .ilike("first_name", newFirstName.trim())
         .ilike("last_name", newLastName.trim())
         .order("created_at", { ascending: false })
@@ -383,16 +438,20 @@ const AdminPayments = () => {
       setNewForm("");
       setNewStream("");
       setNewGender("male");
-    } catch (err: any) {
-      toast({ title: "Registration Failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Registration Failed", description: getErrorMessage(err), variant: "destructive" });
     }
     setRegistering(false);
   };
 
-  const filteredStudents = students.filter(s =>
-    studentSearch === "" ||
-    `${s.first_name} ${s.last_name} ${s.registration_number}`.toLowerCase().includes(studentSearch.toLowerCase())
-  );
+  const filteredStudents = students
+    .filter(s => {
+      if (studentSearch === "") return true;
+      const queryTokens = lookupTokens(studentSearch);
+      const target = normalizeLookupText(`${s.first_name} ${s.last_name} ${s.registration_number} ${s.form || ""} ${s.stream || ""}`);
+      return queryTokens.every((token) => target.includes(token));
+    })
+    .slice(0, 80);
 
   return (
     <DashboardLayout role="admin">
@@ -682,7 +741,7 @@ const AdminPayments = () => {
                     <SelectContent>
                       {filteredStudents.map(s => (
                         <SelectItem key={s.id} value={s.id}>
-                          {s.first_name} {s.last_name} ({s.registration_number})
+                          {s.first_name} {s.last_name} ({s.registration_number}){s.form || s.stream ? ` — ${formatClass(s)}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
