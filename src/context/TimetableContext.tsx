@@ -394,7 +394,13 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
               // for this slot will emit them as combined). Their teacherLoad is NOT incremented
               // again since the teacher physically teaches one combined session.
               others.forEach(cid => {
-                preAssigned[`${cid}-${day}-${slot}`] = { subjectId: subject.id, teacherId: teacher.id };
+                const otherCombined = [cls.id, ...others.filter(o => o !== cid)];
+                preAssigned[`${cid}-${day}-${slot}`] = {
+                  subjectId: subject.id,
+                  teacherId: teacher.id,
+                  combinedClassIds: otherCombined,
+                  skipTeacherLoad: true,
+                };
               });
 
               assigned = true;
