@@ -408,7 +408,36 @@ const AdminStudents = () => {
     fetchStudents();
   };
 
-  const handleResetPassword = async () => {
+  const handleRemoveClass = async () => {
+    if (!removeClassForm || !removeClassStream) {
+      toast({ title: "Missing Fields", description: "Pick the class to remove.", variant: "destructive" });
+      return;
+    }
+    const matches = students.filter(s => (s.form || "") === removeClassForm && (s.stream || "") === removeClassStream);
+    if (matches.length === 0) {
+      toast({ title: "No Students", description: "No students in that class.", variant: "destructive" });
+      return;
+    }
+    if (removeConfirmText.trim().toUpperCase() !== "DELETE") {
+      toast({ title: "Confirmation Required", description: "Type DELETE to confirm.", variant: "destructive" });
+      return;
+    }
+    if (!confirm(`PERMANENTLY DELETE ${matches.length} student(s) from Form ${removeClassForm} ${removeClassStream}? This cannot be undone.`)) return;
+
+    setRemoveSubmitting(true);
+    const ids = matches.map(s => s.id);
+    const { error } = await supabase.from("profiles").delete().in("id", ids);
+    setRemoveSubmitting(false);
+
+    if (error) {
+      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Class Removed", description: `${matches.length} student(s) deleted from Form ${removeClassForm} ${removeClassStream}.` });
+    setRemoveClassOpen(false);
+    setRemoveClassForm(""); setRemoveClassStream(""); setRemoveConfirmText("");
+    fetchStudents();
+  };
     if (!resetRegNumber.trim() || !newPassword) {
       toast({ title: "Missing Fields", description: "Please enter the registration number and new password.", variant: "destructive" });
       return;
