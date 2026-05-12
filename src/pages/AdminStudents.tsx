@@ -1501,6 +1501,57 @@ const AdminStudents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Remove Class Dialog */}
+      <Dialog open={removeClassOpen} onOpenChange={(v) => { if (!removeSubmitting) { setRemoveClassOpen(v); if (!v) { setRemoveClassForm(""); setRemoveClassStream(""); setRemoveConfirmText(""); } } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Remove All Students in a Class</DialogTitle>
+            <DialogDescription>
+              This permanently deletes every student profile in the chosen class. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const combos = Array.from(new Set(students.map(s => `${s.form || ""}|${s.stream || ""}`)))
+              .filter(k => k !== "|")
+              .sort();
+            const count = students.filter(s => (s.form || "") === removeClassForm && (s.stream || "") === removeClassStream).length;
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Class to remove</Label>
+                  <Select value={`${removeClassForm}|${removeClassStream}`} onValueChange={(v) => { const [f, s] = v.split("|"); setRemoveClassForm(f); setRemoveClassStream(s); }}>
+                    <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                    <SelectContent>
+                      {combos.map(k => {
+                        const [f, s] = k.split("|");
+                        const c = students.filter(x => (x.form || "") === f && (x.stream || "") === s).length;
+                        return <SelectItem key={k} value={k}>Form {f} {s} ({c})</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {removeClassForm && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    {count} student(s) will be <strong>permanently deleted</strong> from Form {removeClassForm} {removeClassStream}.
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Type <strong>DELETE</strong> to confirm</Label>
+                  <Input value={removeConfirmText} onChange={(e) => setRemoveConfirmText(e.target.value)} placeholder="DELETE" />
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveClassOpen(false)} disabled={removeSubmitting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleRemoveClass} disabled={removeSubmitting} className="gap-2">
+              {removeSubmitting && <Loader2 size={16} className="animate-spin" />}
+              Remove Class
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
