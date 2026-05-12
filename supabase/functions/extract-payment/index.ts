@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
 
 Extract:
 - depositor_name (the person who made the deposit)
+- student_name (the student/pupil/learner name if the receipt says it is for a different person; otherwise same as depositor_name)
 - amount (numeric value only, no currency symbol)
 - currency (USD, ZWL, etc. - default USD if unclear)
 - bank_name (full official bank name, e.g. "Ecobank Zimbabwe", "NBS Building Society")
@@ -83,9 +84,9 @@ Extract:
 - method (Bank Deposit, Mobile Money, EcoCash, etc.)
 
 Return ONLY a valid JSON object. No explanation or markdown.
-Example: {"depositor_name":"James Mwangi","amount":"450","currency":"USD","bank_name":"Ecobank Zimbabwe","swift_code":"ADORZIHA","reference_number":"SMTEZWDTGBS9Y7Q8","transaction_id_format":"SMTXXXXXXXXXX","date":"2025-03-28","method":"Bank Deposit"}
+Example: {"depositor_name":"James Mwangi","student_name":"James Mwangi","amount":"450","currency":"USD","bank_name":"Ecobank Zimbabwe","swift_code":"ADORZIHA","reference_number":"SMTEZWDTGBS9Y7Q8","transaction_id_format":"SMTXXXXXXXXXX","date":"2025-03-28","method":"Bank Deposit"}
 
-If a field is not visible, use an empty string. Make your best guess for unclear text.`,
+If multiple names are visible, put the account payer in depositor_name and the student being paid for in student_name. If a field is not visible, use an empty string. Make your best guess for unclear text.`,
           },
           {
             role: "user",
@@ -110,6 +111,7 @@ If a field is not visible, use an empty string. Make your best guess for unclear
                 type: "object",
                 properties: {
                   depositor_name: { type: "string" },
+                  student_name: { type: "string" },
                   amount: { type: "string" },
                   currency: { type: "string" },
                   bank_name: { type: "string" },
