@@ -81,7 +81,7 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
     const teacherSchedule: Record<string, Record<string, string>> = {};
     const teacherLoad: Record<string, number> = {};
     const classSubjectCount: Record<string, Record<string, number>> = {};
-    const preAssigned: Record<string, { subjectId: string; teacherId: string }> = {};
+    const preAssigned: Record<string, { subjectId: string; teacherId: string; combinedClassIds?: string[]; skipTeacherLoad?: boolean }> = {};
 
     const totalSlots = config.periodsPerDay + 2;
     const breakSlot = config.morningBreakAfterPeriod + 1;
@@ -144,15 +144,22 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       const totalAcademic = academicPairs.length;
       const freeNeeded = Math.max(0, totalAcademic - requiredPeriods);
       if (freeNeeded === 0) return;
-      // Group by day, take from end of each day, rotate days
+      // Group by day and SHUFFLE within each day so frees aren't always last-period.
+      // Then round-robin across days so every class spreads its frees evenly across the week.
       const byDay: Record<string, number[]> = {};
       academicPairs.forEach(p => { (byDay[p.day] ||= []).push(p.slot); });
-      Object.values(byDay).forEach(arr => arr.sort((a, b) => b - a)); // descending = last first
+      Object.values(byDay).forEach(arr => {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      });
       let assigned = 0;
       let round = 0;
+      const dayOrder = shuffle(DAYS as unknown as DayOfWeek[]);
       while (assigned < freeNeeded) {
         let placedThisRound = 0;
-        for (const day of DAYS) {
+        for (const day of dayOrder) {
           if (assigned >= freeNeeded) break;
           const arr = byDay[day] || [];
           if (arr.length > round) {
@@ -164,6 +171,30 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
         if (placedThisRound === 0) break;
         round++;
       }
+    });
+
+    // Identify auto-combine groups: classes in the same form (Forms 5 & 6 only) that
+    // share the SAME teacher for the SAME subject. They will be scheduled together
+    // in the same period as a combined lesson.
+    // Returns a map: classId -> { subjectId -> { teacherId, groupClassIds[] } }
+    const combineGroups: Record<string, Record<string, { teacherId: string; groupClassIds: string[] }>> = {};
+    teachers.forEach(t => {
+      t.assignments.forEach(a => {
+        // Group this teacher's assigned classes by form (only Forms 5 & 6 combine)
+        const byForm: Record<number, string[]> = {};
+        a.classIds.forEach(cid => {
+          const cls = classes.find(c => c.id === cid);
+          if (!cls || (cls.form !== 5 && cls.form !== 6)) return;
+          (byForm[cls.form] ||= []).push(cid);
+        });
+        Object.values(byForm).forEach(group => {
+          if (group.length < 2) return;
+          group.forEach(cid => {
+            if (!combineGroups[cid]) combineGroups[cid] = {};
+            combineGroups[cid][a.subjectId] = { teacherId: t.id, groupClassIds: group };
+          });
+        });
+      });
     });
 
     const isPreMarkedFree = (classId: string, day: DayOfWeek, slot: number) =>
@@ -248,9 +279,25 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
           const preKey = `${cls.id}-${day}-${slot}`;
           if (preAssigned[preKey]) {
             const pa = preAssigned[preKey];
-            slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: pa.subjectId, teacherId: pa.teacherId, type: 'lesson' });
-            const t = teachers.find(t => t.id === pa.teacherId);
-            recordSubjectSlot(cls.id, day, pa.subjectId, slot, pa.teacherId, t);
+            slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: pa.subjectId, teacherId: pa.teacherId, type: 'lesson', combinedClassIds: pa.combinedClassIds });
+            if (pa.skipTeacherLoad) {
+              // Combined sibling — count subject toward this class but don't double-count teacher load
+              classSubjectCount[cls.id][pa.subjectId] = (classSubjectCount[cls.id][pa.subjectId] || 0) + 1;
+              const cdk = `${cls.id}-${day}`;
+              if (!classSubjectDay[cdk]) classSubjectDay[cdk] = new Set();
+              classSubjectDay[cdk].add(pa.subjectId);
+              classSubjectDayCount[`${cls.id}-${day}-${pa.subjectId}`] = (classSubjectDayCount[`${cls.id}-${day}-${pa.subjectId}`] || 0) + 1;
+              const sk = `${cls.id}-${day}-${pa.subjectId}`;
+              if (!classSubjectDaySection[sk]) classSubjectDaySection[sk] = new Set();
+              classSubjectDaySection[sk].add(getDaySection(slot));
+              classSubjectLastSlot[`${cls.id}-${day}-${pa.subjectId}`] = slot;
+              const wk = `${cls.id}-${pa.subjectId}`;
+              if (!classSubjectWeekDays[wk]) classSubjectWeekDays[wk] = new Set();
+              classSubjectWeekDays[wk].add(day);
+            } else {
+              const t = teachers.find(t => t.id === pa.teacherId);
+              recordSubjectSlot(cls.id, day, pa.subjectId, slot, pa.teacherId, t);
+            }
             continue;
           }
 
@@ -323,8 +370,39 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
 
             if (availableTeachers.length > 0) {
               const teacher = availableTeachers.sort((a, b) => (teacherLoad[a.id] || 0) - (teacherLoad[b.id] || 0))[0];
-              slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: subject.id, teacherId: teacher.id, type: 'lesson' });
+
+              // Auto-combine: if this class is in a combine-group for this subject with this
+              // teacher, schedule all sibling classes in the same period as a combined lesson.
+              const grp = combineGroups[cls.id]?.[subject.id];
+              const groupMembers = (grp && grp.teacherId === teacher.id)
+                ? grp.groupClassIds.filter(cid => {
+                    if (cid === cls.id) return true;
+                    if (preAssigned[`${cid}-${day}-${slot}`]) return false;
+                    if (isPreMarkedFree(cid, day, slot)) return false;
+                    if ((classSubjectCount[cid]?.[subject.id] || 0) >= subject.periodsPerWeek) return false;
+                    const dayCount = classSubjectDayCount[`${cid}-${day}-${subject.id}`] || 0;
+                    if (dayCount >= 2) return false;
+                    return (classSubjectIds[cid] || []).includes(subject.id);
+                  })
+                : [cls.id];
+
+              const others = groupMembers.filter(id => id !== cls.id);
+              slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: subject.id, teacherId: teacher.id, type: 'lesson', combinedClassIds: others });
               recordSubjectSlot(cls.id, day, subject.id, slot, teacher.id, teacher);
+
+              // Pre-assign sibling classes for this same period (so the outer per-class loop
+              // for this slot will emit them as combined). Their teacherLoad is NOT incremented
+              // again since the teacher physically teaches one combined session.
+              others.forEach(cid => {
+                const otherCombined = [cls.id, ...others.filter(o => o !== cid)];
+                preAssigned[`${cid}-${day}-${slot}`] = {
+                  subjectId: subject.id,
+                  teacherId: teacher.id,
+                  combinedClassIds: otherCombined,
+                  skipTeacherLoad: true,
+                };
+              });
+
               assigned = true;
 
               const nextSlot = slot + 1;
@@ -338,7 +416,20 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
                 !teacherSchedule[teacher.id]?.[`${day}-${nextSlot}`] &&
                 (teacherLoad[teacher.id] || 0) < teacher.maxPeriodsPerWeek
               ) {
-                preAssigned[`${cls.id}-${day}-${nextSlot}`] = { subjectId: subject.id, teacherId: teacher.id };
+                preAssigned[`${cls.id}-${day}-${nextSlot}`] = { subjectId: subject.id, teacherId: teacher.id, combinedClassIds: others };
+                // Also pre-assign double for sibling combined classes
+                others.forEach(cid => {
+                  if (!preAssigned[`${cid}-${day}-${nextSlot}`] &&
+                      (classSubjectCount[cid]?.[subject.id] || 0) < subject.periodsPerWeek) {
+                    const otherCombined = [cls.id, ...others.filter(o => o !== cid)];
+                    preAssigned[`${cid}-${day}-${nextSlot}`] = {
+                      subjectId: subject.id,
+                      teacherId: teacher.id,
+                      combinedClassIds: otherCombined,
+                      skipTeacherLoad: true,
+                    };
+                  }
+                });
                 if (!teacherSchedule[teacher.id]) teacherSchedule[teacher.id] = {};
                 teacherSchedule[teacher.id][`${day}-${nextSlot}`] = cls.id;
                 classSubjectDayDoubled[doubleKey] = true;
