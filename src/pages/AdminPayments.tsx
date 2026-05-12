@@ -44,6 +44,22 @@ interface StudentProfile {
   stream?: string | null;
 }
 
+interface ScannedPayment {
+  depositor_name?: string;
+  student_name?: string;
+  possible_student_name?: string;
+  amount?: string;
+  currency?: string;
+  bank_name?: string;
+  swift_code?: string;
+  reference_number?: string;
+  transaction_id_format?: string;
+  date?: string;
+  method?: string;
+}
+
+const getErrorMessage = (err: unknown) => err instanceof Error ? err.message : "Something went wrong";
+
 const normalizeLookupText = (value: string) =>
   value
     .normalize("NFD")
@@ -89,7 +105,7 @@ const AdminPayments = () => {
   const [loading, setLoading] = useState(true);
   const [slipDialogOpen, setSlipDialogOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [scannedData, setScannedData] = useState<any>(null);
+  const [scannedData, setScannedData] = useState<ScannedPayment | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [students, setStudents] = useState<StudentProfile[]>([]);
@@ -251,8 +267,8 @@ const AdminPayments = () => {
           }
           setConfirmDialogOpen(true);
         }
-      } catch (err: any) {
-        toast({ title: "Scan Failed", description: err.message, variant: "destructive" });
+      } catch (err) {
+        toast({ title: "Scan Failed", description: getErrorMessage(err), variant: "destructive" });
       } finally {
         setScanning(false);
       }
@@ -301,8 +317,8 @@ const AdminPayments = () => {
         } else {
           throw new Error("Failed to create student record");
         }
-      } catch (err: any) {
-        toast({ title: "Auto-register failed", description: err.message, variant: "destructive" });
+      } catch (err) {
+        toast({ title: "Auto-register failed", description: getErrorMessage(err), variant: "destructive" });
         setSaving(false);
         return;
       }
