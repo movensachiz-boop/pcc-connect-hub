@@ -369,7 +369,39 @@ const AdminStudents = () => {
     fetchStudents();
   };
 
-  const handleResetPassword = async () => {
+  const handleBulkReassign = async () => {
+    if (!reassignFromForm || !reassignFromStream || !reassignToForm || !reassignToStream) {
+      toast({ title: "Missing Fields", description: "Pick both source and destination class.", variant: "destructive" });
+      return;
+    }
+    if (reassignFromForm === reassignToForm && reassignFromStream === reassignToStream) {
+      toast({ title: "Same Class", description: "Source and destination are identical.", variant: "destructive" });
+      return;
+    }
+    const matches = students.filter(s => (s.form || "") === reassignFromForm && (s.stream || "") === reassignFromStream);
+    if (matches.length === 0) {
+      toast({ title: "No Students", description: "No students found in the source class.", variant: "destructive" });
+      return;
+    }
+    if (!confirm(`Move ${matches.length} student(s) from Form ${reassignFromForm} ${reassignFromStream} → Form ${reassignToForm} ${reassignToStream}?`)) return;
+
+    setReassignSubmitting(true);
+    const ids = matches.map(s => s.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ form: reassignToForm, stream: reassignToStream })
+      .in("id", ids);
+    setReassignSubmitting(false);
+
+    if (error) {
+      toast({ title: "Reassign Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Class Reassigned", description: `${matches.length} student(s) moved to Form ${reassignToForm} ${reassignToStream}.` });
+    setReassignOpen(false);
+    setReassignFromForm(""); setReassignFromStream(""); setReassignToForm(""); setReassignToStream("");
+    fetchStudents();
+  };
     if (!resetRegNumber.trim() || !newPassword) {
       toast({ title: "Missing Fields", description: "Please enter the registration number and new password.", variant: "destructive" });
       return;
