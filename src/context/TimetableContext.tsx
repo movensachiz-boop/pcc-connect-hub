@@ -81,7 +81,7 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
     const teacherSchedule: Record<string, Record<string, string>> = {};
     const teacherLoad: Record<string, number> = {};
     const classSubjectCount: Record<string, Record<string, number>> = {};
-    const preAssigned: Record<string, { subjectId: string; teacherId: string }> = {};
+    const preAssigned: Record<string, { subjectId: string; teacherId: string; combinedClassIds?: string[]; skipTeacherLoad?: boolean }> = {};
 
     const totalSlots = config.periodsPerDay + 2;
     const breakSlot = config.morningBreakAfterPeriod + 1;
