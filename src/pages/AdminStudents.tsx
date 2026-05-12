@@ -1393,6 +1393,75 @@ const AdminStudents = () => {
         }}
         title="Scan Class List with Phone"
       />
+
+      {/* Bulk Reassign Class Dialog */}
+      <Dialog open={reassignOpen} onOpenChange={(v) => { if (!reassignSubmitting) setReassignOpen(v); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reassign Class</DialogTitle>
+            <DialogDescription>
+              Move every student from one Form/Stream to another. Use this to fix mis-labelled classes (e.g. G2.1 → G2).
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const combos = Array.from(new Set(students.map(s => `${s.form || ""}|${s.stream || ""}`)))
+              .filter(k => k !== "|")
+              .sort();
+            const fromCount = students.filter(s => (s.form || "") === reassignFromForm && (s.stream || "") === reassignFromStream).length;
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>From (existing class)</Label>
+                  <Select value={`${reassignFromForm}|${reassignFromStream}`} onValueChange={(v) => { const [f, s] = v.split("|"); setReassignFromForm(f); setReassignFromStream(s); }}>
+                    <SelectTrigger><SelectValue placeholder="Select source class" /></SelectTrigger>
+                    <SelectContent>
+                      {combos.map(k => {
+                        const [f, s] = k.split("|");
+                        const count = students.filter(st => (st.form || "") === f && (st.stream || "") === s).length;
+                        return <SelectItem key={k} value={k}>Form {f} {s} ({count})</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>To Form</Label>
+                    <Select value={reassignToForm} onValueChange={setReassignToForm}>
+                      <SelectTrigger><SelectValue placeholder="Form" /></SelectTrigger>
+                      <SelectContent>
+                        {["1","2","3","4","5","6"].map(f => <SelectItem key={f} value={f}>Form {f}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>To Stream</Label>
+                    <Input value={reassignToStream} onChange={(e) => setReassignToStream(e.target.value)} placeholder="e.g. G2, G22, Blue, Sciences" />
+                    {reassignToForm && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {(parseInt(reassignToForm) >= 5 ? ["Sciences","Commercials","Arts"] : ["G1","G2","G22","Blue"]).map(s => (
+                          <Button key={s} type="button" size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setReassignToStream(s)}>{s}</Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {reassignFromForm && (
+                  <p className="text-sm text-muted-foreground">
+                    {fromCount} student(s) will be moved.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReassignOpen(false)} disabled={reassignSubmitting}>Cancel</Button>
+            <Button onClick={handleBulkReassign} disabled={reassignSubmitting} className="gap-2">
+              {reassignSubmitting && <Loader2 size={16} className="animate-spin" />}
+              Move Students
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
