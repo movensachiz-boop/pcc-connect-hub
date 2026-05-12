@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download, Pencil } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download, Pencil, ArrowRightLeft } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +65,12 @@ const AdminStudents = () => {
   const [editSaving, setEditSaving] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [reassignFromForm, setReassignFromForm] = useState("");
+  const [reassignFromStream, setReassignFromStream] = useState("");
+  const [reassignToForm, setReassignToForm] = useState("");
+  const [reassignToStream, setReassignToStream] = useState("");
+  const [reassignSubmitting, setReassignSubmitting] = useState(false);
 
   // Bulk class entry state
   const [bulkForm, setBulkForm] = useState("");
@@ -363,6 +369,40 @@ const AdminStudents = () => {
     fetchStudents();
   };
 
+  const handleBulkReassign = async () => {
+    if (!reassignFromForm || !reassignFromStream || !reassignToForm || !reassignToStream) {
+      toast({ title: "Missing Fields", description: "Pick both source and destination class.", variant: "destructive" });
+      return;
+    }
+    if (reassignFromForm === reassignToForm && reassignFromStream === reassignToStream) {
+      toast({ title: "Same Class", description: "Source and destination are identical.", variant: "destructive" });
+      return;
+    }
+    const matches = students.filter(s => (s.form || "") === reassignFromForm && (s.stream || "") === reassignFromStream);
+    if (matches.length === 0) {
+      toast({ title: "No Students", description: "No students found in the source class.", variant: "destructive" });
+      return;
+    }
+    if (!confirm(`Move ${matches.length} student(s) from Form ${reassignFromForm} ${reassignFromStream} → Form ${reassignToForm} ${reassignToStream}?`)) return;
+
+    setReassignSubmitting(true);
+    const ids = matches.map(s => s.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ form: reassignToForm, stream: reassignToStream })
+      .in("id", ids);
+    setReassignSubmitting(false);
+
+    if (error) {
+      toast({ title: "Reassign Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Class Reassigned", description: `${matches.length} student(s) moved to Form ${reassignToForm} ${reassignToStream}.` });
+    setReassignOpen(false);
+    setReassignFromForm(""); setReassignFromStream(""); setReassignToForm(""); setReassignToStream("");
+    fetchStudents();
+  };
+
   const handleResetPassword = async () => {
     if (!resetRegNumber.trim() || !newPassword) {
       toast({ title: "Missing Fields", description: "Please enter the registration number and new password.", variant: "destructive" });
@@ -635,6 +675,9 @@ const AdminStudents = () => {
             </Button>
             <Button variant="outline" className="gap-2" onClick={() => setBulkOpen(true)}>
               <Users size={16} /> Bulk Class Entry
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => setReassignOpen(true)}>
+              <ArrowRightLeft size={16} /> Reassign Class
             </Button>
             <Button variant="outline" className="gap-2" onClick={async () => {
               const year = new Date().getFullYear().toString();
@@ -1350,6 +1393,75 @@ const AdminStudents = () => {
         }}
         title="Scan Class List with Phone"
       />
+
+      {/* Bulk Reassign Class Dialog */}
+      <Dialog open={reassignOpen} onOpenChange={(v) => { if (!reassignSubmitting) setReassignOpen(v); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reassign Class</DialogTitle>
+            <DialogDescription>
+              Move every student from one Form/Stream to another. Use this to fix mis-labelled classes (e.g. G2.1 → G2).
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const combos = Array.from(new Set(students.map(s => `${s.form || ""}|${s.stream || ""}`)))
+              .filter(k => k !== "|")
+              .sort();
+            const fromCount = students.filter(s => (s.form || "") === reassignFromForm && (s.stream || "") === reassignFromStream).length;
+            return (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>From (existing class)</Label>
+                  <Select value={`${reassignFromForm}|${reassignFromStream}`} onValueChange={(v) => { const [f, s] = v.split("|"); setReassignFromForm(f); setReassignFromStream(s); }}>
+                    <SelectTrigger><SelectValue placeholder="Select source class" /></SelectTrigger>
+                    <SelectContent>
+                      {combos.map(k => {
+                        const [f, s] = k.split("|");
+                        const count = students.filter(st => (st.form || "") === f && (st.stream || "") === s).length;
+                        return <SelectItem key={k} value={k}>Form {f} {s} ({count})</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>To Form</Label>
+                    <Select value={reassignToForm} onValueChange={setReassignToForm}>
+                      <SelectTrigger><SelectValue placeholder="Form" /></SelectTrigger>
+                      <SelectContent>
+                        {["1","2","3","4","5","6"].map(f => <SelectItem key={f} value={f}>Form {f}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>To Stream</Label>
+                    <Input value={reassignToStream} onChange={(e) => setReassignToStream(e.target.value)} placeholder="e.g. G2, G22, Blue, Sciences" />
+                    {reassignToForm && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {(parseInt(reassignToForm) >= 5 ? ["Sciences","Commercials","Arts"] : ["G1","G2","G22","Blue"]).map(s => (
+                          <Button key={s} type="button" size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setReassignToStream(s)}>{s}</Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {reassignFromForm && (
+                  <p className="text-sm text-muted-foreground">
+                    {fromCount} student(s) will be moved.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReassignOpen(false)} disabled={reassignSubmitting}>Cancel</Button>
+            <Button onClick={handleBulkReassign} disabled={reassignSubmitting} className="gap-2">
+              {reassignSubmitting && <Loader2 size={16} className="animate-spin" />}
+              Move Students
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
