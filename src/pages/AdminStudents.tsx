@@ -71,6 +71,11 @@ const AdminStudents = () => {
   const [reassignToForm, setReassignToForm] = useState("");
   const [reassignToStream, setReassignToStream] = useState("");
   const [reassignSubmitting, setReassignSubmitting] = useState(false);
+  const [removeClassOpen, setRemoveClassOpen] = useState(false);
+  const [removeClassForm, setRemoveClassForm] = useState("");
+  const [removeClassStream, setRemoveClassStream] = useState("");
+  const [removeConfirmText, setRemoveConfirmText] = useState("");
+  const [removeSubmitting, setRemoveSubmitting] = useState(false);
 
   // Bulk class entry state
   const [bulkForm, setBulkForm] = useState("");
