@@ -144,15 +144,22 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       const totalAcademic = academicPairs.length;
       const freeNeeded = Math.max(0, totalAcademic - requiredPeriods);
       if (freeNeeded === 0) return;
-      // Group by day, take from end of each day, rotate days
+      // Group by day and SHUFFLE within each day so frees aren't always last-period.
+      // Then round-robin across days so every class spreads its frees evenly across the week.
       const byDay: Record<string, number[]> = {};
       academicPairs.forEach(p => { (byDay[p.day] ||= []).push(p.slot); });
-      Object.values(byDay).forEach(arr => arr.sort((a, b) => b - a)); // descending = last first
+      Object.values(byDay).forEach(arr => {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      });
       let assigned = 0;
       let round = 0;
+      const dayOrder = shuffle(DAYS as unknown as DayOfWeek[]);
       while (assigned < freeNeeded) {
         let placedThisRound = 0;
-        for (const day of DAYS) {
+        for (const day of dayOrder) {
           if (assigned >= freeNeeded) break;
           const arr = byDay[day] || [];
           if (arr.length > round) {
@@ -164,6 +171,30 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
         if (placedThisRound === 0) break;
         round++;
       }
+    });
+
+    // Identify auto-combine groups: classes in the same form (Forms 5 & 6 only) that
+    // share the SAME teacher for the SAME subject. They will be scheduled together
+    // in the same period as a combined lesson.
+    // Returns a map: classId -> { subjectId -> { teacherId, groupClassIds[] } }
+    const combineGroups: Record<string, Record<string, { teacherId: string; groupClassIds: string[] }>> = {};
+    teachers.forEach(t => {
+      t.assignments.forEach(a => {
+        // Group this teacher's assigned classes by form (only Forms 5 & 6 combine)
+        const byForm: Record<number, string[]> = {};
+        a.classIds.forEach(cid => {
+          const cls = classes.find(c => c.id === cid);
+          if (!cls || (cls.form !== 5 && cls.form !== 6)) return;
+          (byForm[cls.form] ||= []).push(cid);
+        });
+        Object.values(byForm).forEach(group => {
+          if (group.length < 2) return;
+          group.forEach(cid => {
+            if (!combineGroups[cid]) combineGroups[cid] = {};
+            combineGroups[cid][a.subjectId] = { teacherId: t.id, groupClassIds: group };
+          });
+        });
+      });
     });
 
     const isPreMarkedFree = (classId: string, day: DayOfWeek, slot: number) =>
