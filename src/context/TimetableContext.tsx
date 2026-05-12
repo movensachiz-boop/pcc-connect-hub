@@ -279,9 +279,25 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
           const preKey = `${cls.id}-${day}-${slot}`;
           if (preAssigned[preKey]) {
             const pa = preAssigned[preKey];
-            slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: pa.subjectId, teacherId: pa.teacherId, type: 'lesson' });
-            const t = teachers.find(t => t.id === pa.teacherId);
-            recordSubjectSlot(cls.id, day, pa.subjectId, slot, pa.teacherId, t);
+            slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: pa.subjectId, teacherId: pa.teacherId, type: 'lesson', combinedClassIds: pa.combinedClassIds });
+            if (pa.skipTeacherLoad) {
+              // Combined sibling — count subject toward this class but don't double-count teacher load
+              classSubjectCount[cls.id][pa.subjectId] = (classSubjectCount[cls.id][pa.subjectId] || 0) + 1;
+              const cdk = `${cls.id}-${day}`;
+              if (!classSubjectDay[cdk]) classSubjectDay[cdk] = new Set();
+              classSubjectDay[cdk].add(pa.subjectId);
+              classSubjectDayCount[`${cls.id}-${day}-${pa.subjectId}`] = (classSubjectDayCount[`${cls.id}-${day}-${pa.subjectId}`] || 0) + 1;
+              const sk = `${cls.id}-${day}-${pa.subjectId}`;
+              if (!classSubjectDaySection[sk]) classSubjectDaySection[sk] = new Set();
+              classSubjectDaySection[sk].add(getDaySection(slot));
+              classSubjectLastSlot[`${cls.id}-${day}-${pa.subjectId}`] = slot;
+              const wk = `${cls.id}-${pa.subjectId}`;
+              if (!classSubjectWeekDays[wk]) classSubjectWeekDays[wk] = new Set();
+              classSubjectWeekDays[wk].add(day);
+            } else {
+              const t = teachers.find(t => t.id === pa.teacherId);
+              recordSubjectSlot(cls.id, day, pa.subjectId, slot, pa.teacherId, t);
+            }
             continue;
           }
 
