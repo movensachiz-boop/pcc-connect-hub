@@ -5,6 +5,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type ExtractedPayment = {
+  depositor_name?: string;
+  student_name?: string;
+  amount?: string;
+  currency?: string;
+  bank_name?: string;
+  swift_code?: string;
+  reference_number?: string;
+  transaction_id_format?: string;
+  date?: string;
+  method?: string;
+};
+
+type BankPattern = {
+  bank_name: string;
+  swift_code: string;
+  id_regex: string;
+  sample_reference: string | null;
+  transaction_id_format: string;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -144,7 +165,7 @@ If multiple names are visible, put the account payer in depositor_name and the s
     }
 
     const aiData = await aiResponse.json();
-    let payment: any = null;
+    let payment: ExtractedPayment | null = null;
 
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
@@ -169,7 +190,7 @@ If multiple names are visible, put the account payer in depositor_name and the s
       const bankNameLower = payment.bank_name.toLowerCase();
       const { data: patterns } = await supabaseAdmin.from("bank_document_patterns").select("*");
 
-      const matchedPattern = patterns?.find((p: any) =>
+      const matchedPattern = (patterns as BankPattern[] | null)?.find((p) =>
         bankNameLower.includes(p.bank_name.toLowerCase().split(" ")[0].toLowerCase())
       );
 
