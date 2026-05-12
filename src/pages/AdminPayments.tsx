@@ -290,7 +290,7 @@ const AdminPayments = () => {
         if (regErr) throw regErr;
         if (data?.error) throw new Error(data.error);
         const { data: newStudents } = await supabase.from("profiles")
-          .select("id, first_name, last_name, registration_number, guardian_phone")
+          .select("id, first_name, last_name, registration_number, guardian_phone, form, stream")
           .ilike("first_name", newFirstName.trim())
           .ilike("last_name", newLastName.trim())
           .order("created_at", { ascending: false })
@@ -403,7 +403,7 @@ const AdminPayments = () => {
       await fetchStudents();
       // Find the newly created student by name match (most recent)
       const { data: newStudents } = await supabase.from("profiles")
-        .select("id, first_name, last_name, registration_number, guardian_phone")
+        .select("id, first_name, last_name, registration_number, guardian_phone, form, stream")
         .ilike("first_name", newFirstName.trim())
         .ilike("last_name", newLastName.trim())
         .order("created_at", { ascending: false })
