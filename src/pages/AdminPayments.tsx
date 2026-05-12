@@ -354,7 +354,7 @@ const AdminPayments = () => {
       bank_name: scannedData?.bank_name || null,
       swift_code: scannedData?.swift_code || null,
       transaction_id_format: scannedData?.transaction_id_format || null,
-    } as any).select().single();
+    }).select().single();
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -438,8 +438,8 @@ const AdminPayments = () => {
       setNewForm("");
       setNewStream("");
       setNewGender("male");
-    } catch (err: any) {
-      toast({ title: "Registration Failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Registration Failed", description: getErrorMessage(err), variant: "destructive" });
     }
     setRegistering(false);
   };
