@@ -438,6 +438,8 @@ const AdminStudents = () => {
     setRemoveClassForm(""); setRemoveClassStream(""); setRemoveConfirmText("");
     fetchStudents();
   };
+
+  const handleResetPassword = async () => {
     if (!resetRegNumber.trim() || !newPassword) {
       toast({ title: "Missing Fields", description: "Please enter the registration number and new password.", variant: "destructive" });
       return;
