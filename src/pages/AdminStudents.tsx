@@ -715,6 +715,9 @@ const AdminStudents = () => {
             <Button variant="outline" className="gap-2" onClick={() => setReassignOpen(true)}>
               <ArrowRightLeft size={16} /> Reassign Class
             </Button>
+            <Button variant="destructive" className="gap-2" onClick={() => setRemoveClassOpen(true)}>
+              <X size={16} /> Remove Class
+            </Button>
             <Button variant="outline" className="gap-2" onClick={async () => {
               const year = new Date().getFullYear().toString();
               const ids = filtered.map(s => ({
