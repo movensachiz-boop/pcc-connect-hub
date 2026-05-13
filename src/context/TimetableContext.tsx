@@ -200,10 +200,10 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       t.assignments.forEach(a => {
         // Group this teacher's assigned classes by form (only Forms 5 & 6 combine)
         const byForm: Record<number, string[]> = {};
-        a.classIds.forEach(cid => {
-          const cls = classes.find(c => c.id === cid);
+        a.classIds.forEach(rawCid => {
+          const cls = classes.find(c => matchesClass(rawCid, c.id));
           if (!cls || (cls.form !== 5 && cls.form !== 6)) return;
-          (byForm[cls.form] ||= []).push(cid);
+          (byForm[cls.form] ||= []).push(cls.id);
         });
         Object.values(byForm).forEach(group => {
           if (group.length < 2) return;
