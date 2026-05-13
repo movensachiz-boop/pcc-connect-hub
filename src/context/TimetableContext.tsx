@@ -390,8 +390,17 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
               return bRemain - aRemain;
             });
 
+          // Core/compulsory subjects must be done before lunch. After lunch,
+          // strip core subjects from candidates; only fall back to them if no
+          // electives remain (so we don't leave the slot empty unnecessarily).
+          let candidateSubjects = availableSubjects;
+          if (currentSection === 'after-lunch') {
+            const noCore = availableSubjects.filter(s => !s.isCompulsory);
+            if (noCore.length > 0) candidateSubjects = noCore;
+          }
+
           let assigned = false;
-          for (const subject of availableSubjects) {
+          for (const subject of candidateSubjects) {
             const availableTeachers = teachers.filter(t => {
               const hasAssignment = t.assignments.some(a => a.subjectId === subject.id && a.classIds.some(cid => matchesClass(cid, cls.id)));
               return hasAssignment && (teacherLoad[t.id] || 0) < t.maxPeriodsPerWeek && !teacherSchedule[t.id]?.[`${day}-${slot}`];
