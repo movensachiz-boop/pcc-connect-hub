@@ -360,10 +360,11 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
               return !violatesGapRule(cls.id, day, s.id, slot);
             })
             .sort((a, b) => {
-              // Highest priority: ENG/MATH must be placed before morning break
-              const isBeforeBreak = currentSection === 'before-break';
-              const aDailyBeforeBreak = isBeforeBreak && dailySubjectIds.has(a.id) && !scheduledToday.has(a.id) ? 0 : 1;
-              const bDailyBeforeBreak = isBeforeBreak && dailySubjectIds.has(b.id) && !scheduledToday.has(b.id) ? 0 : 1;
+              // Highest priority: core/daily subjects must be placed BEFORE LUNCH
+              // (i.e., before-break or after-break sections) for every class.
+              const isBeforeLunch = currentSection === 'before-break' || currentSection === 'after-break';
+              const aDailyBeforeBreak = isBeforeLunch && dailySubjectIds.has(a.id) && !scheduledToday.has(a.id) ? 0 : 1;
+              const bDailyBeforeBreak = isBeforeLunch && dailySubjectIds.has(b.id) && !scheduledToday.has(b.id) ? 0 : 1;
               if (aDailyBeforeBreak !== bDailyBeforeBreak) return aDailyBeforeBreak - bDailyBeforeBreak;
               const aDailyNeeded = dailySubjectIds.has(a.id) && !scheduledToday.has(a.id) ? 0 : 1;
               const bDailyNeeded = dailySubjectIds.has(b.id) && !scheduledToday.has(b.id) ? 0 : 1;
