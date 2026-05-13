@@ -41,12 +41,23 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
   // Strict sync: each class's subjectIds = exactly the subjects that have a teacher
   // registered to teach that class. Subjects with no assigned teacher are removed.
   useEffect(() => {
+    const STREAM_ALIASES: Record<string, string> = {
+      gold: 'G1', silver: 'G2', bronze: 'G22', platinum: 'Blue',
+    };
+    const canonicalClassId = (raw: string): string => {
+      if (!raw) return raw;
+      const m = String(raw).trim().match(/^(\d+)\s*(.+)$/);
+      if (!m) return raw;
+      const canonical = STREAM_ALIASES[m[2].trim().toLowerCase()] || m[2].trim();
+      return `${m[1]}${canonical}`;
+    };
     let changed = false;
     const next = classes.map(c => {
       const fromTeachers = new Set<string>();
       teachers.forEach(t => {
         t.assignments.forEach(a => {
-          if (a.classIds.includes(c.id) && subjects.some(s => s.id === a.subjectId)) {
+          if (a.classIds.some(cid => cid === c.id || canonicalClassId(cid) === c.id)
+              && subjects.some(s => s.id === a.subjectId)) {
             fromTeachers.add(a.subjectId);
           }
         });
