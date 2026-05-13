@@ -382,7 +382,7 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
           let assigned = false;
           for (const subject of availableSubjects) {
             const availableTeachers = teachers.filter(t => {
-              const hasAssignment = t.assignments.some(a => a.subjectId === subject.id && a.classIds.includes(cls.id));
+              const hasAssignment = t.assignments.some(a => a.subjectId === subject.id && a.classIds.some(cid => matchesClass(cid, cls.id)));
               return hasAssignment && (teacherLoad[t.id] || 0) < t.maxPeriodsPerWeek && !teacherSchedule[t.id]?.[`${day}-${slot}`];
             });
 
