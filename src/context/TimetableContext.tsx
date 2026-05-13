@@ -98,7 +98,9 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
     const breakSlot = config.morningBreakAfterPeriod + 1;
     const lunchSlot = config.lunchAfterPeriod + 2;
 
-    const doubleEligible = new Set(subjects.filter(s => s.periodsPerWeek >= 5).map(s => s.id));
+    // Core/compulsory subjects should NOT be auto-doubled — they should appear as
+    // single periods spread across days. Only heavy electives qualify for doubles.
+    const doubleEligible = new Set(subjects.filter(s => s.periodsPerWeek >= 5 && !s.isCompulsory).map(s => s.id));
     const classSubjectDayDoubled: Record<string, boolean> = {};
     // All compulsory (core) subjects should appear EVERY day for each class.
     const dailySubjectIds = new Set(subjects.filter(s => s.isCompulsory).map(s => s.id));
