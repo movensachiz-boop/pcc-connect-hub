@@ -476,8 +476,8 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
             }
           }
 
-          if (!assigned && availableSubjects.length > 0) {
-            const subject = availableSubjects[0];
+          if (!assigned && candidateSubjects.length > 0) {
+            const subject = candidateSubjects[0];
             slots.push({ id: v4(), day, period: slot, classId: cls.id, subjectId: subject.id, type: 'lesson' });
             recordSubjectSlot(cls.id, day, subject.id, slot);
             assigned = true;
