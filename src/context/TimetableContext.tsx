@@ -41,12 +41,23 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
   // Strict sync: each class's subjectIds = exactly the subjects that have a teacher
   // registered to teach that class. Subjects with no assigned teacher are removed.
   useEffect(() => {
+    const STREAM_ALIASES: Record<string, string> = {
+      gold: 'G1', silver: 'G2', bronze: 'G22', platinum: 'Blue',
+    };
+    const canonicalClassId = (raw: string): string => {
+      if (!raw) return raw;
+      const m = String(raw).trim().match(/^(\d+)\s*(.+)$/);
+      if (!m) return raw;
+      const canonical = STREAM_ALIASES[m[2].trim().toLowerCase()] || m[2].trim();
+      return `${m[1]}${canonical}`;
+    };
     let changed = false;
     const next = classes.map(c => {
       const fromTeachers = new Set<string>();
       teachers.forEach(t => {
         t.assignments.forEach(a => {
-          if (a.classIds.includes(c.id) && subjects.some(s => s.id === a.subjectId)) {
+          if (a.classIds.some(cid => cid === c.id || canonicalClassId(cid) === c.id)
+              && subjects.some(s => s.id === a.subjectId)) {
             fromTeachers.add(a.subjectId);
           }
         });
@@ -99,6 +110,24 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
 
     teachers.forEach(t => { teacherLoad[t.id] = 0; });
 
+    // Stream alias map: friendly names used in teacher assignments are normalised
+    // to the canonical class stream codes used by the timetable engine.
+    // e.g. "4 Gold" / "4Gold" -> "4G1".
+    const STREAM_ALIASES: Record<string, string> = {
+      gold: 'G1', silver: 'G2', bronze: 'G22', platinum: 'Blue',
+    };
+    const canonicalClassId = (raw: string): string => {
+      if (!raw) return raw;
+      const m = String(raw).trim().match(/^(\d+)\s*(.+)$/);
+      if (!m) return raw;
+      const form = m[1];
+      const stream = m[2].trim();
+      const canonical = STREAM_ALIASES[stream.toLowerCase()] || stream;
+      return `${form}${canonical}`;
+    };
+    const matchesClass = (assignedId: string, classId: string) =>
+      assignedId === classId || canonicalClassId(assignedId) === classId;
+
     // Auto-derive each class's subjects from teacher assignments.
     // A class only gets a subject scheduled if at least one teacher is assigned to teach
     // that subject to that class. Falls back to the class's configured subjectIds when no
@@ -108,7 +137,7 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       const fromTeachers = new Set<string>();
       teachers.forEach(t => {
         t.assignments.forEach(a => {
-          if (a.classIds.includes(c.id) && subjects.some(s => s.id === a.subjectId)) {
+          if (a.classIds.some(cid => matchesClass(cid, c.id)) && subjects.some(s => s.id === a.subjectId)) {
             fromTeachers.add(a.subjectId);
           }
         });
@@ -182,10 +211,10 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       t.assignments.forEach(a => {
         // Group this teacher's assigned classes by form (only Forms 5 & 6 combine)
         const byForm: Record<number, string[]> = {};
-        a.classIds.forEach(cid => {
-          const cls = classes.find(c => c.id === cid);
+        a.classIds.forEach(rawCid => {
+          const cls = classes.find(c => matchesClass(rawCid, c.id));
           if (!cls || (cls.form !== 5 && cls.form !== 6)) return;
-          (byForm[cls.form] ||= []).push(cid);
+          (byForm[cls.form] ||= []).push(cls.id);
         });
         Object.values(byForm).forEach(group => {
           if (group.length < 2) return;
@@ -364,7 +393,7 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
           let assigned = false;
           for (const subject of availableSubjects) {
             const availableTeachers = teachers.filter(t => {
-              const hasAssignment = t.assignments.some(a => a.subjectId === subject.id && a.classIds.includes(cls.id));
+              const hasAssignment = t.assignments.some(a => a.subjectId === subject.id && a.classIds.some(cid => matchesClass(cid, cls.id)));
               return hasAssignment && (teacherLoad[t.id] || 0) < t.maxPeriodsPerWeek && !teacherSchedule[t.id]?.[`${day}-${slot}`];
             });
 
