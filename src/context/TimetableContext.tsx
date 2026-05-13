@@ -100,8 +100,8 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
 
     const doubleEligible = new Set(subjects.filter(s => s.periodsPerWeek >= 5).map(s => s.id));
     const classSubjectDayDoubled: Record<string, boolean> = {};
-    const dailySubjectCodes = new Set(['ENG', 'MATH']);
-    const dailySubjectIds = new Set(subjects.filter(s => dailySubjectCodes.has(s.code)).map(s => s.id));
+    // All compulsory (core) subjects should appear EVERY day for each class.
+    const dailySubjectIds = new Set(subjects.filter(s => s.isCompulsory).map(s => s.id));
     const classSubjectDay: Record<string, Set<string>> = {};
     const classSubjectDayCount: Record<string, number> = {};
     const classSubjectDaySection: Record<string, Set<string>> = {};
