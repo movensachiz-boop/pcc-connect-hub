@@ -99,6 +99,24 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
 
     teachers.forEach(t => { teacherLoad[t.id] = 0; });
 
+    // Stream alias map: friendly names used in teacher assignments are normalised
+    // to the canonical class stream codes used by the timetable engine.
+    // e.g. "4 Gold" / "4Gold" -> "4G1".
+    const STREAM_ALIASES: Record<string, string> = {
+      gold: 'G1', silver: 'G2', bronze: 'G22', platinum: 'Blue',
+    };
+    const canonicalClassId = (raw: string): string => {
+      if (!raw) return raw;
+      const m = String(raw).trim().match(/^(\d+)\s*(.+)$/);
+      if (!m) return raw;
+      const form = m[1];
+      const stream = m[2].trim();
+      const canonical = STREAM_ALIASES[stream.toLowerCase()] || stream;
+      return `${form}${canonical}`;
+    };
+    const matchesClass = (assignedId: string, classId: string) =>
+      assignedId === classId || canonicalClassId(assignedId) === classId;
+
     // Auto-derive each class's subjects from teacher assignments.
     // A class only gets a subject scheduled if at least one teacher is assigned to teach
     // that subject to that class. Falls back to the class's configured subjectIds when no
@@ -108,7 +126,7 @@ export function TimetableProvider({ children }: { children: React.ReactNode }) {
       const fromTeachers = new Set<string>();
       teachers.forEach(t => {
         t.assignments.forEach(a => {
-          if (a.classIds.includes(c.id) && subjects.some(s => s.id === a.subjectId)) {
+          if (a.classIds.some(cid => matchesClass(cid, c.id)) && subjects.some(s => s.id === a.subjectId)) {
             fromTeachers.add(a.subjectId);
           }
         });
