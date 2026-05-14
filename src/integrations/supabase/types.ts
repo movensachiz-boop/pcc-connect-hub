@@ -251,6 +251,48 @@ export type Database = {
         }
         Relationships: []
       }
+      goods_received: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          grn_number: string | null
+          id: string
+          items: Json
+          notes: string | null
+          purchase_order_id: string | null
+          received_by: string | null
+          received_date: string
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          grn_number?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          purchase_order_id?: string | null
+          received_by?: string | null
+          received_date?: string
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          grn_number?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          purchase_order_id?: string | null
+          received_by?: string | null
+          received_date?: string
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string
@@ -562,6 +604,150 @@ export type Database = {
           stream?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          expected_delivery: string | null
+          id: string
+          items: Json
+          notes: string | null
+          po_number: string | null
+          requisition_id: string | null
+          status: string
+          supplier_id: string | null
+          supplier_name: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expected_delivery?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          po_number?: string | null
+          requisition_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expected_delivery?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          po_number?: string | null
+          requisition_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      requisitions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          department: string | null
+          id: string
+          items: Json
+          notes: string | null
+          purpose: string | null
+          requested_by: string
+          requisition_number: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          department?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          purpose?: string | null
+          requested_by: string
+          requisition_number?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          department?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          purpose?: string | null
+          requested_by?: string
+          requisition_number?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
