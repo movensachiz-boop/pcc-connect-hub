@@ -35,6 +35,7 @@ const adminLinks = [
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
   { label: "Fees & Requirements", icon: Receipt, path: "/admin/fees" },
   { label: "Inventory", icon: Package, path: "/admin/inventory" },
+  { label: "Procurement", icon: ShoppingCart, path: "/admin/procurement" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
