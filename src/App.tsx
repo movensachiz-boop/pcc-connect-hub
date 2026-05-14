@@ -35,6 +35,7 @@ import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import AdminAuditTrail from "./pages/AdminAuditTrail";
 import AdminInventory from "./pages/AdminInventory";
+import AdminProcurement from "./pages/AdminProcurement";
 import StudentInventory from "./pages/StudentInventory";
 import StaffGuard from "./components/StaffGuard";
 import PhoneScan from "./pages/PhoneScan";
