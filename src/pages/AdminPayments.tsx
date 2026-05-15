@@ -792,6 +792,13 @@ const AdminPayments = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkPaymentDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        students={students}
+        onSaved={fetchPayments}
+      />
     </DashboardLayout>
   );
 };
