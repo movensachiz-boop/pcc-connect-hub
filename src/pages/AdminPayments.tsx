@@ -125,6 +125,7 @@ const AdminPayments = () => {
   const [newStream, setNewStream] = useState("");
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   useEffect(() => {
     fetchPayments();
