@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus } from "lucide-react";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers } from "lucide-react";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import BulkPaymentDialog from "@/components/BulkPaymentDialog";
 
 interface PaymentRow {
   id: string;
@@ -124,6 +125,7 @@ const AdminPayments = () => {
   const [newStream, setNewStream] = useState("");
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   useEffect(() => {
     fetchPayments();
@@ -471,6 +473,9 @@ const AdminPayments = () => {
             }} className="gap-2">
               Record Payment
             </Button>
+            <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
+              <Layers size={16} /> Bulk Entry
+            </Button>
             <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
               <Camera size={16} /> Scan Deposit Slip
             </Button>
@@ -787,6 +792,13 @@ const AdminPayments = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkPaymentDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        students={students}
+        onSaved={fetchPayments}
+      />
     </DashboardLayout>
   );
 };
