@@ -473,6 +473,9 @@ const AdminPayments = () => {
             }} className="gap-2">
               Record Payment
             </Button>
+            <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
+              <Layers size={16} /> Bulk Entry
+            </Button>
             <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
               <Camera size={16} /> Scan Deposit Slip
             </Button>
