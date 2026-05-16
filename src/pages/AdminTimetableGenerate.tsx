@@ -76,7 +76,9 @@ export default function AdminTimetableGenerate() {
                   {r.count !== null && <span className="text-sm text-muted-foreground">{r.count}</span>}
                 </div>
               ))}
-            </div>
+          </div>
+
+          <TimetableBackupPanel />
           </div>
 
           <div className="bg-card rounded-xl border p-6">
