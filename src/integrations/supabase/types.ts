@@ -751,6 +751,33 @@ export type Database = {
         }
         Relationships: []
       }
+      timetable_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_auto: boolean
+          name: string
+          snapshot_data: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_auto?: boolean
+          name: string
+          snapshot_data: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_auto?: boolean
+          name?: string
+          snapshot_data?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
