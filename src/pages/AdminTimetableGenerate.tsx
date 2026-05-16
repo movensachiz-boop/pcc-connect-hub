@@ -7,6 +7,7 @@ import { Calendar, Loader2, CheckCircle, AlertTriangle, RefreshCw, Settings as S
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { DayOfWeek } from '@/types/school';
+import TimetableBackupPanel from '@/components/TimetableBackupPanel';
 
 const ALL_DAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
