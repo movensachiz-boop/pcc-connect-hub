@@ -7,6 +7,7 @@ import { Calendar, Loader2, CheckCircle, AlertTriangle, RefreshCw, Settings as S
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { DayOfWeek } from '@/types/school';
+import TimetableBackupPanel from '@/components/TimetableBackupPanel';
 
 const ALL_DAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -75,7 +76,9 @@ export default function AdminTimetableGenerate() {
                   {r.count !== null && <span className="text-sm text-muted-foreground">{r.count}</span>}
                 </div>
               ))}
-            </div>
+          </div>
+
+          <TimetableBackupPanel />
           </div>
 
           <div className="bg-card rounded-xl border p-6">
