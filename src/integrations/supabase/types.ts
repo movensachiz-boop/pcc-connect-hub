@@ -469,6 +469,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_auto: boolean
+          name: string
+          row_count: number
+          snapshot_data: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_auto?: boolean
+          name: string
+          row_count?: number
+          snapshot_data: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_auto?: boolean
+          name?: string
+          row_count?: number
+          snapshot_data?: Json
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number

@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Upload, Loader2, Trash2, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Camera, Upload, Loader2, Trash2, Save, AlertTriangle, CheckCircle2, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { titleCaseName, formatClass } from "@/lib/normalize";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
+import PhoneCameraPairDialog from "@/components/PhoneCameraPairDialog";
 
 interface StudentProfile {
   id: string;
@@ -84,6 +85,7 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
   const fileRef = useRef<HTMLInputElement>(null);
   const [scanning, setScanning] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const [rows, setRows] = useState<BulkRow[]>([]);
   const [method, setMethod] = useState(defaultMethod);
   const [saving, setSaving] = useState(false);
@@ -191,6 +193,9 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
           <div className="flex flex-wrap items-center gap-2 border-b pb-3">
             <Button onClick={() => setCameraOpen(true)} disabled={scanning} className="gap-2">
               <Camera size={16} /> Capture with Camera
+            </Button>
+            <Button variant="outline" onClick={() => setPhoneOpen(true)} disabled={scanning} className="gap-2">
+              <Smartphone size={16} /> Scan with Phone (QR)
             </Button>
             <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={scanning} className="gap-2">
               <Upload size={16} /> Upload Image
@@ -326,6 +331,18 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
         onCapture={processImage}
         title="Scan Bank Statement"
         description="Capture a clear photo of the statement page. We'll extract every credit transaction."
+      />
+
+      <PhoneCameraPairDialog
+        open={phoneOpen}
+        onOpenChange={setPhoneOpen}
+        title="Scan Bank Statement with Phone"
+        onPhotos={async (urls) => {
+          for (const u of urls) {
+            // eslint-disable-next-line no-await-in-loop
+            await processImage(u);
+          }
+        }}
       />
     </>
   );
