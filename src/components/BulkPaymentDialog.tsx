@@ -85,6 +85,7 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
   const fileRef = useRef<HTMLInputElement>(null);
   const [scanning, setScanning] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const [rows, setRows] = useState<BulkRow[]>([]);
   const [method, setMethod] = useState(defaultMethod);
   const [saving, setSaving] = useState(false);
