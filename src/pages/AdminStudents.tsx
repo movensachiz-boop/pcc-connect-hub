@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download, Pencil, ArrowRightLeft } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download, Pencil, ArrowRightLeft, Trash2 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Textarea } from "@/components/ui/textarea";
@@ -436,6 +436,17 @@ const AdminStudents = () => {
     toast({ title: "Class Removed", description: `${matches.length} student(s) deleted from Form ${removeClassForm} ${removeClassStream}.` });
     setRemoveClassOpen(false);
     setRemoveClassForm(""); setRemoveClassStream(""); setRemoveConfirmText("");
+    fetchStudents();
+  };
+
+  const handleDeleteStudent = async (s: { id: string; first_name: string; last_name: string; registration_number: string }) => {
+    if (!confirm(`Permanently delete ${s.first_name} ${s.last_name} (${s.registration_number})?\n\nThis removes the student profile and cannot be undone.`)) return;
+    const { error } = await supabase.from("profiles").delete().eq("id", s.id);
+    if (error) {
+      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Student Deleted", description: `${s.first_name} ${s.last_name} has been removed.` });
     fetchStudents();
   };
 
@@ -995,12 +1006,21 @@ const AdminStudents = () => {
                               });
                               toast({ title: "ID Generated", description: `ID card for ${s.first_name} saved.` });
                             }}
-                            title="Generate Student ID Card"
-                          >
-                            <CreditCard size={14} /> ID
-                          </Button>
-                        </div>
-                      </TableCell>
+                             title="Generate Student ID Card"
+                           >
+                             <CreditCard size={14} /> ID
+                           </Button>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                             onClick={() => handleDeleteStudent(s)}
+                             title="Delete student"
+                           >
+                             <Trash2 size={14} /> Delete
+                           </Button>
+                         </div>
+                       </TableCell>
                     </TableRow>
                   ))}
                   {filtered.length === 0 && (
