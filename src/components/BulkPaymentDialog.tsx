@@ -332,6 +332,18 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
         title="Scan Bank Statement"
         description="Capture a clear photo of the statement page. We'll extract every credit transaction."
       />
+
+      <PhoneCameraPairDialog
+        open={phoneOpen}
+        onOpenChange={setPhoneOpen}
+        title="Scan Bank Statement with Phone"
+        onPhotos={async (urls) => {
+          for (const u of urls) {
+            // eslint-disable-next-line no-await-in-loop
+            await processImage(u);
+          }
+        }}
+      />
     </>
   );
 };
