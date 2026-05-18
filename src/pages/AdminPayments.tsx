@@ -794,6 +794,10 @@ const AdminPayments = () => {
         </DialogContent>
       </Dialog>
 
+      <div className="mt-6">
+        <PaymentsBackupPanel onRestored={fetchPayments} />
+      </div>
+
       <BulkPaymentDialog
         open={bulkOpen}
         onOpenChange={setBulkOpen}
