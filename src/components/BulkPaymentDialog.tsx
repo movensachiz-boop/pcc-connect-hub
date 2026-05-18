@@ -194,6 +194,9 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
             <Button onClick={() => setCameraOpen(true)} disabled={scanning} className="gap-2">
               <Camera size={16} /> Capture with Camera
             </Button>
+            <Button variant="outline" onClick={() => setPhoneOpen(true)} disabled={scanning} className="gap-2">
+              <Smartphone size={16} /> Scan with Phone (QR)
+            </Button>
             <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={scanning} className="gap-2">
               <Upload size={16} /> Upload Image
             </Button>
