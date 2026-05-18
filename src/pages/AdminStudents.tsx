@@ -449,6 +449,8 @@ const AdminStudents = () => {
     toast({ title: "Student Deleted", description: `${s.first_name} ${s.last_name} has been removed.` });
     fetchStudents();
   };
+
+  const handleResetPassword = async () => {
     if (!resetRegNumber.trim() || !newPassword) {
       toast({ title: "Missing Fields", description: "Please enter the registration number and new password.", variant: "destructive" });
       return;
