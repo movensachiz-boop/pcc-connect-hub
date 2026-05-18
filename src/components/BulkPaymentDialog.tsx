@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Upload, Loader2, Trash2, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Camera, Upload, Loader2, Trash2, Save, AlertTriangle, CheckCircle2, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { titleCaseName, formatClass } from "@/lib/normalize";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
+import PhoneCameraPairDialog from "@/components/PhoneCameraPairDialog";
 
 interface StudentProfile {
   id: string;
