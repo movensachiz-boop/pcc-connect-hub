@@ -1006,12 +1006,21 @@ const AdminStudents = () => {
                               });
                               toast({ title: "ID Generated", description: `ID card for ${s.first_name} saved.` });
                             }}
-                            title="Generate Student ID Card"
-                          >
-                            <CreditCard size={14} /> ID
-                          </Button>
-                        </div>
-                      </TableCell>
+                             title="Generate Student ID Card"
+                           >
+                             <CreditCard size={14} /> ID
+                           </Button>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                             onClick={() => handleDeleteStudent(s)}
+                             title="Delete student"
+                           >
+                             <Trash2 size={14} /> Delete
+                           </Button>
+                         </div>
+                       </TableCell>
                     </TableRow>
                   ))}
                   {filtered.length === 0 && (
