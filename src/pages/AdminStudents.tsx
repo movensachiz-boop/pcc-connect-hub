@@ -439,7 +439,16 @@ const AdminStudents = () => {
     fetchStudents();
   };
 
-  const handleResetPassword = async () => {
+  const handleDeleteStudent = async (s: { id: string; first_name: string; last_name: string; registration_number: string }) => {
+    if (!confirm(`Permanently delete ${s.first_name} ${s.last_name} (${s.registration_number})?\n\nThis removes the student profile and cannot be undone.`)) return;
+    const { error } = await supabase.from("profiles").delete().eq("id", s.id);
+    if (error) {
+      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Student Deleted", description: `${s.first_name} ${s.last_name} has been removed.` });
+    fetchStudents();
+  };
     if (!resetRegNumber.trim() || !newPassword) {
       toast({ title: "Missing Fields", description: "Please enter the registration number and new password.", variant: "destructive" });
       return;
