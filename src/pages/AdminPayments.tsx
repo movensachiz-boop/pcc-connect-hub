@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers } from "lucide-react";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers, Tag, FileText } from "lucide-react";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
+import { generatePaidLabels, generatePaidStudentsList, PaidStudent } from "@/lib/generatePaidLabels";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import BulkPaymentDialog from "@/components/BulkPaymentDialog";
@@ -456,12 +457,36 @@ const AdminPayments = () => {
     })
     .slice(0, 80);
 
+  const getPaidStudentList = (): PaidStudent[] => {
+    const paidStatuses = ["paid", "completed", "confirmed"];
+    const byStudent = new Map<string, PaidStudent>();
+    for (const p of payments) {
+      if (!paidStatuses.includes(p.status)) continue;
+      const existing = byStudent.get(p.student_profile_id);
+      if (existing) {
+        existing.amount += Number(p.amount) || 0;
+        if (new Date(p.created_at) > new Date(existing.date)) {
+          existing.date = new Date(p.created_at).toLocaleDateString();
+        }
+      } else {
+        byStudent.set(p.student_profile_id, {
+          name: p.studentName || "Unknown",
+          regNo: p.regNo || "N/A",
+          studentClass: p.studentClass || "—",
+          amount: Number(p.amount) || 0,
+          date: new Date(p.created_at).toLocaleDateString(),
+        });
+      }
+    }
+    return Array.from(byStudent.values()).sort((a, b) => a.name.localeCompare(b.name));
+  };
+
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => {
               setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
               setManualAmount("");
@@ -476,6 +501,22 @@ const AdminPayments = () => {
             </Button>
             <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
               <Layers size={16} /> Bulk Entry
+            </Button>
+            <Button variant="outline" onClick={() => {
+              const paid = getPaidStudentList();
+              if (!paid.length) { toast({ title: "No paid students", variant: "destructive" }); return; }
+              generatePaidLabels(paid);
+              toast({ title: "Labels generated", description: `${paid.length} PAID labels.` });
+            }} className="gap-2">
+              <Tag size={16} /> PAID Labels
+            </Button>
+            <Button variant="outline" onClick={() => {
+              const paid = getPaidStudentList();
+              if (!paid.length) { toast({ title: "No paid students", variant: "destructive" }); return; }
+              generatePaidStudentsList(paid);
+              toast({ title: "List generated", description: `${paid.length} students.` });
+            }} className="gap-2">
+              <FileText size={16} /> Paid List PDF
             </Button>
             <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
               <Camera size={16} /> Scan Deposit Slip
