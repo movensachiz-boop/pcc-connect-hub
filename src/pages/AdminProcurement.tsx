@@ -428,7 +428,7 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={submit}>Create Requisition</Button>
+              <Button onClick={submit}>{editing ? "Save Changes" : "Create Requisition"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
