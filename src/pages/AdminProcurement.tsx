@@ -39,6 +39,7 @@ interface Requisition {
   status: string;
   notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 interface PurchaseOrder {
   id: string;
