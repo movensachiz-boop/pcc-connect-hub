@@ -462,7 +462,7 @@ const AdminPayments = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => {
               setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
               setManualAmount("");
@@ -477,6 +477,22 @@ const AdminPayments = () => {
             </Button>
             <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-2">
               <Layers size={16} /> Bulk Entry
+            </Button>
+            <Button variant="outline" onClick={() => {
+              const paid = getPaidStudentList();
+              if (!paid.length) { toast({ title: "No paid students", variant: "destructive" }); return; }
+              generatePaidLabels(paid);
+              toast({ title: "Labels generated", description: `${paid.length} PAID labels.` });
+            }} className="gap-2">
+              <Tag size={16} /> PAID Labels
+            </Button>
+            <Button variant="outline" onClick={() => {
+              const paid = getPaidStudentList();
+              if (!paid.length) { toast({ title: "No paid students", variant: "destructive" }); return; }
+              generatePaidStudentsList(paid);
+              toast({ title: "List generated", description: `${paid.length} students.` });
+            }} className="gap-2">
+              <FileText size={16} /> Paid List PDF
             </Button>
             <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
               <Camera size={16} /> Scan Deposit Slip
