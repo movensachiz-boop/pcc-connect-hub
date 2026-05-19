@@ -452,9 +452,20 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
               {data.length === 0 && (
                 <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No requisitions yet</TableCell></TableRow>
               )}
-              {data.map((r) => (
+              {data.map((r) => {
+                const edited = r.updated_at && new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() > 2000;
+                return (
                 <TableRow key={r.id}>
-                  <TableCell className="font-mono text-xs">{r.requisition_number}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>{r.requisition_number}</span>
+                      {edited && (
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5" title={`Edited ${new Date(r.updated_at!).toLocaleString()}`}>
+                          Edited
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>{r.requested_by}</TableCell>
                   <TableCell>{r.department || "—"}</TableCell>
@@ -469,12 +480,14 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
                           <Button size="sm" variant="outline" onClick={() => reject(r)}>Reject</Button>
                         </>
                       )}
+                      <Button size="sm" variant="outline" onClick={() => openEdit(r)}><Pencil size={14} /></Button>
                       <Button size="sm" variant="outline" onClick={() => downloadPDF(r)}><FileDown size={14} /></Button>
                       <Button size="sm" variant="ghost" onClick={() => remove(r)}><Trash2 size={14} /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
