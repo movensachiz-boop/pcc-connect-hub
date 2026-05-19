@@ -269,6 +269,7 @@ function StatBox({ icon, label, value }: { icon: React.ReactNode; label: string;
 /* ──────── Requisitions ──────── */
 function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Requisition | null>(null);
   const [form, setForm] = useState({
     requested_by: "",
     department: "",
@@ -279,8 +280,22 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
   const [items, setItems] = useState<Item[]>([emptyItem()]);
 
   const reset = () => {
+    setEditing(null);
     setForm({ requested_by: "", department: "", purpose: "", currency: "USD", notes: "" });
     setItems([emptyItem()]);
+  };
+
+  const openEdit = (r: Requisition) => {
+    setEditing(r);
+    setForm({
+      requested_by: r.requested_by || "",
+      department: r.department || "",
+      purpose: r.purpose || "",
+      currency: r.currency || "USD",
+      notes: r.notes || "",
+    });
+    setItems((r.items && r.items.length ? r.items : [emptyItem()]) as Item[]);
+    setOpen(true);
   };
 
   const submit = async () => {
