@@ -383,12 +383,12 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
           <CardTitle>Pre-Requisitions</CardTitle>
           <CardDescription>Submit requests for procurement with auto-calculated totals</CardDescription>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
           <DialogTrigger asChild>
-            <Button><Plus size={16} /> New Requisition</Button>
+            <Button onClick={() => reset()}><Plus size={16} /> New Requisition</Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>New Pre-Requisition</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editing ? `Edit ${editing.requisition_number}` : "New Pre-Requisition"}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
