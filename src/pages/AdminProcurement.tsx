@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, FileDown, CheckCircle2, FileText, Truck, Package, ShoppingCart } from "lucide-react";
+import { Plus, Trash2, FileDown, CheckCircle2, FileText, Truck, Package, ShoppingCart, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { generateProcurementDoc, ProcurementLineItem } from "@/lib/generateProcurementDoc";
@@ -39,6 +39,7 @@ interface Requisition {
   status: string;
   notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 interface PurchaseOrder {
   id: string;
@@ -268,6 +269,7 @@ function StatBox({ icon, label, value }: { icon: React.ReactNode; label: string;
 /* ──────── Requisitions ──────── */
 function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Requisition | null>(null);
   const [form, setForm] = useState({
     requested_by: "",
     department: "",
@@ -278,8 +280,22 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
   const [items, setItems] = useState<Item[]>([emptyItem()]);
 
   const reset = () => {
+    setEditing(null);
     setForm({ requested_by: "", department: "", purpose: "", currency: "USD", notes: "" });
     setItems([emptyItem()]);
+  };
+
+  const openEdit = (r: Requisition) => {
+    setEditing(r);
+    setForm({
+      requested_by: r.requested_by || "",
+      department: r.department || "",
+      purpose: r.purpose || "",
+      currency: r.currency || "USD",
+      notes: r.notes || "",
+    });
+    setItems((r.items && r.items.length ? r.items : [emptyItem()]) as Item[]);
+    setOpen(true);
   };
 
   const submit = async () => {
@@ -292,7 +308,7 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
       return;
     }
     const total = sumItems(items);
-    const { error } = await supabase.from("requisitions").insert({
+    const payload = {
       requested_by: form.requested_by,
       department: form.department || null,
       purpose: form.purpose || null,
@@ -300,13 +316,25 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
       total_amount: total,
       currency: form.currency,
       notes: form.notes || null,
-      status: "pending",
-    });
-    if (error) {
-      toast({ title: "Failed", description: error.message, variant: "destructive" });
-      return;
+    };
+    if (editing) {
+      const { error } = await supabase
+        .from("requisitions")
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq("id", editing.id);
+      if (error) {
+        toast({ title: "Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Requisition updated" });
+    } else {
+      const { error } = await supabase.from("requisitions").insert({ ...payload, status: "pending" });
+      if (error) {
+        toast({ title: "Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Requisition created" });
     }
-    toast({ title: "Requisition created" });
     setOpen(false);
     reset();
     onChange();
@@ -355,12 +383,12 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
           <CardTitle>Pre-Requisitions</CardTitle>
           <CardDescription>Submit requests for procurement with auto-calculated totals</CardDescription>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
           <DialogTrigger asChild>
-            <Button><Plus size={16} /> New Requisition</Button>
+            <Button onClick={() => reset()}><Plus size={16} /> New Requisition</Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>New Pre-Requisition</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editing ? `Edit ${editing.requisition_number}` : "New Pre-Requisition"}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -400,7 +428,7 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={submit}>Create Requisition</Button>
+              <Button onClick={submit}>{editing ? "Save Changes" : "Create Requisition"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -424,9 +452,20 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
               {data.length === 0 && (
                 <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No requisitions yet</TableCell></TableRow>
               )}
-              {data.map((r) => (
+              {data.map((r) => {
+                const edited = r.updated_at && new Date(r.updated_at).getTime() - new Date(r.created_at).getTime() > 2000;
+                return (
                 <TableRow key={r.id}>
-                  <TableCell className="font-mono text-xs">{r.requisition_number}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>{r.requisition_number}</span>
+                      {edited && (
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5" title={`Edited ${new Date(r.updated_at!).toLocaleString()}`}>
+                          Edited
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>{r.requested_by}</TableCell>
                   <TableCell>{r.department || "—"}</TableCell>
@@ -441,12 +480,14 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
                           <Button size="sm" variant="outline" onClick={() => reject(r)}>Reject</Button>
                         </>
                       )}
+                      <Button size="sm" variant="outline" onClick={() => openEdit(r)}><Pencil size={14} /></Button>
                       <Button size="sm" variant="outline" onClick={() => downloadPDF(r)}><FileDown size={14} /></Button>
                       <Button size="sm" variant="ghost" onClick={() => remove(r)}><Trash2 size={14} /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
