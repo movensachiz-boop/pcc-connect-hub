@@ -308,7 +308,7 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
       return;
     }
     const total = sumItems(items);
-    const { error } = await supabase.from("requisitions").insert({
+    const payload = {
       requested_by: form.requested_by,
       department: form.department || null,
       purpose: form.purpose || null,
@@ -316,13 +316,25 @@ function RequisitionsTab({ data, onChange }: { data: Requisition[]; onChange: ()
       total_amount: total,
       currency: form.currency,
       notes: form.notes || null,
-      status: "pending",
-    });
-    if (error) {
-      toast({ title: "Failed", description: error.message, variant: "destructive" });
-      return;
+    };
+    if (editing) {
+      const { error } = await supabase
+        .from("requisitions")
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq("id", editing.id);
+      if (error) {
+        toast({ title: "Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Requisition updated" });
+    } else {
+      const { error } = await supabase.from("requisitions").insert({ ...payload, status: "pending" });
+      if (error) {
+        toast({ title: "Failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Requisition created" });
     }
-    toast({ title: "Requisition created" });
     setOpen(false);
     reset();
     onChange();
