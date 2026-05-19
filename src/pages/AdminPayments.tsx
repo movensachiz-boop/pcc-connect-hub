@@ -457,6 +457,30 @@ const AdminPayments = () => {
     })
     .slice(0, 80);
 
+  const getPaidStudentList = (): PaidStudent[] => {
+    const paidStatuses = ["paid", "completed", "confirmed"];
+    const byStudent = new Map<string, PaidStudent>();
+    for (const p of payments) {
+      if (!paidStatuses.includes(p.status)) continue;
+      const existing = byStudent.get(p.student_profile_id);
+      if (existing) {
+        existing.amount += Number(p.amount) || 0;
+        if (new Date(p.created_at) > new Date(existing.date)) {
+          existing.date = new Date(p.created_at).toLocaleDateString();
+        }
+      } else {
+        byStudent.set(p.student_profile_id, {
+          name: p.studentName || "Unknown",
+          regNo: p.regNo || "N/A",
+          studentClass: p.studentClass || "—",
+          amount: Number(p.amount) || 0,
+          date: new Date(p.created_at).toLocaleDateString(),
+        });
+      }
+    }
+    return Array.from(byStudent.values()).sort((a, b) => a.name.localeCompare(b.name));
+  };
+
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
