@@ -66,6 +66,9 @@ interface GRN {
   received_date: string;
   notes?: string;
   created_at: string;
+  total_amount?: number;
+  currency?: string;
+  receipt_urls?: string[];
 }
 
 const emptyItem = (): Item => ({ description: "", quantity: 1, unit_price: 0, unit: "pcs" });
