@@ -175,7 +175,12 @@ function ItemsEditor({
 }
 
 export default function AdminProcurement() {
-  const [tab, setTab] = useState("requisitions");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get("tab") || "requisitions");
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t) setTab(t);
+  }, [searchParams]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
   const [pos, setPOs] = useState<PurchaseOrder[]>([]);
