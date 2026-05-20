@@ -255,40 +255,49 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          currency: string
           grn_number: string | null
           id: string
           items: Json
           notes: string | null
           purchase_order_id: string | null
+          receipt_urls: string[] | null
           received_by: string | null
           received_date: string
           supplier_name: string | null
+          total_amount: number
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           grn_number?: string | null
           id?: string
           items?: Json
           notes?: string | null
           purchase_order_id?: string | null
+          receipt_urls?: string[] | null
           received_by?: string | null
           received_date?: string
           supplier_name?: string | null
+          total_amount?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           grn_number?: string | null
           id?: string
           items?: Json
           notes?: string | null
           purchase_order_id?: string | null
+          receipt_urls?: string[] | null
           received_by?: string | null
           received_date?: string
           supplier_name?: string | null
+          total_amount?: number
           updated_at?: string
         }
         Relationships: []

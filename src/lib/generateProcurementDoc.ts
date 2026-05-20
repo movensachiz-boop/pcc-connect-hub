@@ -109,7 +109,7 @@ export const generateProcurementDoc = async (data: ProcurementDocData) => {
   y = doc.lastAutoTable.finalY + 6;
 
   // Items table
-  const showCost = data.docType !== "GOODS RECEIVED NOTE";
+  const showCost = true;
   const head = showCost
     ? [["#", "Description", "Qty", "Unit", "Unit Price", "Total"]]
     : [["#", "Description", "Qty", "Unit", "Notes"]];

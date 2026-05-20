@@ -66,6 +66,9 @@ interface GRN {
   received_date: string;
   notes?: string;
   created_at: string;
+  total_amount?: number;
+  currency?: string;
+  receipt_urls?: string[];
 }
 
 const emptyItem = (): Item => ({ description: "", quantity: 1, unit_price: 0, unit: "pcs" });
@@ -701,30 +704,61 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
   const [open, setOpen] = useState(false);
   const [poId, setPoId] = useState("");
   const [items, setItems] = useState<Item[]>([emptyItem()]);
-  const [form, setForm] = useState({ received_by: "", received_date: new Date().toISOString().slice(0, 10), notes: "" });
+  const [currency, setCurrency] = useState("USD");
+  const [receiptFiles, setReceiptFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [form, setForm] = useState({ received_by: "", received_date: new Date().toISOString().slice(0, 10), notes: "", supplier_name: "" });
 
   const onPickPO = (id: string) => {
     setPoId(id);
     const p = pos.find((x) => x.id === id);
-    if (p) setItems(p.items?.length ? p.items : [emptyItem()]);
+    if (p) {
+      setItems(p.items?.length ? p.items : [emptyItem()]);
+      setCurrency(p.currency || "USD");
+      setForm((f) => ({ ...f, supplier_name: p.supplier_name || "" }));
+    }
   };
 
   const submit = async () => {
+    if (items.some((i) => !i.description.trim())) {
+      toast({ title: "All items need a description", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
     const po = pos.find((x) => x.id === poId);
+    const total = sumItems(items);
+
+    // Upload receipts first
+    const receipt_urls: string[] = [];
+    for (const file of receiptFiles) {
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from("grn-receipts").upload(path, file);
+      if (upErr) {
+        toast({ title: "Receipt upload failed", description: upErr.message, variant: "destructive" });
+        setUploading(false);
+        return;
+      }
+      receipt_urls.push(path);
+    }
+
     const { error } = await supabase.from("goods_received").insert({
       purchase_order_id: poId || null,
-      supplier_name: po?.supplier_name,
+      supplier_name: po?.supplier_name || form.supplier_name || null,
       items: items as any,
       received_by: form.received_by || null,
       received_date: form.received_date,
       notes: form.notes || null,
+      total_amount: total,
+      currency,
+      receipt_urls,
     });
+    setUploading(false);
     if (error) return toast({ title: error.message, variant: "destructive" });
     if (poId) await supabase.from("purchase_orders").update({ status: "received" }).eq("id", poId);
     toast({ title: "Goods received recorded" });
     setOpen(false);
-    setPoId(""); setItems([emptyItem()]);
-    setForm({ received_by: "", received_date: new Date().toISOString().slice(0, 10), notes: "" });
+    setPoId(""); setItems([emptyItem()]); setReceiptFiles([]); setCurrency("USD");
+    setForm({ received_by: "", received_date: new Date().toISOString().slice(0, 10), notes: "", supplier_name: "" });
     onChange();
   };
 
@@ -734,6 +768,7 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
       docType: "GOODS RECEIVED NOTE",
       number: g.grn_number,
       date: new Date(g.received_date).toLocaleDateString(),
+      currency: g.currency || "USD",
       supplierName: g.supplier_name,
       receivedBy: g.received_by,
       poNumber: po?.po_number,
@@ -742,8 +777,16 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
     });
   };
 
+  const viewReceipt = async (path: string) => {
+    const { data: signed } = await supabase.storage.from("grn-receipts").createSignedUrl(path, 300);
+    if (signed?.signedUrl) window.open(signed.signedUrl, "_blank");
+  };
+
   const remove = async (g: GRN) => {
     if (!confirm(`Delete ${g.grn_number}?`)) return;
+    if (g.receipt_urls?.length) {
+      await supabase.storage.from("grn-receipts").remove(g.receipt_urls);
+    }
     await supabase.from("goods_received").delete().eq("id", g.id);
     onChange();
   };
@@ -753,7 +796,7 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Goods Received Notes</CardTitle>
-          <CardDescription>Record deliveries against purchase orders</CardDescription>
+          <CardDescription>Record deliveries with pricing and upload receipt evidence</CardDescription>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus size={16} /> New GRN</Button></DialogTrigger>
@@ -761,7 +804,7 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
             <DialogHeader><DialogTitle>Record Goods Received</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div>
-                <Label>Purchase Order</Label>
+                <Label>Purchase Order (optional)</Label>
                 <Select value={poId} onValueChange={onPickPO}>
                   <SelectTrigger><SelectValue placeholder="Select PO" /></SelectTrigger>
                   <SelectContent>
@@ -769,7 +812,13 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              {!poId && (
+                <div>
+                  <Label>Supplier Name</Label>
+                  <Input value={form.supplier_name} onChange={(e) => setForm({ ...form, supplier_name: e.target.value })} />
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label>Received By</Label>
                   <Input value={form.received_by} onChange={(e) => setForm({ ...form, received_by: e.target.value })} />
@@ -778,10 +827,35 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
                   <Label>Date Received</Label>
                   <Input type="date" value={form.received_date} onChange={(e) => setForm({ ...form, received_date: e.target.value })} />
                 </div>
+                <div>
+                  <Label>Currency</Label>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="ZWL">ZWL</SelectItem>
+                      <SelectItem value="ZAR">ZAR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
-                <Label>Items Received</Label>
-                <ItemsEditor items={items} setItems={setItems} showCost={false} />
+                <Label>Items Received (with prices)</Label>
+                <ItemsEditor items={items} setItems={setItems} showCost={true} currency={currency} />
+              </div>
+              <div>
+                <Label>Upload Receipts / Invoices (evidence)</Label>
+                <Input
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setReceiptFiles(Array.from(e.target.files || []))}
+                />
+                {receiptFiles.length > 0 && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {receiptFiles.length} file(s) selected: {receiptFiles.map((f) => f.name).join(", ")}
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Notes</Label>
@@ -789,8 +863,8 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={submit}>Save GRN</Button>
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={uploading}>Cancel</Button>
+              <Button onClick={submit} disabled={uploading}>{uploading ? "Saving..." : "Save GRN"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -805,12 +879,14 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
                 <TableHead>Supplier</TableHead>
                 <TableHead>Received By</TableHead>
                 <TableHead>Items</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Receipts</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No goods received yet</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No goods received yet</TableCell></TableRow>
               )}
               {data.map((g) => (
                 <TableRow key={g.id}>
@@ -819,6 +895,20 @@ function GRNTab({ data, pos, onChange }: { data: GRN[]; pos: PurchaseOrder[]; on
                   <TableCell>{g.supplier_name || "—"}</TableCell>
                   <TableCell>{g.received_by || "—"}</TableCell>
                   <TableCell>{(g.items || []).length}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    {g.currency || "USD"} {Number(g.total_amount || 0).toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    {g.receipt_urls?.length ? (
+                      <div className="flex gap-1 flex-wrap">
+                        {g.receipt_urls.map((u, i) => (
+                          <Button key={i} size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => viewReceipt(u)}>
+                            #{i + 1}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button size="sm" variant="outline" onClick={() => downloadPDF(g)}><FileDown size={14} /></Button>
