@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers, Tag, FileText } from "lucide-react";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { generatePaidLabels, generatePaidStudentsList, PaidStudent } from "@/lib/generatePaidLabels";
+import { generateFeesByClassPDF } from "@/lib/generateFeesByClass";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import BulkPaymentDialog from "@/components/BulkPaymentDialog";
