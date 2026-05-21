@@ -519,6 +519,14 @@ const AdminPayments = () => {
             }} className="gap-2">
               <FileText size={16} /> Paid List PDF
             </Button>
+            <Button variant="outline" onClick={() => {
+              const groups = buildFeesByClassGroups();
+              if (!groups.length) { toast({ title: "No students found", variant: "destructive" }); return; }
+              generateFeesByClassPDF(groups);
+              toast({ title: "PDF generated", description: `${groups.length} class(es).` });
+            }} className="gap-2">
+              <FileText size={16} /> Fees by Class PDF
+            </Button>
             <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
               <Camera size={16} /> Scan Deposit Slip
             </Button>
