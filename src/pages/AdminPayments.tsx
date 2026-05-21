@@ -482,6 +482,27 @@ const AdminPayments = () => {
     return Array.from(byStudent.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
 
+  const buildFeesByClassGroups = () => {
+    const paidTotals = new Map<string, number>();
+    for (const p of payments) {
+      if (!["paid", "completed", "confirmed"].includes(p.status)) continue;
+      paidTotals.set(p.student_profile_id, (paidTotals.get(p.student_profile_id) || 0) + Number(p.amount || 0));
+    }
+    const groups = new Map<string, { paid: { name: string; regNo: string; amount: number }[]; unpaid: { name: string; regNo: string }[] }>();
+    for (const s of students) {
+      const cls = formatClass(s) || "Unassigned";
+      if (!groups.has(cls)) groups.set(cls, { paid: [], unpaid: [] });
+      const g = groups.get(cls)!;
+      const name = titleCaseName(`${s.first_name} ${s.last_name}`);
+      const amt = paidTotals.get(s.id) || 0;
+      if (amt > 0) g.paid.push({ name, regNo: s.registration_number, amount: amt });
+      else g.unpaid.push({ name, regNo: s.registration_number });
+    }
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([className, v]) => ({ className, paid: v.paid, unpaid: v.unpaid }));
+  };
+
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
