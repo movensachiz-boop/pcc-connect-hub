@@ -613,6 +613,86 @@ const AdminPayments = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Fees status grouped by class */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Fees Status by Class</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(() => {
+              const paidTotals = new Map<string, number>();
+              for (const p of payments) {
+                if (!["paid", "completed", "confirmed"].includes(p.status)) continue;
+                paidTotals.set(p.student_profile_id, (paidTotals.get(p.student_profile_id) || 0) + Number(p.amount || 0));
+              }
+              const groups = new Map<string, { paid: StudentProfile[]; unpaid: StudentProfile[] }>();
+              for (const s of students) {
+                const cls = formatClass(s) || "Unassigned";
+                if (!groups.has(cls)) groups.set(cls, { paid: [], unpaid: [] });
+                const bucket = groups.get(cls)!;
+                if ((paidTotals.get(s.id) || 0) > 0) bucket.paid.push(s);
+                else bucket.unpaid.push(s);
+              }
+              const sortedClasses = Array.from(groups.keys()).sort();
+              if (!sortedClasses.length) {
+                return <p className="text-center text-muted-foreground py-6 text-sm">No students found.</p>;
+              }
+              return sortedClasses.map((cls) => {
+                const g = groups.get(cls)!;
+                const total = g.paid.length + g.unpaid.length;
+                const pct = total ? Math.round((g.paid.length / total) * 100) : 0;
+                return (
+                  <details key={cls} className="rounded-lg border bg-card">
+                    <summary className="cursor-pointer list-none p-3 flex items-center justify-between gap-3 hover:bg-muted/40 transition-colors">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="font-semibold truncate">{cls}</span>
+                        <Badge variant="outline" className="text-[10px]">{total} student{total !== 1 ? "s" : ""}</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-success text-success-foreground text-[10px]">{g.paid.length} paid</Badge>
+                        <Badge variant="destructive" className="text-[10px]">{g.unpaid.length} unpaid</Badge>
+                        <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
+                      </div>
+                    </summary>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 pt-0 border-t">
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-success mb-2">Paid ({g.paid.length})</p>
+                        {g.paid.length === 0 ? (
+                          <p className="text-xs text-muted-foreground italic">None</p>
+                        ) : (
+                          <ul className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                            {g.paid.map(s => (
+                              <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
+                                <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
+                                <span className="font-mono text-xs text-success">${(paidTotals.get(s.id) || 0).toFixed(2)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-destructive mb-2">Not Paid ({g.unpaid.length})</p>
+                        {g.unpaid.length === 0 ? (
+                          <p className="text-xs text-muted-foreground italic">None</p>
+                        ) : (
+                          <ul className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                            {g.unpaid.map(s => (
+                              <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
+                                <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
+                                <span className="font-mono text-xs text-muted-foreground">{s.registration_number}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </details>
+                );
+              });
+            })()}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Upload Slip Dialog */}
