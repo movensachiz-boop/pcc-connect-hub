@@ -70,26 +70,33 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT table containing many fee deposit transactions.
+            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT table of fee deposits.
 
-CRITICAL — USE TABLE STRUCTURE / COLUMN ALIGNMENT:
-The statement has these columns in this fixed order: [Posting Date] [Details/Description] [Debit] [Credit] [Balance].
-You MUST read each transaction as ONE HORIZONTAL ROW. A value belongs to a transaction ONLY if it sits on the same horizontal row (same y-position) as that row's Posting Date. Never mix values from the row above or below. Preserve column positions when parsing.
+COLUMN ORDER (fixed): [Posting Date] [Details/Description] [Debit] [Credit] [Balance].
 
-For EACH transaction row, return:
-- date: the value from the leftmost "Posting Date" column on that row (YYYY-MM-DD if possible, else as printed).
-- details: the raw narration from the "Details/Description" column on that same row. Description text may sit directly below or beside the date but still belongs to the same row — include wrapped lines only if they clearly belong to this transaction and not the next.
-- student_name: the student's full name parsed from that row's description. If the word "FEES" appears, take the FIRST full student name that appears AFTER "FEES". Otherwise take the first clear person name. Strip labels like FEES, FEES-, DEPOSIT, VACATION, TERM/T1/T2/T3 + year, form labels (F1..F6, FORM 1..6), and streams/colours (BLUE, YELLOW, GREEN, RED, G1, G2, G22, SCIENCES, COMMERCIALS, ARTS). Title case. Never include phone or account numbers.
-- amount: the number from the "Credit" column that is HORIZONTALLY ALIGNED with this row's Posting Date. NEVER take the Debit value. NEVER take a Credit value from a different row. Numeric only, no currency symbol. If this row's Credit cell is empty or 0.00, SKIP the row entirely.
+HOW EACH TRANSACTION IS LAID OUT (CRITICAL — READ CAREFULLY):
+- Each transaction occupies a BLOCK of usually 2 lines in the Details column.
+- LINE 1 of the block sits on the SAME horizontal row as the Posting Date AND the Credit amount. This line is usually a header like "FEES" / "DEPOSIT" / "VACATION FEES T1 2026". It does NOT contain the student name.
+- LINE 2 of the block sits DIRECTLY BELOW the Posting Date (one line lower) and contains the STUDENT NAME (and sometimes form/stream).
+- The DATE and CREDIT AMOUNT are horizontally aligned with LINE 1. The STUDENT NAME is the line immediately BELOW that date.
+- For ONE transaction: take the date from the Posting Date column, take the credit amount from the Credit column on the SAME row as the date, and take the student name from the description line DIRECTLY BELOW the date (still within the same transaction block, before the next Posting Date appears).
 
-Skip "Brought Forward Balance", running totals, headers, and any row whose Credit cell is empty/zero. Skip pure debit rows.
+DO NOT shift rows. A common mistake is to read the student name from the CURRENT date row and pair it with the NEXT row's amount — this is WRONG. The amount belongs to the date that sits on the SAME row as the header line ABOVE the name, not the row of the name itself.
+
+For EACH transaction block, return:
+- date: value from the Posting Date column (YYYY-MM-DD if possible, else as printed).
+- details: the full description block (header line + name line) as printed.
+- student_name: the student full name parsed from the line DIRECTLY BELOW the Posting Date. If multiple names appear, take the first full person name. Strip labels (FEES, FEES-, DEPOSIT, VACATION, TERM/T1/T2/T3 + year, F1..F6, FORM 1..6, BLUE/YELLOW/GREEN/RED/G1/G2/G22/SCIENCES/COMMERCIALS/ARTS). Title case. Never include phone or account numbers.
+- amount: the number from the Credit column HORIZONTALLY ALIGNED with this Posting Date (same row as the header line, NOT the name line). NEVER take Debit. NEVER take the next row's Credit. If the Credit cell on the date's row is empty/zero, SKIP this transaction.
+
+Skip "Brought Forward Balance", running totals, headers, and any debit-only rows.
 
 Return ONLY a JSON object: {"rows":[{...}, ...]}. No markdown.`,
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Detect each transaction row separately by horizontal alignment. For each row: date from Posting Date column, description from Details column on the same row, amount strictly from the Credit column horizontally aligned with that row. Ignore Debit values and skip rows with empty/zero Credit. If the description has multiple names, take the first full student name after the word FEES." },
+              { type: "text", text: "Read each transaction as a BLOCK. The Posting Date and the Credit amount are on the SAME horizontal row. The student name is on the line DIRECTLY BELOW the date (still within the same block). Pair the date + amount from the top row of the block with the name from the line beneath it. Do NOT pair the name's row with the next transaction's amount. Skip rows whose Credit cell is empty or zero." },
               {
                 type: "image_url",
                 image_url: {
