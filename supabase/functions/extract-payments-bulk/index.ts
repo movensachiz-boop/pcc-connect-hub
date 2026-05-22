@@ -66,38 +66,28 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
-            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT table of fee deposits. Accuracy is more important than speed.
+            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT table of fee deposits.
 
 COLUMN ORDER (fixed): [Posting Date] [Details/Description] [Debit] [Credit] [Balance].
 
-ANCHOR RULE (MOST IMPORTANT):
-- Every visible value in the Posting Date column starts a NEW STUDENT TRANSACTION. Treat each Posting Date as a hard boundary/anchor.
-- Process anchors from top to bottom. For anchor N, the transaction block starts at Posting Date N and ends immediately BEFORE Posting Date N+1.
-- NEVER read student information from anchor N+1 while processing anchor N. If another Posting Date appears, you have already moved to the next student.
-- The first student and the last student must be captured using the exact same anchor method.
+HOW EACH TRANSACTION IS LAID OUT (CRITICAL — READ CAREFULLY):
+- Each transaction occupies a BLOCK of usually 2 lines in the Details column.
+- LINE 1 of the block sits on the SAME horizontal row as the Posting Date AND the Credit amount. This line is usually a header like "FEES" / "DEPOSIT" / "VACATION FEES T1 2026". It does NOT contain the student name.
+- LINE 2 of the block sits DIRECTLY BELOW the Posting Date (one line lower) and contains the STUDENT NAME (and sometimes form/stream).
+- The DATE and CREDIT AMOUNT are horizontally aligned with LINE 1. The STUDENT NAME is the line immediately BELOW that date.
+- For ONE transaction: take the date from the Posting Date column, take the credit amount from the Credit column on the SAME row as the date, and take the student name from the description line DIRECTLY BELOW the date (still within the same transaction block, before the next Posting Date appears).
 
-HOW EACH TRANSACTION BLOCK IS LAID OUT:
-- TOP LINE of the block: Posting Date + Details header + Credit amount are on the SAME horizontal row. The header is often "FEES", "DEPOSIT", or "VACATION FEES T1 2026".
-- NAME LINE of the block: the student name is normally the description line DIRECTLY BELOW that Posting Date, still before the next Posting Date anchor.
-- AMOUNT: take ONLY the Credit column value horizontally aligned with this same Posting Date anchor/top line. NEVER take Debit. NEVER take Credit from the next Posting Date row.
-- NAME: take the first full student name found inside this same anchored block. Prefer the line directly below the Posting Date. If the top Details line contains "FEES" followed by a name, take the first full name after "FEES". Stop scanning as soon as the next Posting Date starts.
-
-DO NOT shift rows. A common mistake is to read the student name from one transaction and pair it with the next transaction's amount — this is WRONG. The amount always belongs to the Posting Date on the same horizontal row as that amount, and the student name must come from the block under that same Posting Date only.
+DO NOT shift rows. A common mistake is to read the student name from the CURRENT date row and pair it with the NEXT row's amount — this is WRONG. The amount belongs to the date that sits on the SAME row as the header line ABOVE the name, not the row of the name itself.
 
 For EACH transaction block, return:
 - date: value from the Posting Date column (YYYY-MM-DD if possible, else as printed).
 - details: the full description block (header line + name line) as printed.
-- student_name: the student full name parsed from the same anchored block, normally the line DIRECTLY BELOW the Posting Date. If multiple names appear inside this block, take the first full person name after "FEES". Strip labels (FEES, FEES-, DEPOSIT, VACATION, TERM/T1/T2/T3 + year, F1..F6, FORM 1..6, BLUE/YELLOW/GREEN/RED/G1/G2/G22/SCIENCES/COMMERCIALS/ARTS). Title case. Never include phone or account numbers.
-- amount: the number from the Credit column HORIZONTALLY ALIGNED with this Posting Date anchor (same row as the header line, NOT the name line). NEVER take Debit. NEVER take the next Posting Date row's Credit. If the Credit cell on this Posting Date row is empty/zero, SKIP this transaction.
-
-FINAL SELF-CHECK BEFORE RETURNING:
-- For every returned row, confirm: date and amount are on the same horizontal row; student_name appears after that date and before the next Posting Date.
-- If a name is below one Posting Date but the amount is aligned to the next Posting Date, your extraction is wrong; fix it before returning.
-- Do not guess missing names by using the next transaction block.
+- student_name: the student full name parsed from the line DIRECTLY BELOW the Posting Date. If multiple names appear, take the first full person name. Strip labels (FEES, FEES-, DEPOSIT, VACATION, TERM/T1/T2/T3 + year, F1..F6, FORM 1..6, BLUE/YELLOW/GREEN/RED/G1/G2/G22/SCIENCES/COMMERCIALS/ARTS). Title case. Never include phone or account numbers.
+- amount: the number from the Credit column HORIZONTALLY ALIGNED with this Posting Date (same row as the header line, NOT the name line). NEVER take Debit. NEVER take the next row's Credit. If the Credit cell on the date's row is empty/zero, SKIP this transaction.
 
 Skip "Brought Forward Balance", running totals, headers, and any debit-only rows.
 
@@ -106,7 +96,7 @@ Return ONLY a JSON object: {"rows":[{...}, ...]}. No markdown.`,
           {
             role: "user",
             content: [
-              { type: "text", text: "Use Posting Date anchors. Every Posting Date starts a new student transaction. For each date, take the Credit amount on the same horizontal row as that date, then take the student name from the description line directly below that same date, before the next Posting Date appears. Do not borrow the next row's amount or the next student's name. Capture the first student through the last student using this exact same method. Skip rows whose Credit cell on the date row is empty or zero." },
+              { type: "text", text: "Read each transaction as a BLOCK. The Posting Date and the Credit amount are on the SAME horizontal row. The student name is on the line DIRECTLY BELOW the date (still within the same block). Pair the date + amount from the top row of the block with the name from the line beneath it. Do NOT pair the name's row with the next transaction's amount. Skip rows whose Credit cell is empty or zero." },
               {
                 type: "image_url",
                 image_url: {
