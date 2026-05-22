@@ -70,22 +70,26 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT containing many fee deposit transactions.
+            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT table containing many fee deposit transactions.
 
-Extract EVERY individual fee/deposit transaction line. For each row return:
-- date: posting/value date (YYYY-MM-DD if possible, else as printed)
-- details: the raw narration as printed (e.g. "FEES OTTILIA MUDHONGA F4 BLUE", "VACATION APPRECIATE CHAGOMA 3 YELLOW")
-- student_name: the student's name parsed from the narration (strip prefixes like FEES, FEES-, DEPOSIT, VACATION, T2 2026, form labels, stream colours). Title case.
-- amount: the CREDIT amount (money received). Numeric only, no currency symbol. IGNORE rows where credit is 0.00 or empty. NEVER use the debit column. NEVER include phone numbers.
+CRITICAL — USE TABLE STRUCTURE / COLUMN ALIGNMENT:
+The statement has these columns in this fixed order: [Posting Date] [Details/Description] [Debit] [Credit] [Balance].
+You MUST read each transaction as ONE HORIZONTAL ROW. A value belongs to a transaction ONLY if it sits on the same horizontal row (same y-position) as that row's Posting Date. Never mix values from the row above or below. Preserve column positions when parsing.
 
-Skip "Brought Forward Balance" and any row with a 0 or empty credit. Skip pure debit/repayment-collection rows.
+For EACH transaction row, return:
+- date: the value from the leftmost "Posting Date" column on that row (YYYY-MM-DD if possible, else as printed).
+- details: the raw narration from the "Details/Description" column on that same row. Description text may sit directly below or beside the date but still belongs to the same row — include wrapped lines only if they clearly belong to this transaction and not the next.
+- student_name: the student's full name parsed from that row's description. If the word "FEES" appears, take the FIRST full student name that appears AFTER "FEES". Otherwise take the first clear person name. Strip labels like FEES, FEES-, DEPOSIT, VACATION, TERM/T1/T2/T3 + year, form labels (F1..F6, FORM 1..6), and streams/colours (BLUE, YELLOW, GREEN, RED, G1, G2, G22, SCIENCES, COMMERCIALS, ARTS). Title case. Never include phone or account numbers.
+- amount: the number from the "Credit" column that is HORIZONTALLY ALIGNED with this row's Posting Date. NEVER take the Debit value. NEVER take a Credit value from a different row. Numeric only, no currency symbol. If this row's Credit cell is empty or 0.00, SKIP the row entirely.
+
+Skip "Brought Forward Balance", running totals, headers, and any row whose Credit cell is empty/zero. Skip pure debit rows.
 
 Return ONLY a JSON object: {"rows":[{...}, ...]}. No markdown.`,
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Extract every credit (deposit) transaction with the student name parsed from the narration. Ignore debits and zero amounts." },
+              { type: "text", text: "Detect each transaction row separately by horizontal alignment. For each row: date from Posting Date column, description from Details column on the same row, amount strictly from the Credit column horizontally aligned with that row. Ignore Debit values and skip rows with empty/zero Credit. If the description has multiple names, take the first full student name after the word FEES." },
               {
                 type: "image_url",
                 image_url: {
