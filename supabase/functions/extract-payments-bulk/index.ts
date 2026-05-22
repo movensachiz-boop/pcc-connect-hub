@@ -89,7 +89,7 @@ Return ONLY a JSON object: {"rows":[{...}, ...]}. No markdown.`,
           {
             role: "user",
             content: [
-              { type: "text", text: "Extract every credit (deposit) transaction with the student name parsed from the narration. Ignore debits and zero amounts." },
+              { type: "text", text: "Detect each transaction row separately by horizontal alignment. For each row: date from Posting Date column, description from Details column on the same row, amount strictly from the Credit column horizontally aligned with that row. Ignore Debit values and skip rows with empty/zero Credit. If the description has multiple names, take the first full student name after the word FEES." },
               {
                 type: "image_url",
                 image_url: {
