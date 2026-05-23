@@ -75,19 +75,20 @@ Deno.serve(async (req) => {
 COLUMN ORDER (fixed): [Posting Date] [Details/Description] [Debit] [Credit] [Balance].
 
 HOW EACH TRANSACTION IS LAID OUT (CRITICAL — READ CAREFULLY):
-- Each transaction occupies a BLOCK of usually 2 lines in the Details column.
-- LINE 1 of the block sits on the SAME horizontal row as the Posting Date AND the Credit amount. This line is usually a header like "FEES" / "DEPOSIT" / "VACATION FEES T1 2026". It does NOT contain the student name.
-- LINE 2 of the block sits DIRECTLY BELOW the Posting Date (one line lower) and contains the STUDENT NAME (and sometimes form/stream).
-- The DATE and CREDIT AMOUNT are horizontally aligned with LINE 1. The STUDENT NAME is the line immediately BELOW that date.
-- For ONE transaction: take the date from the Posting Date column, take the credit amount from the Credit column on the SAME row as the date, and take the student name from the description line DIRECTLY BELOW the date (still within the same transaction block, before the next Posting Date appears).
+- Each valid transaction is a TOP-ROW + BELOW-ROW block.
+- TOP ROW: contains the Posting Date on the left and the Credit amount on the far right. These two values are horizontally aligned on the SAME line. This top row may have text such as "FEES", "DEPOSIT", or "VACATION FEES T1 2026" in the Details column.
+- BELOW ROW: the line immediately UNDER that same Posting Date contains the STUDENT NAME in the Details/Description column.
+- The student name is NOT on the amount row. The amount is NOT below the student name. The amount to capture is the Credit value ABOVE the student name, aligned with the Posting Date.
+- For ONE valid transaction: first identify a Posting Date row with a Credit amount on the SAME horizontal line, then look directly BELOW that date for the student name. Capture ONLY if that below-line contains a real student name.
+- If a Posting Date row has a Credit amount but there is NO student name directly below that same date/block, SKIP it completely. Do not use a name from another row.
 
-DO NOT shift rows. A common mistake is to read the student name from the CURRENT date row and pair it with the NEXT row's amount — this is WRONG. The amount belongs to the date that sits on the SAME row as the header line ABOVE the name, not the row of the name itself.
+DO NOT shift rows. NEVER pair a student name with the Credit amount that appears below the name or on the next transaction row. The correct Credit amount is always ABOVE the student name and aligned with that transaction's Posting Date. If the only visible amount is below the student name, it belongs to the NEXT transaction and must NOT be used for that student.
 
 For EACH transaction block, return:
 - date: value from the Posting Date column (YYYY-MM-DD if possible, else as printed).
-- details: the full description block (header line + name line) as printed.
+- details: the full valid description block (top row/header + directly-below name row) as printed.
 - student_name: the student full name parsed from the line DIRECTLY BELOW the Posting Date. If multiple names appear, take the first full person name. Strip labels (FEES, FEES-, DEPOSIT, VACATION, TERM/T1/T2/T3 + year, F1..F6, FORM 1..6, BLUE/YELLOW/GREEN/RED/G1/G2/G22/SCIENCES/COMMERCIALS/ARTS). Title case. Never include phone or account numbers.
-- amount: the number from the Credit column HORIZONTALLY ALIGNED with this Posting Date (same row as the header line, NOT the name line). NEVER take Debit. NEVER take the next row's Credit. If the Credit cell on the date's row is empty/zero, SKIP this transaction.
+- amount: the number from the Credit column HORIZONTALLY ALIGNED with this Posting Date (same row as the header/top row, ABOVE the student name). NEVER take Debit. NEVER take the Credit below the student name. NEVER take the next row's Credit. If the Credit cell on the date's row is empty/zero, SKIP this transaction.
 
 Skip "Brought Forward Balance", running totals, headers, and any debit-only rows.
 
