@@ -97,7 +97,7 @@ Return ONLY a JSON object: {"rows":[{...}, ...]}. No markdown.`,
           {
             role: "user",
             content: [
-              { type: "text", text: "Read each transaction as a BLOCK. The Posting Date and the Credit amount are on the SAME horizontal row. The student name is on the line DIRECTLY BELOW the date (still within the same block). Pair the date + amount from the top row of the block with the name from the line beneath it. Do NOT pair the name's row with the next transaction's amount. Skip rows whose Credit cell is empty or zero." },
+              { type: "text", text: "Read each transaction as a TOP-ROW + BELOW-ROW block. The TOP ROW has the Posting Date and Credit amount aligned on the SAME horizontal line. The BELOW ROW, immediately under that date, must contain the student name. Capture the amount ABOVE the student name, not below it. If a date+credit row has no student name directly below it, skip that row completely. Do NOT pair a student name with the next row's amount or any amount below the name." },
               {
                 type: "image_url",
                 image_url: {
