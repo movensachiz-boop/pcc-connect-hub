@@ -76,19 +76,20 @@ COLUMN ORDER (fixed): [Posting Date] [Details/Description] [Channel ID] [Value D
 
 CRITICAL EXTRACTION STRATEGY — ANCHOR ON THE CREDIT AMOUNT, NOT ON THE NAME:
 1. First identify every NON-ZERO amount in the CREDIT column only. Ignore Debit, Balance, and 0.00 credit values.
-2. For each non-zero Credit amount, read horizontally left to find the same visual row/line in the Details column and the nearest Posting Date for that row/block.
-3. The student name normally appears BELOW that credit-aligned row, in the same transaction block. Assign the Credit amount to the FIRST full student name BELOW that credit line before the next non-zero Credit amount or next transaction block.
-4. Never assign a Credit amount to a student name ABOVE the credit line if there is another full student name below that same credit line. This prevents shifting an amount to the previous student.
-5. If there is a full student name ABOVE the credit line and there is NO full student name below it before the transaction block ends, then the amount can belong to the name above. This covers wrapped last-row cases where the valid Credit amount is directly below the student's name in the same block.
-6. If a Credit amount has no student name below it and no unambiguous same-block student name immediately above it, SKIP it.
+2. For each non-zero Credit amount, read horizontally left to find the SAME VISUAL LINE in the Details column. The text on that same line decides whether to look below or above.
+3. If the same-line Details text is a deposit marker such as "Cash Deposit Same", "Deposit", "Credit", or a similar bank transaction header, the STUDENT NAME IS BELOW that line. Assign the credit to the FIRST full student name below it before the next deposit marker/credit line. NEVER assign that credit to any name above the marker.
+4. If the same-line Details text is a continuation line below a name, such as "Generic RTGS", "POS", "Tax", reference text, or a line that is visibly under the student's name inside the same wrapped transaction, then assign the credit to the nearest full student name immediately ABOVE it, but only when there is no new student name below before the block ends.
+5. Never assign a Credit amount to a student name ABOVE a deposit marker if there is another full student name below that same marker. This prevents shifting an amount to the previous student.
+6. If a Credit amount has no student name below its deposit marker and no unambiguous continuation-line student immediately above it, SKIP it.
 
 SPECIFIC BANK STATEMENT PATTERN TO FOLLOW:
 - A line like "Cash Deposit Same" with Credit 275.00 followed BELOW by "ZANELE PANDE" means 275.00 belongs to Zanele Pande, NOT to any name above such as Ruvarashe Remigio.
 - The next Credit 270.00 followed BELOW by "FEES SAINT SHERENI" belongs to Saint Shereni.
-- If the final visible transaction has "MITCHEL DHEMBA" and the only non-zero Credit amount for that block is directly below/within the same wrapped block, capture that non-zero Credit amount for Mitchel Dhemba, not the nearby 0.00.
+- If the final visible transaction has "MITCHEL DHEMBA" above a continuation line and the only non-zero Credit amount for that block is on that continuation line below/within the same wrapped block, capture that non-zero Credit amount for Mitchel Dhemba, not the nearby 0.00.
 
 DO NOT shift rows incorrectly:
 - Do not start from a student name and grab the amount below it if that amount has another student name below it.
+- If Credit is aligned with "Cash Deposit Same", always look DOWN for the student; the name above is from the previous/unfinished block and must be ignored.
 - Do not use Debit or Balance values.
 - Do not capture rows where the only aligned Credit value is 0.00.
 - Do not duplicate one Credit amount for two names.
