@@ -23,48 +23,28 @@ type StatementLine = {
 };
 
 const parseMoney = (value?: string) => {
-  const raw = String(value || "").replace(/,/g, " ");
-  const matches = raw.match(/\d+(?:\.\d{1,2})?/g) || [];
-  for (const token of matches) {
-    const amount = Number(token);
-    if (Number.isFinite(amount) && amount > 0) return amount;
-  }
-  return 0;
+  const cleaned = String(value || "").replace(/,/g, "").replace(/[^0-9.]/g, "");
+  if (!cleaned) return 0;
+  const amount = Number(cleaned);
+  return Number.isFinite(amount) ? amount : 0;
 };
-
-const isDepositMarker = (details?: string) =>
-  /\b(cash\s+deposit|deposit|credit|cash\s+dep|transfer|pos|rtgs|zipit|ib\s+transfer)\b/i.test(details || "");
 
 const cleanStudentName = (value?: string) =>
   String(value || "")
     .replace(/\+?\d[\d\s-]{6,}/g, "")
-    .replace(/\b(FEES?|DEPOSIT|VACATION|TERM|T[123]|20\d{2}|FORM\s*[1-6]|F[1-6]|BLUE|YELLOW|GREEN|RED|G1|G2|G22|SCIENCES|COMMERCIALS|ARTS|CASH|TRANSFER|POS|RTGS|ZIPIT|IB|MOBILE|ECOCASH|ONEMONEY|REF|REFERENCE)\b/gi, " ")
+    .replace(/\b(FEES?|DEPOSIT|VACATION|TERM|T[123]|20\d{2}|FORM\s*[1-6]|F[1-6]|BLUE|YELLOW|GREEN|RED|G1|G2|G22|SCIENCES|COMMERCIALS|ARTS)\b/gi, " ")
     .replace(/[^a-zA-Z\s'-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase()
     .replace(/\b\w/g, (m) => m.toUpperCase());
 
-const extractName = (line?: StatementLine) => {
-  const fromField = cleanStudentName(line?.student_name);
-  if (fromField && fromField.split(/\s+/).filter(Boolean).length >= 2) return fromField;
-  const fromDetails = cleanStudentName(line?.details);
-  if (fromDetails && fromDetails.split(/\s+/).filter(Boolean).length >= 2) return fromDetails;
-  // Single-word fallback (≥3 chars) if line isn't a generic deposit marker
-  const single = fromField || fromDetails;
-  if (single && single.length >= 3 && !isDepositMarker(line?.details)) return single;
-  return "";
+const hasStudentName = (line?: StatementLine) => {
+  const name = cleanStudentName(line?.student_name || line?.details);
+  return name.split(/\s+/).filter(Boolean).length >= 2 ? name : "";
 };
 
-const SEARCH_WINDOW = 5;
-
-const fallbackNameFromContext = (lines: StatementLine[]) => {
-  const candidates = lines
-    .map((line) => extractName(line) || cleanStudentName(line?.details))
-    .filter(Boolean)
-    .filter((name) => !/^(cash|deposit|credit|transfer|pos|rtgs|zipit)$/i.test(name));
-  return candidates[0] || "Unmatched Student";
-};
+const isDepositMarker = (details?: string) => /\b(cash\s+deposit|deposit|credit|cash\s+dep)\b/i.test(details || "");
 
 const buildRowsFromStatementLines = (lines: StatementLine[]): ExtractedRow[] => {
   const ordered = [...lines]
@@ -75,39 +55,38 @@ const buildRowsFromStatementLines = (lines: StatementLine[]): ExtractedRow[] => 
     const amount = parseMoney(line.credit);
     if (amount <= 0) return [];
 
-    const sameLineName = extractName(line);
-    let chosenName = isDepositMarker(line.details) ? "" : sameLineName;
+    const sameLineName = hasStudentName(line);
+    let chosenName = sameLineName;
 
-    // Look DOWN within window for a name on a continuation line (no own credit)
-    if (!chosenName) {
-      for (let i = index + 1; i < Math.min(ordered.length, index + 1 + SEARCH_WINDOW); i++) {
+    if (!chosenName || isDepositMarker(line.details)) {
+      for (let i = index + 1; i < ordered.length; i++) {
         const next = ordered[i];
         if (parseMoney(next.credit) > 0) break;
-        const candidate = extractName(next);
-        if (candidate) { chosenName = candidate; break; }
+        const candidate = hasStudentName(next);
+        if (candidate) {
+          chosenName = candidate;
+          break;
+        }
       }
     }
 
-    // Look UP within window
     if (!chosenName) {
-      for (let i = index - 1; i >= Math.max(0, index - SEARCH_WINDOW); i--) {
+      for (let i = index - 1; i >= 0; i--) {
         const prev = ordered[i];
         if (parseMoney(prev.credit) > 0) break;
-        const candidate = extractName(prev);
-        if (candidate) { chosenName = candidate; break; }
+        const candidate = hasStudentName(prev);
+        if (candidate) {
+          chosenName = candidate;
+          break;
+        }
       }
     }
 
-    // Last resort: same-line name even if it looked like a deposit marker
-    if (!chosenName && sameLineName) chosenName = sameLineName;
+    if (!chosenName) return [];
 
     const blockDetails = [ordered[index - 1]?.details, line.details, ordered[index + 1]?.details]
       .filter(Boolean)
       .join(" | ");
-
-    if (!chosenName) {
-      chosenName = fallbackNameFromContext([ordered[index - 1], line, ordered[index + 1]].filter(Boolean));
-    }
 
     return [{
       date: line.date || ordered[index - 1]?.date || "",
