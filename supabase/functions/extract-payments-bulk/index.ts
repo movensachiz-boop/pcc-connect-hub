@@ -23,10 +23,13 @@ type StatementLine = {
 };
 
 const parseMoney = (value?: string) => {
-  const cleaned = String(value || "").replace(/,/g, "").replace(/[^0-9.]/g, "");
-  if (!cleaned) return 0;
-  const amount = Number(cleaned);
-  return Number.isFinite(amount) ? amount : 0;
+  const raw = String(value || "").replace(/,/g, " ");
+  const matches = raw.match(/\d+(?:\.\d{1,2})?/g) || [];
+  for (const token of matches) {
+    const amount = Number(token);
+    if (Number.isFinite(amount) && amount > 0) return amount;
+  }
+  return 0;
 };
 
 const isDepositMarker = (details?: string) =>
@@ -53,7 +56,15 @@ const extractName = (line?: StatementLine) => {
   return "";
 };
 
-const SEARCH_WINDOW = 3;
+const SEARCH_WINDOW = 5;
+
+const fallbackNameFromContext = (lines: StatementLine[]) => {
+  const candidates = lines
+    .map((line) => extractName(line) || cleanStudentName(line?.details))
+    .filter(Boolean)
+    .filter((name) => !/^(cash|deposit|credit|transfer|pos|rtgs|zipit)$/i.test(name));
+  return candidates[0] || "Unmatched Student";
+};
 
 const buildRowsFromStatementLines = (lines: StatementLine[]): ExtractedRow[] => {
   const ordered = [...lines]
@@ -90,11 +101,13 @@ const buildRowsFromStatementLines = (lines: StatementLine[]): ExtractedRow[] => 
     // Last resort: same-line name even if it looked like a deposit marker
     if (!chosenName && sameLineName) chosenName = sameLineName;
 
-    if (!chosenName) return [];
-
     const blockDetails = [ordered[index - 1]?.details, line.details, ordered[index + 1]?.details]
       .filter(Boolean)
       .join(" | ");
+
+    if (!chosenName) {
+      chosenName = fallbackNameFromContext([ordered[index - 1], line, ordered[index + 1]].filter(Boolean));
+    }
 
     return [{
       date: line.date || ordered[index - 1]?.date || "",
