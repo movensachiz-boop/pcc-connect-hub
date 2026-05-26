@@ -129,6 +129,33 @@ const AdminPayments = () => {
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [editPayment, setEditPayment] = useState<PaymentRow | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
+  const handleSaveEdit = async () => {
+    if (!editPayment) return;
+    const amt = parseFloat(editAmount);
+    if (isNaN(amt) || amt < 0) {
+      toast({ title: "Invalid amount", variant: "destructive" });
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from("payments")
+        .update({ amount: amt })
+        .eq("id", editPayment.id);
+      if (error) throw error;
+      toast({ title: "Payment updated", description: `Amount set to $${amt.toFixed(2)}` });
+      setEditPayment(null);
+      fetchPayments();
+    } catch (err) {
+      toast({ title: "Update failed", description: getErrorMessage(err), variant: "destructive" });
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchPayments();
