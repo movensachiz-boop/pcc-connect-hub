@@ -692,7 +692,8 @@ const AdminPayments = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    ));
+                  })()}
                 </TableBody>
               </Table>
             )}
