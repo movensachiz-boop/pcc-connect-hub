@@ -646,6 +646,9 @@ const AdminPayments = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { setEditPayment(p); setEditAmount(String(p.amount)); }}>
+                                  <FileText size={14} className="mr-2" /> Edit Amount
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handlePrint(p)}>
                                   <Printer size={14} className="mr-2" /> Print A4
                                 </DropdownMenuItem>
