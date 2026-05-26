@@ -985,6 +985,34 @@ const AdminPayments = () => {
         students={students}
         onSaved={fetchPayments}
       />
+
+      <Dialog open={!!editPayment} onOpenChange={(o) => !o && setEditPayment(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Payment Amount</DialogTitle>
+            <DialogDescription>
+              {editPayment?.studentName} — {editPayment?.receipt_number || editPayment?.id.slice(0, 8)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="edit-amount">Amount ({editPayment?.currency || "USD"})</Label>
+            <Input
+              id="edit-amount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={editAmount}
+              onChange={(e) => setEditAmount(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPayment(null)} disabled={editSaving}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={editSaving}>
+              {editSaving ? <Loader2 className="animate-spin" size={16} /> : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
