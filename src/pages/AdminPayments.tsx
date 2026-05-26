@@ -107,6 +107,7 @@ const AdminPayments = () => {
   const { toast } = useToast();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paymentSearch, setPaymentSearch] = useState("");
   const [slipDialogOpen, setSlipDialogOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState<ScannedPayment | null>(null);
