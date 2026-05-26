@@ -107,6 +107,7 @@ const AdminPayments = () => {
   const { toast } = useToast();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paymentSearch, setPaymentSearch] = useState("");
   const [slipDialogOpen, setSlipDialogOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState<ScannedPayment | null>(null);
@@ -591,8 +592,14 @@ const AdminPayments = () => {
         )}
 
         <Card className="shadow-card">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
             <CardTitle className="text-base">All Transactions</CardTitle>
+            <Input
+              value={paymentSearch}
+              onChange={(e) => setPaymentSearch(e.target.value)}
+              placeholder="Search receipt, name, reg, method, amount..."
+              className="max-w-xs h-9"
+            />
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
@@ -616,7 +623,25 @@ const AdminPayments = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payments.map((p) => (
+                  {(() => {
+                    const q = paymentSearch.trim().toLowerCase();
+                    const filtered = q
+                      ? payments.filter((p) =>
+                          [p.receipt_number, p.studentName, p.regNo, p.method, p.status, String(p.amount), p.id.slice(0,8)]
+                            .filter(Boolean)
+                            .some((v) => String(v).toLowerCase().includes(q))
+                        )
+                      : payments;
+                    if (filtered.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                            No payments match "{paymentSearch}".
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    return filtered.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">{p.receipt_number || p.id.slice(0, 8)}</TableCell>
                       <TableCell>{p.studentName}</TableCell>
@@ -667,7 +692,8 @@ const AdminPayments = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    ));
+                  })()}
                 </TableBody>
               </Table>
             )}
