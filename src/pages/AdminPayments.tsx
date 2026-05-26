@@ -129,6 +129,33 @@ const AdminPayments = () => {
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [editPayment, setEditPayment] = useState<PaymentRow | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
+  const handleSaveEdit = async () => {
+    if (!editPayment) return;
+    const amt = parseFloat(editAmount);
+    if (isNaN(amt) || amt < 0) {
+      toast({ title: "Invalid amount", variant: "destructive" });
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from("payments")
+        .update({ amount: amt })
+        .eq("id", editPayment.id);
+      if (error) throw error;
+      toast({ title: "Payment updated", description: `Amount set to $${amt.toFixed(2)}` });
+      setEditPayment(null);
+      fetchPayments();
+    } catch (err) {
+      toast({ title: "Update failed", description: getErrorMessage(err), variant: "destructive" });
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchPayments();
@@ -619,6 +646,9 @@ const AdminPayments = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { setEditPayment(p); setEditAmount(String(p.amount)); }}>
+                                  <FileText size={14} className="mr-2" /> Edit Amount
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handlePrint(p)}>
                                   <Printer size={14} className="mr-2" /> Print A4
                                 </DropdownMenuItem>
@@ -955,6 +985,34 @@ const AdminPayments = () => {
         students={students}
         onSaved={fetchPayments}
       />
+
+      <Dialog open={!!editPayment} onOpenChange={(o) => !o && setEditPayment(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Payment Amount</DialogTitle>
+            <DialogDescription>
+              {editPayment?.studentName} — {editPayment?.receipt_number || editPayment?.id.slice(0, 8)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="edit-amount">Amount ({editPayment?.currency || "USD"})</Label>
+            <Input
+              id="edit-amount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={editAmount}
+              onChange={(e) => setEditAmount(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPayment(null)} disabled={editSaving}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={editSaving}>
+              {editSaving ? <Loader2 className="animate-spin" size={16} /> : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
