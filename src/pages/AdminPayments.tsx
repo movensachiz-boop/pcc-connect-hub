@@ -107,7 +107,6 @@ const AdminPayments = () => {
   const { toast } = useToast();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [paymentSearch, setPaymentSearch] = useState("");
   const [slipDialogOpen, setSlipDialogOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState<ScannedPayment | null>(null);
@@ -130,33 +129,6 @@ const AdminPayments = () => {
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [editPayment, setEditPayment] = useState<PaymentRow | null>(null);
-  const [editAmount, setEditAmount] = useState("");
-  const [editSaving, setEditSaving] = useState(false);
-
-  const handleSaveEdit = async () => {
-    if (!editPayment) return;
-    const amt = parseFloat(editAmount);
-    if (isNaN(amt) || amt < 0) {
-      toast({ title: "Invalid amount", variant: "destructive" });
-      return;
-    }
-    setEditSaving(true);
-    try {
-      const { error } = await supabase
-        .from("payments")
-        .update({ amount: amt })
-        .eq("id", editPayment.id);
-      if (error) throw error;
-      toast({ title: "Payment updated", description: `Amount set to $${amt.toFixed(2)}` });
-      setEditPayment(null);
-      fetchPayments();
-    } catch (err) {
-      toast({ title: "Update failed", description: getErrorMessage(err), variant: "destructive" });
-    } finally {
-      setEditSaving(false);
-    }
-  };
 
   useEffect(() => {
     fetchPayments();
@@ -592,14 +564,8 @@ const AdminPayments = () => {
         )}
 
         <Card className="shadow-card">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
+          <CardHeader className="pb-2">
             <CardTitle className="text-base">All Transactions</CardTitle>
-            <Input
-              value={paymentSearch}
-              onChange={(e) => setPaymentSearch(e.target.value)}
-              placeholder="Search receipt, name, reg, method, amount..."
-              className="max-w-xs h-9"
-            />
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
@@ -623,25 +589,7 @@ const AdminPayments = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(() => {
-                    const q = paymentSearch.trim().toLowerCase();
-                    const filtered = q
-                      ? payments.filter((p) =>
-                          [p.receipt_number, p.studentName, p.regNo, p.method, p.status, String(p.amount), p.id.slice(0,8)]
-                            .filter(Boolean)
-                            .some((v) => String(v).toLowerCase().includes(q))
-                        )
-                      : payments;
-                    if (filtered.length === 0) {
-                      return (
-                        <TableRow>
-                          <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
-                            No payments match "{paymentSearch}".
-                          </TableCell>
-                        </TableRow>
-                      );
-                    }
-                    return filtered.map((p) => (
+                  {payments.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">{p.receipt_number || p.id.slice(0, 8)}</TableCell>
                       <TableCell>{p.studentName}</TableCell>
@@ -671,9 +619,6 @@ const AdminPayments = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => { setEditPayment(p); setEditAmount(String(p.amount)); }}>
-                                  <FileText size={14} className="mr-2" /> Edit Amount
-                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handlePrint(p)}>
                                   <Printer size={14} className="mr-2" /> Print A4
                                 </DropdownMenuItem>
@@ -692,8 +637,7 @@ const AdminPayments = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                    ));
-                  })()}
+                  ))}
                 </TableBody>
               </Table>
             )}
@@ -1011,34 +955,6 @@ const AdminPayments = () => {
         students={students}
         onSaved={fetchPayments}
       />
-
-      <Dialog open={!!editPayment} onOpenChange={(o) => !o && setEditPayment(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Payment Amount</DialogTitle>
-            <DialogDescription>
-              {editPayment?.studentName} — {editPayment?.receipt_number || editPayment?.id.slice(0, 8)}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="edit-amount">Amount ({editPayment?.currency || "USD"})</Label>
-            <Input
-              id="edit-amount"
-              type="number"
-              step="0.01"
-              min="0"
-              value={editAmount}
-              onChange={(e) => setEditAmount(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditPayment(null)} disabled={editSaving}>Cancel</Button>
-            <Button onClick={handleSaveEdit} disabled={editSaving}>
-              {editSaving ? <Loader2 className="animate-spin" size={16} /> : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 };

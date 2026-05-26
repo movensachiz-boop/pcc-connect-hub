@@ -12,91 +12,6 @@ type ExtractedRow = {
   amount?: string;
 };
 
-type StatementLine = {
-  line_no?: number;
-  date?: string;
-  details?: string;
-  debit?: string;
-  credit?: string;
-  balance?: string;
-  student_name?: string;
-};
-
-const parseMoney = (value?: string) => {
-  const cleaned = String(value || "").replace(/,/g, "").replace(/[^0-9.]/g, "");
-  if (!cleaned) return 0;
-  const amount = Number(cleaned);
-  return Number.isFinite(amount) ? amount : 0;
-};
-
-const cleanStudentName = (value?: string) =>
-  String(value || "")
-    .replace(/\+?\d[\d\s-]{6,}/g, "")
-    .replace(/\b(FEES?|DEPOSIT|VACATION|TERM|T[123]|20\d{2}|FORM\s*[1-6]|F[1-6]|BLUE|YELLOW|GREEN|RED|G1|G2|G22|SCIENCES|COMMERCIALS|ARTS)\b/gi, " ")
-    .replace(/[^a-zA-Z\s'-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase()
-    .replace(/\b\w/g, (m) => m.toUpperCase());
-
-const hasStudentName = (line?: StatementLine) => {
-  const name = cleanStudentName(line?.student_name || line?.details);
-  return name.split(/\s+/).filter(Boolean).length >= 2 ? name : "";
-};
-
-const isDepositMarker = (details?: string) => /\b(cash\s+deposit|deposit|credit|cash\s+dep)\b/i.test(details || "");
-
-const buildRowsFromStatementLines = (lines: StatementLine[]): ExtractedRow[] => {
-  const ordered = [...lines]
-    .map((line, index) => ({ ...line, line_no: Number(line.line_no || index + 1) }))
-    .sort((a, b) => Number(a.line_no) - Number(b.line_no));
-
-  return ordered.flatMap((line, index) => {
-    const amount = parseMoney(line.credit);
-    if (amount <= 0) return [];
-
-    const sameLineName = hasStudentName(line);
-    let chosenName = sameLineName;
-
-    if (!chosenName || isDepositMarker(line.details)) {
-      for (let i = index + 1; i < ordered.length; i++) {
-        const next = ordered[i];
-        if (parseMoney(next.credit) > 0) break;
-        const candidate = hasStudentName(next);
-        if (candidate) {
-          chosenName = candidate;
-          break;
-        }
-      }
-    }
-
-    if (!chosenName) {
-      for (let i = index - 1; i >= 0; i--) {
-        const prev = ordered[i];
-        if (parseMoney(prev.credit) > 0) break;
-        const candidate = hasStudentName(prev);
-        if (candidate) {
-          chosenName = candidate;
-          break;
-        }
-      }
-    }
-
-    if (!chosenName) return [];
-
-    const blockDetails = [ordered[index - 1]?.details, line.details, ordered[index + 1]?.details]
-      .filter(Boolean)
-      .join(" | ");
-
-    return [{
-      date: line.date || ordered[index - 1]?.date || "",
-      details: blockDetails,
-      student_name: chosenName,
-      amount: amount.toFixed(2),
-    }];
-  });
-};
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -155,31 +70,33 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT table.
+            content: `You are an OCR assistant for a school accounts office processing a BANK STATEMENT table of fee deposits.
 
-Your job is ONLY to transcribe the statement into VISUAL LINES from top to bottom. Do NOT decide final payment matching.
+COLUMN ORDER (fixed): [Posting Date] [Details/Description] [Debit] [Credit] [Balance].
 
-COLUMN ORDER (fixed): [Posting Date] [Details/Description] [Channel ID] [Value Date] [Debit] [Credit] [Balance]. Preserve the row/line alignment exactly as seen.
+HOW EACH TRANSACTION IS LAID OUT (CRITICAL — READ CAREFULLY):
+- Each transaction occupies a BLOCK of usually 2 lines in the Details column.
+- LINE 1 of the block sits on the SAME horizontal row as the Posting Date AND the Credit amount. This line is usually a header like "FEES" / "DEPOSIT" / "VACATION FEES T1 2026". It does NOT contain the student name.
+- LINE 2 of the block sits DIRECTLY BELOW the Posting Date (one line lower) and contains the STUDENT NAME (and sometimes form/stream).
+- The DATE and CREDIT AMOUNT are horizontally aligned with LINE 1. The STUDENT NAME is the line immediately BELOW that date.
+- For ONE transaction: take the date from the Posting Date column, take the credit amount from the Credit column on the SAME row as the date, and take the student name from the description line DIRECTLY BELOW the date (still within the same transaction block, before the next Posting Date appears).
 
-CRITICAL COLUMN RULES:
-1. Return one object per visible printed line, ordered top-to-bottom with line_no starting at 1.
-2. Put numbers in credit ONLY when the number is visually in the CREDIT column. Never copy Balance or Debit values into credit.
-3. Put numbers in debit ONLY when visually in the DEBIT column. Balance values belong only in balance.
-4. Include 0.00 credit values as credit: "0.00" if they are printed in the Credit column, because the app will ignore zero credits later.
-5. If a transaction wraps over multiple printed lines, return each printed line separately. Do not merge rows.
-6. If a student name appears on a line, put the clean full name in student_name as well as leaving the original wording in details. If there is no clear full student name, leave student_name empty.
+DO NOT shift rows. A common mistake is to read the student name from the CURRENT date row and pair it with the NEXT row's amount — this is WRONG. The amount belongs to the date that sits on the SAME row as the header line ABOVE the name, not the row of the name itself.
 
-IMPORTANT ALIGNMENT EXAMPLES:
-- If "Cash Deposit Same" has Credit 275.00 on its line and "ZANELE PANDE" appears on the next visual line, return TWO separate lines: line A details "Cash Deposit Same" credit "275.00"; line B details/student_name "ZANELE PANDE" with no credit unless a credit is also printed on that exact line.
-- If "FEES SAINT SHERENI" appears below a Credit 270.00 line, keep Saint Shereni on its own lower line.
-- If "MITCHEL DHEMBA" is above a continuation line where Credit 270.00 is printed, keep Mitchel Dhemba on the name line and Credit 270.00 on the continuation line.
+For EACH transaction block, return:
+- date: value from the Posting Date column (YYYY-MM-DD if possible, else as printed).
+- details: the full description block (header line + name line) as printed.
+- student_name: the student full name parsed from the line DIRECTLY BELOW the Posting Date. If multiple names appear, take the first full person name. Strip labels (FEES, FEES-, DEPOSIT, VACATION, TERM/T1/T2/T3 + year, F1..F6, FORM 1..6, BLUE/YELLOW/GREEN/RED/G1/G2/G22/SCIENCES/COMMERCIALS/ARTS). Title case. Never include phone or account numbers.
+- amount: the number from the Credit column HORIZONTALLY ALIGNED with this Posting Date (same row as the header line, NOT the name line). NEVER take Debit. NEVER take the next row's Credit. If the Credit cell on the date's row is empty/zero, SKIP this transaction.
 
-Skip only page headers/footers that are not table lines. Return ONLY the tool call data.`,
+Skip "Brought Forward Balance", running totals, headers, and any debit-only rows.
+
+Return ONLY a JSON object: {"rows":[{...}, ...]}. No markdown.`,
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Transcribe every visible bank statement table line in top-to-bottom order. Preserve which numbers are in the CREDIT column. Do not merge wrapped lines and do not move an amount from one line to another." },
+              { type: "text", text: "Read each transaction as a BLOCK. The Posting Date and the Credit amount are on the SAME horizontal row. The student name is on the line DIRECTLY BELOW the date (still within the same block). Pair the date + amount from the top row of the block with the name from the line beneath it. Do NOT pair the name's row with the next transaction's amount. Skip rows whose Credit cell is empty or zero." },
               {
                 type: "image_url",
                 image_url: {
@@ -194,28 +111,25 @@ Skip only page headers/footers that are not table lines. Return ONLY the tool ca
             type: "function",
             function: {
               name: "extract_payments",
-              description: "Transcribe visible bank statement lines with column alignment preserved",
+              description: "Extract many fee deposit rows from a bank statement",
               parameters: {
                 type: "object",
                 properties: {
-                  lines: {
+                  rows: {
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        line_no: { type: "number" },
                         date: { type: "string" },
                         details: { type: "string" },
-                        debit: { type: "string" },
-                        credit: { type: "string" },
-                        balance: { type: "string" },
                         student_name: { type: "string" },
+                        amount: { type: "string" },
                       },
-                      required: ["line_no", "details"],
+                      required: ["student_name", "amount"],
                     },
                   },
                 },
-                required: ["lines"],
+                required: ["rows"],
               },
             },
           },
@@ -243,18 +157,16 @@ Skip only page headers/footers that are not table lines. Return ONLY the tool ca
     }
 
     const aiData = await aiResponse.json();
-    let statementLines: StatementLine[] = [];
+    let rows: ExtractedRow[] = [];
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       try {
         const parsed = JSON.parse(toolCall.function.arguments);
-        statementLines = Array.isArray(parsed?.lines) ? parsed.lines : [];
+        rows = Array.isArray(parsed?.rows) ? parsed.rows : [];
       } catch (e) {
         console.error("Parse error:", e);
       }
     }
-
-    let rows: ExtractedRow[] = buildRowsFromStatementLines(statementLines);
 
     // Clean up: drop empty/zero amounts, strip phone-like strings
     rows = rows

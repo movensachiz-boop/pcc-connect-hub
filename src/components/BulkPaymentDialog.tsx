@@ -80,26 +80,6 @@ const rank = (raw: string, students: StudentProfile[]) => {
     .slice(0, 8);
 };
 
-const optimizeStatementImage = (base64: string): Promise<string> =>
-  new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const maxSide = 1600;
-      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return resolve(base64);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", 0.82));
-    };
-    img.onerror = () => resolve(base64);
-    img.src = base64;
-  });
-
 const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank Deposit", onSaved }: Props) => {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -121,10 +101,9 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
   const processImage = async (base64: string) => {
     setScanning(true);
     try {
-      const optimizedBase64 = await optimizeStatementImage(base64);
       const { data: { session } } = await supabase.auth.getSession();
       const resp = await supabase.functions.invoke("extract-payments-bulk", {
-        body: { imageBase64: optimizedBase64 },
+        body: { imageBase64: base64 },
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
       if (resp.error) throw new Error(resp.error.message || "Scan failed");
