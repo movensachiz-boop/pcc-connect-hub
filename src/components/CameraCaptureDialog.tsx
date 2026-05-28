@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Camera, Loader2, RefreshCw, Check, X, Zap, ZapOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { applyTorchConstraint, canAttemptTorch, createCameraStream, getTorchCapability } from "@/lib/cameraTorch";
 
 interface CameraCaptureDialogProps {
   open: boolean;
@@ -25,13 +26,32 @@ const CameraCaptureDialog = ({ open, onOpenChange, onCapture, title = "Scan with
   const { toast } = useToast();
 
   const applyTorch = async (on: boolean) => {
-    const track = streamRef.current?.getVideoTracks?.()[0] as any;
+    const track = streamRef.current?.getVideoTracks?.()[0];
     if (!track) return;
     try {
-      await track.applyConstraints({ advanced: [{ torch: on }] });
+      if (on && !getTorchCapability(track)) {
+        const torchStream = await createCameraStream("environment", true);
+        const torchTrack = torchStream.getVideoTracks()[0];
+        if (getTorchCapability(torchTrack)) {
+          streamRef.current?.getTracks().forEach((t) => t.stop());
+          streamRef.current = torchStream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = torchStream;
+            await videoRef.current.play().catch(() => {});
+          }
+          setFacingMode("environment");
+          setTorchSupported(true);
+          await applyTorchConstraint(torchTrack, true);
+          setTorchOn(true);
+          return;
+        }
+        torchStream.getTracks().forEach((t) => t.stop());
+      }
+      await applyTorchConstraint(track, on);
       setTorchOn(on);
+      setTorchSupported(true);
     } catch {
-      toast({ title: "Flash unavailable", description: "This camera does not support flash.", variant: "destructive" });
+      toast({ title: "Flash unavailable", description: "Use the back camera on Chrome/Android; this browser may block torch control.", variant: "destructive" });
     }
   };
 
@@ -46,14 +66,10 @@ const CameraCaptureDialog = ({ open, onOpenChange, onCapture, title = "Scan with
   const startStream = async (mode: "environment" | "user") => {
     stopStream();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: mode }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      });
+      const stream = await createCameraStream(mode);
       streamRef.current = stream;
-      const track = stream.getVideoTracks()[0] as any;
-      const caps = track?.getCapabilities?.();
-      setTorchSupported(!!caps?.torch);
+      const track = stream.getVideoTracks()[0];
+      setTorchSupported(canAttemptTorch(track));
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
