@@ -49,6 +49,9 @@ const PhoneScan = () => {
         audio: false,
       });
       streamRef.current = stream;
+      const track = stream.getVideoTracks()[0] as any;
+      const caps = track?.getCapabilities?.();
+      setTorchSupported(!!caps?.torch);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
