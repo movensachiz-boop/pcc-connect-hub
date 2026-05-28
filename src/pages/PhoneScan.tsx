@@ -204,7 +204,17 @@ const PhoneScan = () => {
             <Button onClick={snap} disabled={!ready} className="gap-2 px-6">
               <Camera size={18} /> {ready ? "Capture" : "Loading camera…"}
             </Button>
-            <div className="w-[88px]" />
+            {torchSupported ? (
+              <Button
+                variant="outline"
+                onClick={() => applyTorch(!torchOn)}
+                className="gap-2 bg-transparent text-white border-white/20"
+              >
+                {torchOn ? <ZapOff size={14} /> : <Zap size={14} />} {torchOn ? "Off" : "Flash"}
+              </Button>
+            ) : (
+              <div className="w-[88px]" />
+            )}
           </>
         ) : (
           <>
