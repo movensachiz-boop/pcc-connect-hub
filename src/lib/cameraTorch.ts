@@ -51,6 +51,8 @@ export const createCameraStream = async (mode: CameraMode, preferTorch = false):
   try {
     fallback = await getStream({ facingMode: { exact: "environment" }, ...highResVideo });
     if (!preferTorch || getTorchCapability(fallback.getVideoTracks()[0])) return fallback;
+    stopStream(fallback);
+    fallback = null;
   } catch {
     fallback = null;
   }
