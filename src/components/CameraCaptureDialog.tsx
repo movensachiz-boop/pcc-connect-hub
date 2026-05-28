@@ -149,6 +149,11 @@ const CameraCaptureDialog = ({ open, onOpenChange, onCapture, title = "Scan with
                 <RefreshCw size={14} /> Flip
               </Button>
             )}
+            {!preview && ready && torchSupported && (
+              <Button type="button" variant="outline" onClick={() => applyTorch(!torchOn)} className="gap-2">
+                {torchOn ? <ZapOff size={14} /> : <Zap size={14} />} {torchOn ? "Flash Off" : "Flash"}
+              </Button>
+            )}
             {preview && (
               <Button type="button" variant="outline" onClick={retake} disabled={submitting} className="gap-2">
                 <RefreshCw size={14} /> Retake
