@@ -191,30 +191,35 @@ const PhoneScan = () => {
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
-      <footer className="p-4 bg-black/90 border-t border-white/10 flex items-center justify-between gap-2">
+      <footer className="p-4 bg-black/90 border-t border-white/10 flex items-center justify-around gap-2">
         {!preview ? (
           <>
             <Button
               variant="outline"
+              size="icon"
               onClick={() => setFacingMode((m) => (m === "environment" ? "user" : "environment"))}
-              className="gap-2 bg-transparent text-white border-white/20"
+              className="h-14 w-14 rounded-full bg-transparent text-white border-white/30"
+              aria-label="Flip camera"
             >
-              <RefreshCw size={14} /> Flip
+              <RefreshCw size={22} />
             </Button>
-            <Button onClick={snap} disabled={!ready} className="gap-2 px-6">
-              <Camera size={18} /> {ready ? "Capture" : "Loading camera…"}
+            <button
+              onClick={snap}
+              disabled={!ready}
+              aria-label="Capture"
+              className="h-20 w-20 rounded-full bg-white border-4 border-white/40 ring-4 ring-white/20 flex items-center justify-center disabled:opacity-50 active:scale-95 transition"
+            >
+              <span className="h-16 w-16 rounded-full bg-white border-2 border-black/20" />
+            </button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => applyTorch(!torchOn)}
+              className={`h-14 w-14 rounded-full bg-transparent border-white/30 ${torchOn ? "text-yellow-400" : "text-white"}`}
+              aria-label="Toggle flash"
+            >
+              {torchOn ? <ZapOff size={22} /> : <Zap size={22} />}
             </Button>
-            {torchSupported ? (
-              <Button
-                variant="outline"
-                onClick={() => applyTorch(!torchOn)}
-                className="gap-2 bg-transparent text-white border-white/20"
-              >
-                {torchOn ? <ZapOff size={14} /> : <Zap size={14} />} {torchOn ? "Off" : "Flash"}
-              </Button>
-            ) : (
-              <div className="w-[88px]" />
-            )}
           </>
         ) : (
           <>
@@ -226,7 +231,7 @@ const PhoneScan = () => {
             >
               <X size={14} /> Retake
             </Button>
-            <Button onClick={send} disabled={sending || !connected} className="gap-2 px-6">
+            <Button onClick={send} disabled={sending || !connected} className="gap-2 px-6 h-14 text-base">
               {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               Send to Laptop
             </Button>
@@ -234,6 +239,7 @@ const PhoneScan = () => {
           </>
         )}
       </footer>
+
     </div>
   );
 };
