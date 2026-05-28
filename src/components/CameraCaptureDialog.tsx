@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, RefreshCw, Check, X } from "lucide-react";
+import { Camera, Loader2, RefreshCw, Check, X, Zap, ZapOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface CameraCaptureDialogProps {
@@ -20,12 +20,27 @@ const CameraCaptureDialog = ({ open, onOpenChange, onCapture, title = "Scan with
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   const { toast } = useToast();
+
+  const applyTorch = async (on: boolean) => {
+    const track = streamRef.current?.getVideoTracks?.()[0] as any;
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: on }] });
+      setTorchOn(on);
+    } catch {
+      toast({ title: "Flash unavailable", description: "This camera does not support flash.", variant: "destructive" });
+    }
+  };
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setReady(false);
+    setTorchOn(false);
+    setTorchSupported(false);
   };
 
   const startStream = async (mode: "environment" | "user") => {
@@ -36,6 +51,9 @@ const CameraCaptureDialog = ({ open, onOpenChange, onCapture, title = "Scan with
         audio: false,
       });
       streamRef.current = stream;
+      const track = stream.getVideoTracks()[0] as any;
+      const caps = track?.getCapabilities?.();
+      setTorchSupported(!!caps?.torch);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
@@ -129,6 +147,11 @@ const CameraCaptureDialog = ({ open, onOpenChange, onCapture, title = "Scan with
             {!preview && ready && (
               <Button type="button" variant="outline" onClick={flip} className="gap-2">
                 <RefreshCw size={14} /> Flip
+              </Button>
+            )}
+            {!preview && ready && torchSupported && (
+              <Button type="button" variant="outline" onClick={() => applyTorch(!torchOn)} className="gap-2">
+                {torchOn ? <ZapOff size={14} /> : <Zap size={14} />} {torchOn ? "Flash Off" : "Flash"}
               </Button>
             )}
             {preview && (

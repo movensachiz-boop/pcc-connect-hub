@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, RefreshCw, Send, Check, X, WifiOff } from "lucide-react";
+import { Camera, Loader2, RefreshCw, Send, Check, X, WifiOff, Zap, ZapOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const PhoneScan = () => {
@@ -19,11 +19,26 @@ const PhoneScan = () => {
   const [connected, setConnected] = useState(false);
   const [sentCount, setSentCount] = useState(0);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
+
+  const applyTorch = async (on: boolean) => {
+    const track = streamRef.current?.getVideoTracks?.()[0] as any;
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: on }] });
+      setTorchOn(on);
+    } catch {
+      toast({ title: "Flash unavailable", description: "This camera does not support flash.", variant: "destructive" });
+    }
+  };
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setReady(false);
+    setTorchOn(false);
+    setTorchSupported(false);
   };
 
   const startStream = async (mode: "environment" | "user") => {
@@ -34,6 +49,9 @@ const PhoneScan = () => {
         audio: false,
       });
       streamRef.current = stream;
+      const track = stream.getVideoTracks()[0] as any;
+      const caps = track?.getCapabilities?.();
+      setTorchSupported(!!caps?.torch);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
@@ -186,7 +204,17 @@ const PhoneScan = () => {
             <Button onClick={snap} disabled={!ready} className="gap-2 px-6">
               <Camera size={18} /> {ready ? "Capture" : "Loading camera…"}
             </Button>
-            <div className="w-[88px]" />
+            {torchSupported ? (
+              <Button
+                variant="outline"
+                onClick={() => applyTorch(!torchOn)}
+                className="gap-2 bg-transparent text-white border-white/20"
+              >
+                {torchOn ? <ZapOff size={14} /> : <Zap size={14} />} {torchOn ? "Off" : "Flash"}
+              </Button>
+            ) : (
+              <div className="w-[88px]" />
+            )}
           </>
         ) : (
           <>
