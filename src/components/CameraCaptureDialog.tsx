@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2, RefreshCw, Check, X } from "lucide-react";
+import { Camera, Loader2, RefreshCw, Check, X, Zap, ZapOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface CameraCaptureDialogProps {
@@ -20,12 +20,27 @@ const CameraCaptureDialog = ({ open, onOpenChange, onCapture, title = "Scan with
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   const { toast } = useToast();
+
+  const applyTorch = async (on: boolean) => {
+    const track = streamRef.current?.getVideoTracks?.()[0] as any;
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: on }] });
+      setTorchOn(on);
+    } catch {
+      toast({ title: "Flash unavailable", description: "This camera does not support flash.", variant: "destructive" });
+    }
+  };
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setReady(false);
+    setTorchOn(false);
+    setTorchSupported(false);
   };
 
   const startStream = async (mode: "environment" | "user") => {
