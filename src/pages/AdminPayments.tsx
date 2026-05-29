@@ -190,9 +190,61 @@ const AdminPayments = () => {
         };
       });
       setPayments(enriched);
+      setPayments(enriched);
     }
+    fetchFeeSummary();
     setLoading(false);
   };
+
+  const openEditPayment = (p: PaymentRow) => {
+    setEditPayment(p);
+    setEditForm({
+      amount: String(p.amount ?? ""),
+      method: p.method || "",
+      status: p.status || "paid",
+      description: p.description || "",
+    });
+  };
+
+  const handleUpdatePayment = async () => {
+    if (!editPayment) return;
+    const amt = parseFloat(editForm.amount);
+    if (isNaN(amt) || amt <= 0) {
+      toast({ title: "Invalid amount", description: "Enter a positive amount.", variant: "destructive" });
+      return;
+    }
+    setEditSaving(true);
+    const { error } = await supabase
+      .from("payments")
+      .update({
+        amount: amt,
+        method: editForm.method || "Cash",
+        status: editForm.status,
+        description: editForm.description || null,
+      })
+      .eq("id", editPayment.id);
+    setEditSaving(false);
+    if (error) {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Payment updated" });
+    setEditPayment(null);
+    fetchPayments();
+  };
+
+  const handleDeletePayment = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("payments").delete().eq("id", deleteId);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Payment deleted" });
+    setDeleteId(null);
+    fetchPayments();
+  };
+
 
   const handleDownloadReceipt = (p: PaymentRow) => {
     generateReceipt({
