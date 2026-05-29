@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers, Tag, FileText } from "lucide-react";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers, Tag, FileText, Pencil, Trash2 } from "lucide-react";
+
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { generatePaidLabels, generatePaidStudentsList, PaidStudent } from "@/lib/generatePaidLabels";
 import { generateFeesByClassPDF } from "@/lib/generateFeesByClass";
