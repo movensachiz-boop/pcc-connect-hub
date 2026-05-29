@@ -696,29 +696,38 @@ const AdminPayments = () => {
                               </a>
                             </Button>
                           )}
-                          {(p.status === "paid" || p.status === "completed" || p.status === "confirmed") && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical size={16} />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handlePrint(p)}>
-                                  <Printer size={14} className="mr-2" /> Print A4
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handlePrintThermal(p)}>
-                                  <Printer size={14} className="mr-2" /> Print Thermal
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadReceipt(p)}>
-                                  <Download size={14} className="mr-2" /> Download A4 PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadThermal(p)}>
-                                  <Download size={14} className="mr-2" /> Download Thermal PDF
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical size={16} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditPayment(p)}>
+                                <Pencil size={14} className="mr-2" /> Edit Payment
+                              </DropdownMenuItem>
+                              {(p.status === "paid" || p.status === "completed" || p.status === "confirmed") && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handlePrint(p)}>
+                                    <Printer size={14} className="mr-2" /> Print A4
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handlePrintThermal(p)}>
+                                    <Printer size={14} className="mr-2" /> Print Thermal
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadReceipt(p)}>
+                                    <Download size={14} className="mr-2" /> Download A4 PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadThermal(p)}>
+                                    <Download size={14} className="mr-2" /> Download Thermal PDF
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteId(p.id)}>
+                                <Trash2 size={14} className="mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+
                         </div>
                       </TableCell>
                     </TableRow>
