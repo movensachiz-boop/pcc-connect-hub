@@ -683,17 +683,17 @@ const AdminPayments = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             {(() => {
-              const paidTotals = new Map<string, number>();
-              for (const p of payments) {
-                if (!["paid", "completed", "confirmed"].includes(p.status)) continue;
-                paidTotals.set(p.student_profile_id, (paidTotals.get(p.student_profile_id) || 0) + Number(p.amount || 0));
-              }
               const groups = new Map<string, { paid: StudentProfile[]; unpaid: StudentProfile[] }>();
               for (const s of students) {
                 const cls = formatClass(s) || "Unassigned";
                 if (!groups.has(cls)) groups.set(cls, { paid: [], unpaid: [] });
                 const bucket = groups.get(cls)!;
-                if ((paidTotals.get(s.id) || 0) > 0) bucket.paid.push(s);
+                const summary = feeSummary.get(s.id);
+                const expected = summary?.total_fees || 0;
+                const paid = summary?.total_paid || 0;
+                const status = summary?.payment_status || "";
+                const fullyPaid = status === "Paid in Full" || status === "Overpaid" || (expected > 0 && paid >= expected);
+                if (fullyPaid) bucket.paid.push(s);
                 else bucket.unpaid.push(s);
               }
               const sortedClasses = Array.from(groups.keys()).sort();
@@ -712,39 +712,49 @@ const AdminPayments = () => {
                         <Badge variant="outline" className="text-[10px]">{total} student{total !== 1 ? "s" : ""}</Badge>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-success text-success-foreground text-[10px]">{g.paid.length} paid</Badge>
-                        <Badge variant="destructive" className="text-[10px]">{g.unpaid.length} unpaid</Badge>
+                        <Badge className="bg-success text-success-foreground text-[10px]">{g.paid.length} fully paid</Badge>
+                        <Badge variant="destructive" className="text-[10px]">{g.unpaid.length} outstanding</Badge>
                         <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
                       </div>
                     </summary>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 pt-0 border-t">
                       <div>
-                        <p className="text-xs font-semibold uppercase text-success mb-2">Paid ({g.paid.length})</p>
+                        <p className="text-xs font-semibold uppercase text-success mb-2">Fully Paid ({g.paid.length})</p>
                         {g.paid.length === 0 ? (
                           <p className="text-xs text-muted-foreground italic">None</p>
                         ) : (
                           <ul className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                            {g.paid.map(s => (
-                              <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
-                                <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
-                                <span className="font-mono text-xs text-success">${(paidTotals.get(s.id) || 0).toFixed(2)}</span>
-                              </li>
-                            ))}
+                            {g.paid.map(s => {
+                              const sum = feeSummary.get(s.id);
+                              return (
+                                <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
+                                  <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
+                                  <span className="font-mono text-xs text-success">${(sum?.total_paid || 0).toFixed(2)}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold uppercase text-destructive mb-2">Not Paid ({g.unpaid.length})</p>
+                        <p className="text-xs font-semibold uppercase text-destructive mb-2">Outstanding ({g.unpaid.length})</p>
                         {g.unpaid.length === 0 ? (
                           <p className="text-xs text-muted-foreground italic">None</p>
                         ) : (
                           <ul className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                            {g.unpaid.map(s => (
-                              <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
-                                <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
-                                <span className="font-mono text-xs text-muted-foreground">{s.registration_number}</span>
-                              </li>
-                            ))}
+                            {g.unpaid.map(s => {
+                              const sum = feeSummary.get(s.id);
+                              const bal = Math.max(0, (sum?.total_fees || 0) - (sum?.total_paid || 0));
+                              return (
+                                <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
+                                  <span className="truncate">
+                                    {titleCaseName(`${s.first_name} ${s.last_name}`)}
+                                    <span className="text-[10px] text-muted-foreground ml-1">({s.registration_number})</span>
+                                  </span>
+                                  <span className="font-mono text-xs text-destructive">${bal.toFixed(2)}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
@@ -753,6 +763,7 @@ const AdminPayments = () => {
                 );
               });
             })()}
+
           </CardContent>
         </Card>
       </div>
