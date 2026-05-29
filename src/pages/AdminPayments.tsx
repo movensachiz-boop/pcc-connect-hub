@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers, Tag, FileText } from "lucide-react";
+import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, MoreVertical, UserPlus, Layers, Tag, FileText, Pencil, Trash2 } from "lucide-react";
+
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { generatePaidLabels, generatePaidStudentsList, PaidStudent } from "@/lib/generatePaidLabels";
 import { generateFeesByClassPDF } from "@/lib/generateFeesByClass";
@@ -103,6 +104,14 @@ const findStrongStudentMatch = (rawName: string, students: StudentProfile[]) => 
   return ranked[0].student;
 };
 
+interface FeeSummary {
+  profile_id: string;
+  total_fees: number;
+  total_paid: number;
+  balance: number;
+  payment_status: string;
+}
+
 const AdminPayments = () => {
   const { toast } = useToast();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -113,6 +122,7 @@ const AdminPayments = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [feeSummary, setFeeSummary] = useState<Map<string, FeeSummary>>(new Map());
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [manualAmount, setManualAmount] = useState("");
@@ -129,16 +139,32 @@ const AdminPayments = () => {
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [editPayment, setEditPayment] = useState<PaymentRow | null>(null);
+  const [editForm, setEditForm] = useState({ amount: "", method: "", status: "paid", description: "" });
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPayments();
     fetchStudents();
+    fetchFeeSummary();
   }, []);
 
   const fetchStudents = async () => {
     const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone, form, stream").order("first_name");
     if (data) setStudents(data);
   };
+
+  const fetchFeeSummary = async () => {
+    const { data } = await supabase.rpc("get_student_fee_summary");
+    if (data) {
+      const map = new Map<string, FeeSummary>();
+      for (const r of data as FeeSummary[]) map.set(r.profile_id, r);
+      setFeeSummary(map);
+    }
+  };
+
+
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -165,9 +191,61 @@ const AdminPayments = () => {
         };
       });
       setPayments(enriched);
+      setPayments(enriched);
     }
+    fetchFeeSummary();
     setLoading(false);
   };
+
+  const openEditPayment = (p: PaymentRow) => {
+    setEditPayment(p);
+    setEditForm({
+      amount: String(p.amount ?? ""),
+      method: p.method || "",
+      status: p.status || "paid",
+      description: p.description || "",
+    });
+  };
+
+  const handleUpdatePayment = async () => {
+    if (!editPayment) return;
+    const amt = parseFloat(editForm.amount);
+    if (isNaN(amt) || amt <= 0) {
+      toast({ title: "Invalid amount", description: "Enter a positive amount.", variant: "destructive" });
+      return;
+    }
+    setEditSaving(true);
+    const { error } = await supabase
+      .from("payments")
+      .update({
+        amount: amt,
+        method: editForm.method || "Cash",
+        status: editForm.status,
+        description: editForm.description || null,
+      })
+      .eq("id", editPayment.id);
+    setEditSaving(false);
+    if (error) {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Payment updated" });
+    setEditPayment(null);
+    fetchPayments();
+  };
+
+  const handleDeletePayment = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("payments").delete().eq("id", deleteId);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Payment deleted" });
+    setDeleteId(null);
+    fetchPayments();
+  };
+
 
   const handleDownloadReceipt = (p: PaymentRow) => {
     generateReceipt({
@@ -483,25 +561,32 @@ const AdminPayments = () => {
   };
 
   const buildFeesByClassGroups = () => {
-    const paidTotals = new Map<string, number>();
-    for (const p of payments) {
-      if (!["paid", "completed", "confirmed"].includes(p.status)) continue;
-      paidTotals.set(p.student_profile_id, (paidTotals.get(p.student_profile_id) || 0) + Number(p.amount || 0));
-    }
-    const groups = new Map<string, { paid: { name: string; regNo: string; amount: number }[]; unpaid: { name: string; regNo: string }[] }>();
+    const groups = new Map<string, {
+      paid: { name: string; regNo: string; amount: number; expected: number; balance: number }[];
+      unpaid: { name: string; regNo: string; paid: number; expected: number; balance: number }[];
+    }>();
     for (const s of students) {
       const cls = formatClass(s) || "Unassigned";
       if (!groups.has(cls)) groups.set(cls, { paid: [], unpaid: [] });
       const g = groups.get(cls)!;
       const name = titleCaseName(`${s.first_name} ${s.last_name}`);
-      const amt = paidTotals.get(s.id) || 0;
-      if (amt > 0) g.paid.push({ name, regNo: s.registration_number, amount: amt });
-      else g.unpaid.push({ name, regNo: s.registration_number });
+      const summary = feeSummary.get(s.id);
+      const expected = summary?.total_fees || 0;
+      const paid = summary?.total_paid || 0;
+      const balance = expected - paid; // positive = owing
+      const status = summary?.payment_status || "";
+      const fullyPaid = status === "Paid in Full" || status === "Overpaid" || (expected > 0 && paid >= expected);
+      if (fullyPaid) {
+        g.paid.push({ name, regNo: s.registration_number, amount: paid, expected, balance: Math.max(0, balance) });
+      } else {
+        g.unpaid.push({ name, regNo: s.registration_number, paid, expected, balance: Math.max(0, balance) });
+      }
     }
     return Array.from(groups.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([className, v]) => ({ className, paid: v.paid, unpaid: v.unpaid }));
   };
+
 
   return (
     <DashboardLayout role="admin">
@@ -611,29 +696,38 @@ const AdminPayments = () => {
                               </a>
                             </Button>
                           )}
-                          {(p.status === "paid" || p.status === "completed" || p.status === "confirmed") && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical size={16} />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handlePrint(p)}>
-                                  <Printer size={14} className="mr-2" /> Print A4
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handlePrintThermal(p)}>
-                                  <Printer size={14} className="mr-2" /> Print Thermal
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadReceipt(p)}>
-                                  <Download size={14} className="mr-2" /> Download A4 PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownloadThermal(p)}>
-                                  <Download size={14} className="mr-2" /> Download Thermal PDF
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical size={16} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditPayment(p)}>
+                                <Pencil size={14} className="mr-2" /> Edit Payment
+                              </DropdownMenuItem>
+                              {(p.status === "paid" || p.status === "completed" || p.status === "confirmed") && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handlePrint(p)}>
+                                    <Printer size={14} className="mr-2" /> Print A4
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handlePrintThermal(p)}>
+                                    <Printer size={14} className="mr-2" /> Print Thermal
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadReceipt(p)}>
+                                    <Download size={14} className="mr-2" /> Download A4 PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadThermal(p)}>
+                                    <Download size={14} className="mr-2" /> Download Thermal PDF
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteId(p.id)}>
+                                <Trash2 size={14} className="mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+
                         </div>
                       </TableCell>
                     </TableRow>
@@ -651,17 +745,17 @@ const AdminPayments = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             {(() => {
-              const paidTotals = new Map<string, number>();
-              for (const p of payments) {
-                if (!["paid", "completed", "confirmed"].includes(p.status)) continue;
-                paidTotals.set(p.student_profile_id, (paidTotals.get(p.student_profile_id) || 0) + Number(p.amount || 0));
-              }
               const groups = new Map<string, { paid: StudentProfile[]; unpaid: StudentProfile[] }>();
               for (const s of students) {
                 const cls = formatClass(s) || "Unassigned";
                 if (!groups.has(cls)) groups.set(cls, { paid: [], unpaid: [] });
                 const bucket = groups.get(cls)!;
-                if ((paidTotals.get(s.id) || 0) > 0) bucket.paid.push(s);
+                const summary = feeSummary.get(s.id);
+                const expected = summary?.total_fees || 0;
+                const paid = summary?.total_paid || 0;
+                const status = summary?.payment_status || "";
+                const fullyPaid = status === "Paid in Full" || status === "Overpaid" || (expected > 0 && paid >= expected);
+                if (fullyPaid) bucket.paid.push(s);
                 else bucket.unpaid.push(s);
               }
               const sortedClasses = Array.from(groups.keys()).sort();
@@ -680,39 +774,49 @@ const AdminPayments = () => {
                         <Badge variant="outline" className="text-[10px]">{total} student{total !== 1 ? "s" : ""}</Badge>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-success text-success-foreground text-[10px]">{g.paid.length} paid</Badge>
-                        <Badge variant="destructive" className="text-[10px]">{g.unpaid.length} unpaid</Badge>
+                        <Badge className="bg-success text-success-foreground text-[10px]">{g.paid.length} fully paid</Badge>
+                        <Badge variant="destructive" className="text-[10px]">{g.unpaid.length} outstanding</Badge>
                         <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
                       </div>
                     </summary>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 pt-0 border-t">
                       <div>
-                        <p className="text-xs font-semibold uppercase text-success mb-2">Paid ({g.paid.length})</p>
+                        <p className="text-xs font-semibold uppercase text-success mb-2">Fully Paid ({g.paid.length})</p>
                         {g.paid.length === 0 ? (
                           <p className="text-xs text-muted-foreground italic">None</p>
                         ) : (
                           <ul className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                            {g.paid.map(s => (
-                              <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
-                                <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
-                                <span className="font-mono text-xs text-success">${(paidTotals.get(s.id) || 0).toFixed(2)}</span>
-                              </li>
-                            ))}
+                            {g.paid.map(s => {
+                              const sum = feeSummary.get(s.id);
+                              return (
+                                <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
+                                  <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
+                                  <span className="font-mono text-xs text-success">${(sum?.total_paid || 0).toFixed(2)}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
                       <div>
-                        <p className="text-xs font-semibold uppercase text-destructive mb-2">Not Paid ({g.unpaid.length})</p>
+                        <p className="text-xs font-semibold uppercase text-destructive mb-2">Outstanding ({g.unpaid.length})</p>
                         {g.unpaid.length === 0 ? (
                           <p className="text-xs text-muted-foreground italic">None</p>
                         ) : (
                           <ul className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                            {g.unpaid.map(s => (
-                              <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
-                                <span className="truncate">{titleCaseName(`${s.first_name} ${s.last_name}`)}</span>
-                                <span className="font-mono text-xs text-muted-foreground">{s.registration_number}</span>
-                              </li>
-                            ))}
+                            {g.unpaid.map(s => {
+                              const sum = feeSummary.get(s.id);
+                              const bal = Math.max(0, (sum?.total_fees || 0) - (sum?.total_paid || 0));
+                              return (
+                                <li key={s.id} className="text-sm flex justify-between gap-2 border-b border-border/40 pb-1">
+                                  <span className="truncate">
+                                    {titleCaseName(`${s.first_name} ${s.last_name}`)}
+                                    <span className="text-[10px] text-muted-foreground ml-1">({s.registration_number})</span>
+                                  </span>
+                                  <span className="font-mono text-xs text-destructive">${bal.toFixed(2)}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         )}
                       </div>
@@ -721,6 +825,7 @@ const AdminPayments = () => {
                 );
               });
             })()}
+
           </CardContent>
         </Card>
       </div>
@@ -955,6 +1060,76 @@ const AdminPayments = () => {
         students={students}
         onSaved={fetchPayments}
       />
+
+      {/* Edit Payment Dialog */}
+      <Dialog open={!!editPayment} onOpenChange={(v) => !v && setEditPayment(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Payment</DialogTitle>
+            <DialogDescription>
+              {editPayment?.studentName} — {editPayment?.receipt_number || editPayment?.id.slice(0, 8)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Amount ($)</Label>
+              <Input type="number" step="0.01" value={editForm.amount} onChange={(e) => setEditForm(f => ({ ...f, amount: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Method</Label>
+              <Select value={editForm.method} onValueChange={(v) => setEditForm(f => ({ ...f, method: v }))}>
+                <SelectTrigger><SelectValue placeholder="Method" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                  <SelectItem value="Bank Deposit">Bank Deposit</SelectItem>
+                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="EcoCash">EcoCash</SelectItem>
+                  <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                  <SelectItem value="Paynow">Paynow</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="voided">Voided</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Input value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPayment(null)} disabled={editSaving}>Cancel</Button>
+            <Button onClick={handleUpdatePayment} disabled={editSaving}>
+              {editSaving ? <Loader2 size={14} className="animate-spin mr-2" /> : null} Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Payment Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete this payment?</DialogTitle>
+            <DialogDescription>This action cannot be undone. The payment will be removed permanently.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeletePayment}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </DashboardLayout>
   );
 };
