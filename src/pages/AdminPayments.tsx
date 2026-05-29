@@ -146,12 +146,24 @@ const AdminPayments = () => {
   useEffect(() => {
     fetchPayments();
     fetchStudents();
+    fetchFeeSummary();
   }, []);
 
   const fetchStudents = async () => {
     const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone, form, stream").order("first_name");
     if (data) setStudents(data);
   };
+
+  const fetchFeeSummary = async () => {
+    const { data } = await supabase.rpc("get_student_fee_summary");
+    if (data) {
+      const map = new Map<string, FeeSummary>();
+      for (const r of data as FeeSummary[]) map.set(r.profile_id, r);
+      setFeeSummary(map);
+    }
+  };
+
+
 
   const fetchPayments = async () => {
     setLoading(true);
