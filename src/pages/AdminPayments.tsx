@@ -1060,6 +1060,76 @@ const AdminPayments = () => {
         students={students}
         onSaved={fetchPayments}
       />
+
+      {/* Edit Payment Dialog */}
+      <Dialog open={!!editPayment} onOpenChange={(v) => !v && setEditPayment(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Payment</DialogTitle>
+            <DialogDescription>
+              {editPayment?.studentName} — {editPayment?.receipt_number || editPayment?.id.slice(0, 8)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Amount ($)</Label>
+              <Input type="number" step="0.01" value={editForm.amount} onChange={(e) => setEditForm(f => ({ ...f, amount: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Method</Label>
+              <Select value={editForm.method} onValueChange={(v) => setEditForm(f => ({ ...f, method: v }))}>
+                <SelectTrigger><SelectValue placeholder="Method" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                  <SelectItem value="Bank Deposit">Bank Deposit</SelectItem>
+                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="EcoCash">EcoCash</SelectItem>
+                  <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                  <SelectItem value="Paynow">Paynow</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="voided">Voided</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Input value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPayment(null)} disabled={editSaving}>Cancel</Button>
+            <Button onClick={handleUpdatePayment} disabled={editSaving}>
+              {editSaving ? <Loader2 size={14} className="animate-spin mr-2" /> : null} Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Payment Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete this payment?</DialogTitle>
+            <DialogDescription>This action cannot be undone. The payment will be removed permanently.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeletePayment}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </DashboardLayout>
   );
 };
