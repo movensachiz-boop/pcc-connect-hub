@@ -508,25 +508,32 @@ const AdminPayments = () => {
   };
 
   const buildFeesByClassGroups = () => {
-    const paidTotals = new Map<string, number>();
-    for (const p of payments) {
-      if (!["paid", "completed", "confirmed"].includes(p.status)) continue;
-      paidTotals.set(p.student_profile_id, (paidTotals.get(p.student_profile_id) || 0) + Number(p.amount || 0));
-    }
-    const groups = new Map<string, { paid: { name: string; regNo: string; amount: number }[]; unpaid: { name: string; regNo: string }[] }>();
+    const groups = new Map<string, {
+      paid: { name: string; regNo: string; amount: number; expected: number; balance: number }[];
+      unpaid: { name: string; regNo: string; paid: number; expected: number; balance: number }[];
+    }>();
     for (const s of students) {
       const cls = formatClass(s) || "Unassigned";
       if (!groups.has(cls)) groups.set(cls, { paid: [], unpaid: [] });
       const g = groups.get(cls)!;
       const name = titleCaseName(`${s.first_name} ${s.last_name}`);
-      const amt = paidTotals.get(s.id) || 0;
-      if (amt > 0) g.paid.push({ name, regNo: s.registration_number, amount: amt });
-      else g.unpaid.push({ name, regNo: s.registration_number });
+      const summary = feeSummary.get(s.id);
+      const expected = summary?.total_fees || 0;
+      const paid = summary?.total_paid || 0;
+      const balance = expected - paid; // positive = owing
+      const status = summary?.payment_status || "";
+      const fullyPaid = status === "Paid in Full" || status === "Overpaid" || (expected > 0 && paid >= expected);
+      if (fullyPaid) {
+        g.paid.push({ name, regNo: s.registration_number, amount: paid, expected, balance: Math.max(0, balance) });
+      } else {
+        g.unpaid.push({ name, regNo: s.registration_number, paid, expected, balance: Math.max(0, balance) });
+      }
     }
     return Array.from(groups.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([className, v]) => ({ className, paid: v.paid, unpaid: v.unpaid }));
   };
+
 
   return (
     <DashboardLayout role="admin">
