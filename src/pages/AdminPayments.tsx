@@ -103,6 +103,14 @@ const findStrongStudentMatch = (rawName: string, students: StudentProfile[]) => 
   return ranked[0].student;
 };
 
+interface FeeSummary {
+  profile_id: string;
+  total_fees: number;
+  total_paid: number;
+  balance: number;
+  payment_status: string;
+}
+
 const AdminPayments = () => {
   const { toast } = useToast();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -113,6 +121,7 @@ const AdminPayments = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [feeSummary, setFeeSummary] = useState<Map<string, FeeSummary>>(new Map());
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [manualAmount, setManualAmount] = useState("");
@@ -129,6 +138,10 @@ const AdminPayments = () => {
   const [newGender, setNewGender] = useState("male");
   const [registering, setRegistering] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [editPayment, setEditPayment] = useState<PaymentRow | null>(null);
+  const [editForm, setEditForm] = useState({ amount: "", method: "", status: "paid", description: "" });
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPayments();
