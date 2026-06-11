@@ -269,10 +269,10 @@ const StudentPayments = () => {
                       <TableCell>${p.amount.toFixed(2)}</TableCell>
                       <TableCell>{p.method}</TableCell>
                       <TableCell>
-                        <Badge className={statusColor(p.status)}>{p.status}</Badge>
+                        <Badge className={statusColor(p.status)}>{statusLabel(p.status)}</Badge>
                       </TableCell>
                       <TableCell>
-                        {p.status === "confirmed" && (
+                        {isPaid(p.status) && (
                           <div className="flex gap-1">
                             <Button variant="ghost" size="icon" onClick={() => handlePrint(p)} title="Print">
                               <Printer size={16} />
