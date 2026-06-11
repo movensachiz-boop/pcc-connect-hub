@@ -168,21 +168,18 @@ const AdminPayments = () => {
 
   const fetchPayments = async () => {
     setLoading(true);
-    const { data: paymentData } = await supabase
+    const { data: paymentData, error } = await supabase
       .from("payments")
-      .select("*")
+      .select("*, profile:profiles!payments_student_profile_id_fkey(id, first_name, last_name, registration_number, form, stream)")
       .order("created_at", { ascending: false });
 
-    if (paymentData) {
-      const profileIds = [...new Set(paymentData.map(p => p.student_profile_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, registration_number, form, stream")
-        .in("id", profileIds);
+    if (error) {
+      toast({ title: "Failed to load payments", description: error.message, variant: "destructive" });
+    }
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-      const enriched = paymentData.map(p => {
-        const prof = profileMap.get(p.student_profile_id);
+    if (paymentData) {
+      const enriched = paymentData.map((p: any) => {
+        const prof = p.profile;
         return {
           ...p,
           studentName: prof ? titleCaseName(`${prof.first_name} ${prof.last_name}`) : "Unknown",
@@ -191,11 +188,11 @@ const AdminPayments = () => {
         };
       });
       setPayments(enriched);
-      setPayments(enriched);
     }
     fetchFeeSummary();
     setLoading(false);
   };
+
 
   const openEditPayment = (p: PaymentRow) => {
     setEditPayment(p);
