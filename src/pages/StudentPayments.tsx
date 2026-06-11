@@ -186,9 +186,19 @@ const StudentPayments = () => {
     });
   };
 
+  const isPaid = (s: string) => ["confirmed", "paid", "completed"].includes((s || "").toLowerCase());
+  const isPending = (s: string) => ["pending", "processing", "awaiting"].includes((s || "").toLowerCase());
+  const statusLabel = (s: string) => {
+    const v = (s || "").toLowerCase();
+    if (isPaid(v)) return "Paid";
+    if (isPending(v)) return "Pending";
+    if (v === "voided") return "Voided";
+    if (v === "refunded") return "Refunded";
+    return s || "—";
+  };
   const statusColor = (s: string) =>
-    s === "confirmed" ? "bg-success text-success-foreground" :
-    s === "pending" ? "bg-warning text-warning-foreground" :
+    isPaid(s) ? "bg-success text-success-foreground" :
+    isPending(s) ? "bg-warning text-warning-foreground" :
     "bg-destructive text-destructive-foreground";
 
   return (
