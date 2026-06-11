@@ -225,7 +225,7 @@ const StudentPayments = () => {
             <CardHeader className="pb-2">
               <CardDescription>Total Paid</CardDescription>
               <CardTitle className="text-2xl text-success">
-                ${payments.filter(p => p.status === "confirmed").reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                ${payments.filter(p => isPaid(p.status)).reduce((s, p) => s + Number(p.amount), 0).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
