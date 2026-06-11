@@ -81,20 +81,13 @@ const AdminDashboard = () => {
       // Recent payments
       const { data: payData } = await supabase
         .from("payments")
-        .select("amount, created_at, status, method, student_profile_id")
+        .select("amount, created_at, status, method, student_profile_id, profile:profiles!payments_student_profile_id_fkey(first_name, last_name, registration_number, form)")
         .order("created_at", { ascending: false })
         .limit(5);
 
       if (payData && payData.length > 0) {
-        const ids = payData.map(p => p.student_profile_id);
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("id, first_name, last_name, registration_number, form")
-          .in("id", ids);
-
-        const profMap = Object.fromEntries((profs || []).map(p => [p.id, p]));
-        setRecentPayments(payData.map(p => {
-          const prof = profMap[p.student_profile_id];
+        setRecentPayments(payData.map((p: any) => {
+          const prof = p.profile;
           return {
             student: prof ? `${prof.first_name} ${prof.last_name}` : "Unknown",
             reg: prof?.registration_number || "—",
@@ -107,6 +100,7 @@ const AdminDashboard = () => {
       } else {
         setRecentPayments([]);
       }
+
 
       // Pie data from payment methods
       if (payData && payData.length > 0) {
