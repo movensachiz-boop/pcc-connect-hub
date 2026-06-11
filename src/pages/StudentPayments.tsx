@@ -186,9 +186,19 @@ const StudentPayments = () => {
     });
   };
 
+  const isPaid = (s: string) => ["confirmed", "paid", "completed"].includes((s || "").toLowerCase());
+  const isPending = (s: string) => ["pending", "processing", "awaiting"].includes((s || "").toLowerCase());
+  const statusLabel = (s: string) => {
+    const v = (s || "").toLowerCase();
+    if (isPaid(v)) return "Paid";
+    if (isPending(v)) return "Pending";
+    if (v === "voided") return "Voided";
+    if (v === "refunded") return "Refunded";
+    return s || "—";
+  };
   const statusColor = (s: string) =>
-    s === "confirmed" ? "bg-success text-success-foreground" :
-    s === "pending" ? "bg-warning text-warning-foreground" :
+    isPaid(s) ? "bg-success text-success-foreground" :
+    isPending(s) ? "bg-warning text-warning-foreground" :
     "bg-destructive text-destructive-foreground";
 
   return (
@@ -215,7 +225,7 @@ const StudentPayments = () => {
             <CardHeader className="pb-2">
               <CardDescription>Total Paid</CardDescription>
               <CardTitle className="text-2xl text-success">
-                ${payments.filter(p => p.status === "confirmed").reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                ${payments.filter(p => isPaid(p.status)).reduce((s, p) => s + Number(p.amount), 0).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -223,7 +233,7 @@ const StudentPayments = () => {
             <CardHeader className="pb-2">
               <CardDescription>Pending</CardDescription>
               <CardTitle className="text-2xl text-warning">
-                ${payments.filter(p => p.status === "pending").reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                ${payments.filter(p => isPending(p.status)).reduce((s, p) => s + Number(p.amount), 0).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -259,10 +269,10 @@ const StudentPayments = () => {
                       <TableCell>${p.amount.toFixed(2)}</TableCell>
                       <TableCell>{p.method}</TableCell>
                       <TableCell>
-                        <Badge className={statusColor(p.status)}>{p.status}</Badge>
+                        <Badge className={statusColor(p.status)}>{statusLabel(p.status)}</Badge>
                       </TableCell>
                       <TableCell>
-                        {p.status === "confirmed" && (
+                        {isPaid(p.status) && (
                           <div className="flex gap-1">
                             <Button variant="ghost" size="icon" onClick={() => handlePrint(p)} title="Print">
                               <Printer size={16} />
