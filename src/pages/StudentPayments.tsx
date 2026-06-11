@@ -233,7 +233,7 @@ const StudentPayments = () => {
             <CardHeader className="pb-2">
               <CardDescription>Pending</CardDescription>
               <CardTitle className="text-2xl text-warning">
-                ${payments.filter(p => p.status === "pending").reduce((s, p) => s + p.amount, 0).toFixed(2)}
+                ${payments.filter(p => isPending(p.status)).reduce((s, p) => s + Number(p.amount), 0).toFixed(2)}
               </CardTitle>
             </CardHeader>
           </Card>
