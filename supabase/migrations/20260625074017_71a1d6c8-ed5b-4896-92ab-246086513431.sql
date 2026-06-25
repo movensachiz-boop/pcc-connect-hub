@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS accommodation text NOT NULL DEFAULT 'day' CHECK (accommodation IN ('day','boarder'));
+CREATE INDEX IF NOT EXISTS profiles_accommodation_idx ON public.profiles(accommodation);
