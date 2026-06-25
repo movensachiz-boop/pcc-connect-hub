@@ -591,6 +591,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accommodation: string
           balance: number
           claimed: boolean
           created_at: string
@@ -609,6 +610,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          accommodation?: string
           balance?: number
           claimed?: boolean
           created_at?: string
@@ -627,6 +629,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          accommodation?: string
           balance?: number
           claimed?: boolean
           created_at?: string
