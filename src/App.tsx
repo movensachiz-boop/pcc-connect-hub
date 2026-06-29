@@ -39,6 +39,8 @@ import AdminProcurement from "./pages/AdminProcurement";
 import StudentInventory from "./pages/StudentInventory";
 import StaffGuard from "./components/StaffGuard";
 import PhoneScan from "./pages/PhoneScan";
+import DeveloperGuard from "./components/DeveloperGuard";
+import DeveloperSla from "./pages/DeveloperSla";
 
 // Sub-roles
 const DENY_TM_AND_CASHIER: ("cashier" | "timetable_manager")[] = ["cashier", "timetable_manager"];
@@ -87,6 +89,7 @@ const App = () => (
             <Route path="/teacher/timetable" element={<TeacherTimetable />} />
             <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
             <Route path="/owner" element={<OwnerDashboard />} />
+            <Route path="/developer/sla" element={<DeveloperGuard><DeveloperSla /></DeveloperGuard>} />
             <Route path="/verify" element={<VerifyReceipt />} />
             <Route path="/phone-scan/:sessionId" element={<PhoneScan />} />
             <Route path="*" element={<NotFound />} />
