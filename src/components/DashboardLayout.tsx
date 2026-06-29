@@ -77,6 +77,9 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     } else if (actualRole === "timetable_manager") {
       const allowed = ["/admin/timetable", "/admin/timetable/master", "/admin/subjects", "/admin/teachers", "/admin/classes"];
       links = adminLinks.filter(l => allowed.includes(l.path));
+    } else if (actualRole === "developer") {
+      // Developer sees ONLY the SLA portal (developer surface is isolated)
+      links = [{ label: "Service Level Agreements", icon: FileText, path: "/developer/sla" }];
     }
   }
 
