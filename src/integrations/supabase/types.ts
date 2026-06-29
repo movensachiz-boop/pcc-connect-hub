@@ -754,6 +754,196 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_agreements: {
+        Row: {
+          address: string | null
+          agreement_number: string | null
+          client_name: string
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          current_version: number
+          document_type: string
+          email: string | null
+          expiry_date: string | null
+          id: string
+          monthly_fee: number
+          phone: string | null
+          pricing: Json
+          provider: Json
+          reminder_sent_at: string | null
+          renewal_date: string | null
+          school_name: string | null
+          sections: Json
+          signed_at: string | null
+          signed_by_client: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          agreement_number?: string | null
+          client_name?: string
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          current_version?: number
+          document_type?: string
+          email?: string | null
+          expiry_date?: string | null
+          id?: string
+          monthly_fee?: number
+          phone?: string | null
+          pricing?: Json
+          provider?: Json
+          reminder_sent_at?: string | null
+          renewal_date?: string | null
+          school_name?: string | null
+          sections?: Json
+          signed_at?: string | null
+          signed_by_client?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          agreement_number?: string | null
+          client_name?: string
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          current_version?: number
+          document_type?: string
+          email?: string | null
+          expiry_date?: string | null
+          id?: string
+          monthly_fee?: number
+          phone?: string | null
+          pricing?: Json
+          provider?: Json
+          reminder_sent_at?: string | null
+          renewal_date?: string | null
+          school_name?: string | null
+          sections?: Json
+          signed_at?: string | null
+          signed_by_client?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      sla_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          agreement_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          agreement_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          agreement_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_audit_log_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sla_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_templates: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          document_type: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          document_type?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          document_type?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sla_versions: {
+        Row: {
+          agreement_id: string
+          edited_at: string
+          edited_by: string | null
+          id: string
+          snapshot: Json
+          version_number: number
+        }
+        Insert: {
+          agreement_id: string
+          edited_at?: string
+          edited_by?: string | null
+          id?: string
+          snapshot: Json
+          version_number: number
+        }
+        Update: {
+          agreement_id?: string
+          edited_at?: string
+          edited_by?: string | null
+          id?: string
+          snapshot?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_versions_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sla_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
