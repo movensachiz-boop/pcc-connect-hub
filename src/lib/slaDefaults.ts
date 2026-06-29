@@ -1,0 +1,80 @@
+export const DEFAULT_PROVIDER = {
+  name: "Takudzwa Singo",
+  business_type: "Sole Vendor",
+  address: "",
+  phone: "",
+  email: "",
+};
+
+export const DEFAULT_PRICING = {
+  monthly_fee: 60.0,
+  currency: "USD",
+  installations: [
+    "Bonnyvale Campus School Management System",
+    "Mkoba 14 Campus School Management System",
+  ],
+  covers: [
+    "Bug fixes",
+    "Technical support",
+    "Software maintenance",
+    "Database maintenance",
+    "Security updates",
+    "Performance optimisation",
+  ],
+  excludes: [
+    "New modules",
+    "Custom software development",
+    "Major feature requests",
+    "Third-party integrations",
+  ],
+  notice:
+    "Additional modules and custom developments are quoted and billed separately.",
+};
+
+export const DEFAULT_SECTIONS: Record<string, string> = {
+  purpose:
+    "This Service Level Agreement (SLA) defines the support, maintenance, and service levels to be provided by Takudzwa Singo for the School Management Software installed at the Client. The purpose of this agreement is to ensure that the software remains operational, secure, and reliable while clearly defining the responsibilities of both parties.",
+  scope:
+    "This agreement covers software maintenance, bug fixes, technical support, security updates, database maintenance, performance optimisation, system monitoring and user support for the listed installations.",
+  excluded:
+    "Development of new modules, major feature enhancements, custom reports requested after deployment, third-party software integration, and hardware repairs or replacement are NOT included. Any additional modules or custom developments shall be quoted separately and will only commence upon written approval.",
+  availability:
+    "Target system availability is 99% uptime, excluding scheduled maintenance and events beyond the service provider's control.",
+  support_hours:
+    "Normal Support: Monday to Friday, 08:00 – 17:00. Emergency support for critical system failures shall be provided outside normal working hours where reasonably possible.",
+  response_times:
+    "Critical (complete system failure): respond 30 min, resolve 4 hrs. High (major function unavailable): respond 1 hr, resolve 8 hrs. Medium (operational issue affecting some users): respond 4 hrs, resolve 24 hrs. Low (minor bug or cosmetic): respond 1 business day, resolve 5 business days.",
+  provider_resp:
+    "Takudzwa Singo agrees to maintain the software, correct software defects, perform routine maintenance, protect the integrity of the database, provide technical support and maintain confidentiality of school information.",
+  school_resp:
+    "The Client agrees to provide access to the software when support is required, protect user accounts and passwords, report software issues promptly, ensure authorised users operate the system responsibly, and pay service fees on time.",
+  data_ownership:
+    "All student, staff, financial, and administrative data entered into the system remains the sole property of the Client. Takudzwa Singo shall not disclose or use such data except as necessary to provide support services or where required by law.",
+  fees:
+    "The client agrees to pay a monthly software support and maintenance fee of USD $60.00 covering the listed installations. New modules, custom development, major feature requests and third-party integrations are billed separately. Payments shall be made on or before the agreed due date each month.",
+  confidentiality:
+    "Both parties agree to keep confidential all information relating to students, staff, finances, passwords, databases, and any other sensitive information obtained during the course of this agreement.",
+  termination:
+    "Either party may terminate this agreement by giving thirty (30) days' written notice. Any outstanding fees for services rendered prior to termination shall remain payable.",
+  liability:
+    "The Service Provider shall not be liable for losses resulting from power failures, internet outages, hardware failures, user negligence, viruses introduced by users, or natural disasters and events beyond reasonable control.",
+  acceptance:
+    "Signed and accepted by both parties on the date indicated below.",
+};
+
+export const SECTION_ORDER: { key: string; title: string }[] = [
+  { key: "purpose", title: "1. Purpose" },
+  { key: "scope", title: "2. Scope of Services" },
+  { key: "excluded", title: "3. Excluded Services" },
+  { key: "availability", title: "4. Service Availability" },
+  { key: "support_hours", title: "5. Support Hours" },
+  { key: "response_times", title: "6. Incident Response Times" },
+  { key: "provider_resp", title: "7. Responsibilities of the Service Provider" },
+  { key: "school_resp", title: "8. Responsibilities of the School" },
+  { key: "data_ownership", title: "9. Data Ownership" },
+  { key: "fees", title: "10. Fees" },
+  { key: "confidentiality", title: "11. Confidentiality" },
+  { key: "termination", title: "12. Termination" },
+  { key: "liability", title: "13. Limitation of Liability" },
+  { key: "acceptance", title: "14. Acceptance" },
+];
