@@ -183,6 +183,7 @@ Deno.serve(async (req) => {
       .eq("user_id", data.user.id);
     const roles = (roleRows || []).map((r: any) => r.role);
     const preferred =
+      roles.find((r: string) => r === "developer") ||
       roles.find((r: string) => r === "cashier" || r === "timetable_manager") ||
       roles.find((r: string) => r === "owner" || r === "teacher") ||
       roles.find((r: string) => r === "admin") ||
