@@ -78,8 +78,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       const allowed = ["/admin/timetable", "/admin/timetable/master", "/admin/subjects", "/admin/teachers", "/admin/classes"];
       links = adminLinks.filter(l => allowed.includes(l.path));
     } else if (actualRole === "developer") {
-      // Developer sees ONLY the SLA portal (developer surface is isolated)
-      links = [{ label: "Service Level Agreements", icon: FileText, path: "/developer/sla" }];
+      // Developer sees all admin modules PLUS the SLA portal
+      links = [
+        ...adminLinks,
+        { label: "Service Level Agreements", icon: FileText, path: "/developer/sla" },
+      ];
     }
   }
 
