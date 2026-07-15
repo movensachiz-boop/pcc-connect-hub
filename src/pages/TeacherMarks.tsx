@@ -18,7 +18,7 @@ interface StudentRow {
   registration_number: string;
 }
 
-const EXAM_TYPES_CONST = null;
+
 
 const EXAM_TYPES = ["Mid-Term", "End-of-Term", "Mock", "Final"];
 const TERMS = ["Term 1", "Term 2", "Term 3"];
