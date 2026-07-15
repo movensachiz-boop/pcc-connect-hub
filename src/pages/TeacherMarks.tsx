@@ -49,8 +49,6 @@ export default function TeacherMarks() {
   const [marks, setMarks] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const streams = VALID_STREAMS[form] || [];
-
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -62,7 +60,18 @@ export default function TeacherMarks() {
   }, []);
 
   const effective = useMemo(() => getEffectiveSubjectIds({ userId, fullName, teachers }), [userId, fullName, teachers]);
+  const effectiveClasses = useMemo(() => getEffectiveClassIds({ userId, fullName, teachers }), [userId, fullName, teachers]);
   const allowedSubjects = subjects.filter(s => effective.subjectIds.includes(s.id));
+  const allowedClasses = classes.filter(c => effectiveClasses.classIds.includes(c.id));
+
+  const allowedForms = useMemo(
+    () => [...new Set(allowedClasses.map(c => String(c.form)))].sort(),
+    [allowedClasses]
+  );
+  const streams = useMemo(
+    () => allowedClasses.filter(c => String(c.form) === form).map(c => c.stream),
+    [allowedClasses, form]
+  );
 
   useEffect(() => {
     if (!subjectId && allowedSubjects.length > 0) setSubjectId(allowedSubjects[0].id);
@@ -72,8 +81,12 @@ export default function TeacherMarks() {
   }, [allowedSubjects.length]);
 
   useEffect(() => {
-    if (!streams.includes(stream)) setStream(streams[0] || "G1");
-  }, [form]);
+    if (allowedForms.length > 0 && !allowedForms.includes(form)) setForm(allowedForms[0]);
+  }, [allowedForms.join(",")]);
+
+  useEffect(() => {
+    if (streams.length > 0 && !streams.includes(stream)) setStream(streams[0]);
+  }, [form, streams.join(",")]);
 
   useEffect(() => { loadStudents(); }, [form, stream]);
   useEffect(() => { loadMarks(); }, [form, stream, subjectId, term, examType]);
