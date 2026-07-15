@@ -18,14 +18,7 @@ interface StudentRow {
   registration_number: string;
 }
 
-const VALID_STREAMS: Record<string, string[]> = {
-  "1": ["G1", "G2", "G22", "Blue"],
-  "2": ["G1", "G2", "G22", "Blue"],
-  "3": ["G1", "G2", "G22", "Blue"],
-  "4": ["G1", "G2", "G22", "Blue"],
-  "5": ["Sciences", "Commercials", "Arts"],
-  "6": ["Sciences", "Commercials", "Arts"],
-};
+const EXAM_TYPES_CONST = null;
 
 const EXAM_TYPES = ["Mid-Term", "End-of-Term", "Mock", "Final"];
 const TERMS = ["Term 1", "Term 2", "Term 3"];
@@ -140,22 +133,24 @@ export default function TeacherMarks() {
               <ClipboardList className="w-6 h-6 text-primary" /> Record Exam Marks
             </h2>
             <p className="text-sm text-muted-foreground">
-              Enter marks only for the subjects you teach.
-              {effective.source === "admin" && <Badge className="ml-2" variant="secondary">Admin-allocated</Badge>}
-              {effective.source === "self" && <Badge className="ml-2" variant="secondary">Self-selected</Badge>}
+              Enter marks only for the subjects and classes you teach.
+              {effective.source === "admin" && <Badge className="ml-2" variant="secondary">Admin-allocated subjects</Badge>}
+              {effective.source === "self" && <Badge className="ml-2" variant="secondary">Self-selected subjects</Badge>}
+              {effectiveClasses.source === "admin" && <Badge className="ml-2" variant="secondary">Admin classes</Badge>}
+              {effectiveClasses.source === "self" && <Badge className="ml-2" variant="secondary">Self classes</Badge>}
             </p>
           </div>
         </div>
 
-        {effective.subjectIds.length === 0 ? (
+        {effective.subjectIds.length === 0 || effectiveClasses.classIds.length === 0 ? (
           <Card className="border-destructive/40 bg-destructive/5">
             <CardContent className="pt-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-semibold text-destructive">No subjects available</p>
+                <p className="font-semibold text-destructive">Set up your teaching profile</p>
                 <p className="text-muted-foreground">
-                  Admin hasn't allocated any subjects to you and you haven't chosen any yet.
-                  Go to <span className="font-medium">My Subjects</span> to pick the subjects you teach.
+                  You need at least one subject and one class assigned before recording marks.
+                  Go to <span className="font-medium">My Subjects</span> to pick the subjects and classes you teach.
                 </p>
               </div>
             </CardContent>
@@ -169,7 +164,7 @@ export default function TeacherMarks() {
                   <label className="text-xs text-muted-foreground">Form</label>
                   <Select value={form} onValueChange={setForm}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{["1","2","3","4","5","6"].map(f => <SelectItem key={f} value={f}>Form {f}</SelectItem>)}</SelectContent>
+                    <SelectContent>{allowedForms.map(f => <SelectItem key={f} value={f}>Form {f}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>
