@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useTimetable } from "@/context/TimetableContext";
-import { getEffectiveSubjectIds } from "@/lib/teacherSubjects";
+import { getEffectiveSubjectIds, getEffectiveClassIds } from "@/lib/teacherSubjects";
 import { AlertTriangle, Save, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,7 +34,7 @@ const marksKey = (form: string, stream: string, subjectId: string, term: string,
   `exam_marks_${form}_${stream}_${subjectId}_${term}_${examType}`;
 
 export default function TeacherMarks() {
-  const { subjects, teachers } = useTimetable();
+  const { subjects, teachers, classes } = useTimetable();
   const [userId, setUserId] = useState("");
   const [fullName, setFullName] = useState("");
 
