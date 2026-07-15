@@ -28,6 +28,8 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherAttendance from "./pages/TeacherAttendance";
 import TeacherClassRoster from "./pages/TeacherClassRoster";
 import TeacherTimetable from "./pages/TeacherTimetable";
+import TeacherMySubjects from "./pages/TeacherMySubjects";
+import TeacherMarks from "./pages/TeacherMarks";
 import NotFound from "./pages/NotFound";
 import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
@@ -86,6 +88,8 @@ const App = () => (
             <Route path="/teacher" element={<TeacherDashboard />} />
             <Route path="/teacher/attendance" element={<TeacherAttendance />} />
             <Route path="/teacher/roster" element={<TeacherClassRoster />} />
+            <Route path="/teacher/subjects" element={<TeacherMySubjects />} />
+            <Route path="/teacher/marks" element={<TeacherMarks />} />
             <Route path="/teacher/timetable" element={<TeacherTimetable />} />
             <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
             <Route path="/owner" element={<OwnerDashboard />} />

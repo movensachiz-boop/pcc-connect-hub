@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, CalendarDays, CheckCircle } from "lucide-react";
+import { Users, CalendarDays, CheckCircle, GraduationCap, PenSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function TeacherDashboard() {
@@ -9,6 +9,8 @@ export default function TeacherDashboard() {
   const cards = [
     { label: "Mark Attendance", icon: CheckCircle, path: "/teacher/attendance", color: "bg-green-500/10 text-green-600" },
     { label: "Class Roster", icon: Users, path: "/teacher/roster", color: "bg-primary/10 text-primary" },
+    { label: "My Subjects", icon: GraduationCap, path: "/teacher/subjects", color: "bg-accent/20 text-accent-foreground" },
+    { label: "Record Exam Marks", icon: PenSquare, path: "/teacher/marks", color: "bg-primary/10 text-primary" },
     { label: "View Timetable", icon: CalendarDays, path: "/teacher/timetable", color: "bg-primary/10 text-primary" },
   ];
 
