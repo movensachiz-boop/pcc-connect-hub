@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download, Pencil, ArrowRightLeft, Trash2 } from "lucide-react";
+import { Search, UserPlus, KeyRound, Loader2, Camera, Upload, X, Check, Send, CreditCard, ImagePlus, Users, Printer, Download, Pencil, ArrowRightLeft, Trash2, Eye } from "lucide-react";
+import StudentProfileDrawer from "@/components/StudentProfileDrawer";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,6 +77,9 @@ const AdminStudents = () => {
   const [removeClassStream, setRemoveClassStream] = useState("");
   const [removeConfirmText, setRemoveConfirmText] = useState("");
   const [removeSubmitting, setRemoveSubmitting] = useState(false);
+
+  // Student profile drawer
+  const [drawerStudentId, setDrawerStudentId] = useState<string | null>(null);
 
   // Bulk class entry state
   const [bulkForm, setBulkForm] = useState("");
@@ -920,10 +924,19 @@ const AdminStudents = () => {
                       <TableCell className="font-medium">{s.registration_number}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span>{`${s.first_name} ${s.last_name}`.toUpperCase()}</span>
+                          <button
+                            className="text-left hover:underline font-medium"
+                            onClick={() => setDrawerStudentId(s.id)}
+                            title="View full profile"
+                          >
+                            {`${s.first_name} ${s.last_name}`.toUpperCase()}
+                          </button>
                           {duplicateIds.has(s.id) && (
                             <Badge variant="destructive" className="text-[10px]" title="Possible duplicate (matching name or registration number)">Duplicate</Badge>
                           )}
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setDrawerStudentId(s.id)} title="View full profile">
+                            <Eye size={12} />
+                          </Button>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditStudent(s)} title="Edit name">
                             <Pencil size={12} />
                           </Button>
@@ -1572,6 +1585,12 @@ const AdminStudents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StudentProfileDrawer
+        open={drawerStudentId !== null}
+        onOpenChange={(o) => { if (!o) setDrawerStudentId(null); }}
+        studentId={drawerStudentId}
+      />
     </DashboardLayout>
   );
 };
