@@ -1585,6 +1585,12 @@ const AdminStudents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StudentProfileDrawer
+        open={drawerStudentId !== null}
+        onOpenChange={(o) => { if (!o) setDrawerStudentId(null); }}
+        studentId={drawerStudentId}
+      />
     </DashboardLayout>
   );
 };
