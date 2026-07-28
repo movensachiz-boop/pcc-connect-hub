@@ -80,7 +80,7 @@ const Login = () => {
 
       await logActivity("login", { identifier, mode, role: data.role });
 
-      if (data.role === "developer") navigate("/developer/sla");
+      if (data.role === "developer") navigate("/admin");
       else if (data.role === "cashier") navigate("/admin/students");
       else if (data.role === "timetable_manager") navigate("/admin/timetable");
       else if (data.role === "admin") navigate("/admin");
