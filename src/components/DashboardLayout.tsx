@@ -42,6 +42,7 @@ const adminLinks = [
 
 const studentLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/student" },
+  { label: "My Profile", icon: Users, path: "/student/profile" },
   { label: "Payments", icon: Receipt, path: "/student/payments" },
   { label: "Timetable", icon: CalendarDays, path: "/student/timetable" },
   { label: "Courses", icon: BookOpen, path: "/student/courses" },

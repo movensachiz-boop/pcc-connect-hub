@@ -15,6 +15,7 @@ import { Plus, Trash2, FileDown, CheckCircle2, FileText, Truck, Package, Shoppin
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { generateProcurementDoc, ProcurementLineItem } from "@/lib/generateProcurementDoc";
+import PrepaidAccountsTab from "@/components/PrepaidAccountsTab";
 
 type Item = ProcurementLineItem;
 
@@ -236,11 +237,12 @@ export default function AdminProcurement() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid grid-cols-4 w-full md:w-auto">
+          <TabsList className="grid grid-cols-5 w-full md:w-auto">
             <TabsTrigger value="requisitions">Requisitions</TabsTrigger>
             <TabsTrigger value="pos">Purchase Orders</TabsTrigger>
             <TabsTrigger value="grn">Goods Received</TabsTrigger>
             <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
+            <TabsTrigger value="prepaid">Prepaid</TabsTrigger>
           </TabsList>
 
           <TabsContent value="requisitions" className="mt-4">
@@ -254,6 +256,9 @@ export default function AdminProcurement() {
           </TabsContent>
           <TabsContent value="suppliers" className="mt-4">
             <SuppliersTab data={suppliers} onChange={fetchAll} />
+          </TabsContent>
+          <TabsContent value="prepaid" className="mt-4">
+            <PrepaidAccountsTab />
           </TabsContent>
         </Tabs>
       </div>
