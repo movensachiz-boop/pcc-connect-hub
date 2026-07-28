@@ -18,7 +18,7 @@ const StaffGuard = ({ children, allow, deny, redirectTo = "/admin/students" }: P
   if (loading) return null;
   if (!role) return <Navigate to="/login" replace />;
 
-  const isFullAdmin = role === "admin";
+  const isFullAdmin = role === "admin" || role === "developer" || role === "owner";
   if (isFullAdmin) return <>{children}</>;
 
   if (allow && allow.includes(role)) return <>{children}</>;
