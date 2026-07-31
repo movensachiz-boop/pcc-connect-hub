@@ -30,10 +30,18 @@ const AdminDashboard = () => {
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
+  const [currentTerm, setCurrentTerm] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboard();
+    supabase
+      .from("academic_terms")
+      .select("name")
+      .eq("is_current", true)
+      .maybeSingle()
+      .then(({ data }) => setCurrentTerm(data?.name ?? null));
   }, []);
+
 
   const loadDashboard = async () => {
     setLoading(true);
