@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_terms: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          is_current: boolean
+          name: string
+          start_date: string
+          term_number: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          name: string
+          start_date?: string
+          term_number: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          name?: string
+          start_date?: string
+          term_number?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       activity_log: {
         Row: {
           action: string
@@ -526,6 +562,7 @@ export type Database = {
           status: string
           student_profile_id: string
           swift_code: string | null
+          term_id: string | null
           transaction_id_format: string | null
           updated_at: string
           verification_hash: string | null
@@ -547,6 +584,7 @@ export type Database = {
           status?: string
           student_profile_id: string
           swift_code?: string | null
+          term_id?: string | null
           transaction_id_format?: string | null
           updated_at?: string
           verification_hash?: string | null
@@ -568,6 +606,7 @@ export type Database = {
           status?: string
           student_profile_id?: string
           swift_code?: string | null
+          term_id?: string | null
           transaction_id_format?: string | null
           updated_at?: string
           verification_hash?: string | null
@@ -585,6 +624,13 @@ export type Database = {
             columns: ["student_profile_id"]
             isOneToOne: false
             referencedRelation: "student_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
             referencedColumns: ["id"]
           },
         ]
@@ -1229,6 +1275,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_current_term_id: { Args: never; Returns: string }
       get_student_fee_summary: {
         Args: never
         Returns: {
@@ -1245,6 +1292,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      start_new_term: {
+        Args: {
+          _name: string
+          _start_date?: string
+          _term_number: number
+          _year: number
+        }
+        Returns: string
       }
       verify_document_fingerprint: {
         Args: {
