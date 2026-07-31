@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Crown, UserPlus } from "lucide-react";
+import TermManagerCard from "@/components/TermManagerCard";
 
 const STAFF_ROLES = [
   { value: "admin", label: "Full Admin (Mrs Sibanda / Mr Cal / Developer)" },
@@ -96,6 +97,10 @@ const AdminSettings = () => {
     <DashboardLayout role="admin">
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+
+        <TermManagerCard />
+
+
 
         <Card className="shadow-card max-w-lg">
           <CardHeader>

@@ -30,10 +30,18 @@ const AdminDashboard = () => {
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
+  const [currentTerm, setCurrentTerm] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboard();
+    supabase
+      .from("academic_terms")
+      .select("name")
+      .eq("is_current", true)
+      .maybeSingle()
+      .then(({ data }) => setCurrentTerm(data?.name ?? null));
   }, []);
+
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -141,7 +149,12 @@ const AdminDashboard = () => {
   return (
       <DashboardLayout role="admin">
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
+            {currentTerm && (
+              <Badge className="bg-primary text-primary-foreground">{currentTerm}</Badge>
+            )}
+          </div>
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
