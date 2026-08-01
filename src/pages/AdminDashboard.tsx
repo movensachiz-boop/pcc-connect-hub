@@ -173,10 +173,25 @@ const AdminDashboard = () => {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
-            {currentTerm && (
-              <Badge className="bg-primary text-primary-foreground">{currentTerm}</Badge>
+            {terms.length > 0 && (
+              <Select value={selectedTermId ?? undefined} onValueChange={setSelectedTermId}>
+                <SelectTrigger className="w-56 h-9">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  {terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_current ? " (current)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {selectedTerm && !selectedTerm.is_current && (
+              <Badge className="bg-warning text-warning-foreground">Viewing past term</Badge>
             )}
           </div>
+
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
