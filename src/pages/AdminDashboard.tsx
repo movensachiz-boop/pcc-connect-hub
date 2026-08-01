@@ -21,6 +21,12 @@ interface RecentPayment {
   status: string;
 }
 
+interface TermOption {
+  id: string;
+  name: string;
+  is_current: boolean;
+}
+
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [totalStudents, setTotalStudents] = useState(0);
@@ -30,20 +36,32 @@ const AdminDashboard = () => {
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
-  const [currentTerm, setCurrentTerm] = useState<string | null>(null);
+  const [terms, setTerms] = useState<TermOption[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+
+  const selectedTerm = terms.find((t) => t.id === selectedTermId) || null;
 
   useEffect(() => {
-    loadDashboard();
     supabase
       .from("academic_terms")
-      .select("name")
-      .eq("is_current", true)
-      .maybeSingle()
-      .then(({ data }) => setCurrentTerm(data?.name ?? null));
+      .select("id, name, is_current")
+      .order("start_date", { ascending: false })
+      .then(({ data }) => {
+        const list = (data || []) as TermOption[];
+        setTerms(list);
+        const cur = list.find((t) => t.is_current) || list[0];
+        setSelectedTermId(cur?.id ?? null);
+        if (!cur) loadDashboard(null);
+      });
   }, []);
 
+  useEffect(() => {
+    if (selectedTermId) loadDashboard(selectedTermId);
+  }, [selectedTermId]);
 
-  const loadDashboard = async () => {
+
+  const loadDashboard = async (termId: string | null) => {
+
     setLoading(true);
     try {
       // Total students
