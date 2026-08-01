@@ -70,8 +70,10 @@ const AdminDashboard = () => {
         .select("id", { count: "exact", head: true });
       setTotalStudents(studentCount || 0);
 
-      // Fee summary via RPC
-      const { data: feeSummary } = await supabase.rpc("get_student_fee_summary");
+      // Fee summary via RPC (scoped to the selected term)
+      const { data: feeSummary } = termId
+        ? await supabase.rpc("get_student_fee_summary", { _term_id: termId })
+        : await supabase.rpc("get_student_fee_summary");
       const summaries = feeSummary || [];
       const totalPaid = summaries.reduce((s, r) => s + Number(r.total_paid), 0);
       const totalFees = summaries.reduce((s, r) => s + Number(r.total_fees), 0);
