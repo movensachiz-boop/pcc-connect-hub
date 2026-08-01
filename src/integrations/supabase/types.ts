@@ -1276,16 +1276,27 @@ export type Database = {
     }
     Functions: {
       get_current_term_id: { Args: never; Returns: string }
-      get_student_fee_summary: {
-        Args: never
-        Returns: {
-          balance: number
-          payment_status: string
-          profile_id: string
-          total_fees: number
-          total_paid: number
-        }[]
-      }
+      get_student_fee_summary:
+        | {
+            Args: never
+            Returns: {
+              balance: number
+              payment_status: string
+              profile_id: string
+              total_fees: number
+              total_paid: number
+            }[]
+          }
+        | {
+            Args: { _term_id: string }
+            Returns: {
+              balance: number
+              payment_status: string
+              profile_id: string
+              total_fees: number
+              total_paid: number
+            }[]
+          }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
