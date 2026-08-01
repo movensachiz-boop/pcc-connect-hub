@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, DollarSign, AlertTriangle, TrendingUp, ShoppingBag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,12 @@ interface RecentPayment {
   status: string;
 }
 
+interface TermOption {
+  id: string;
+  name: string;
+  is_current: boolean;
+}
+
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [totalStudents, setTotalStudents] = useState(0);
@@ -30,20 +37,32 @@ const AdminDashboard = () => {
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
-  const [currentTerm, setCurrentTerm] = useState<string | null>(null);
+  const [terms, setTerms] = useState<TermOption[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+
+  const selectedTerm = terms.find((t) => t.id === selectedTermId) || null;
 
   useEffect(() => {
-    loadDashboard();
     supabase
       .from("academic_terms")
-      .select("name")
-      .eq("is_current", true)
-      .maybeSingle()
-      .then(({ data }) => setCurrentTerm(data?.name ?? null));
+      .select("id, name, is_current")
+      .order("start_date", { ascending: false })
+      .then(({ data }) => {
+        const list = (data || []) as TermOption[];
+        setTerms(list);
+        const cur = list.find((t) => t.is_current) || list[0];
+        setSelectedTermId(cur?.id ?? null);
+        if (!cur) loadDashboard(null);
+      });
   }, []);
 
+  useEffect(() => {
+    if (selectedTermId) loadDashboard(selectedTermId);
+  }, [selectedTermId]);
 
-  const loadDashboard = async () => {
+
+  const loadDashboard = async (termId: string | null) => {
+
     setLoading(true);
     try {
       // Total students
@@ -52,8 +71,10 @@ const AdminDashboard = () => {
         .select("id", { count: "exact", head: true });
       setTotalStudents(studentCount || 0);
 
-      // Fee summary via RPC
-      const { data: feeSummary } = await supabase.rpc("get_student_fee_summary");
+      // Fee summary via RPC (scoped to the selected term)
+      const { data: feeSummary } = termId
+        ? await supabase.rpc("get_student_fee_summary", { _term_id: termId })
+        : await supabase.rpc("get_student_fee_summary");
       const summaries = feeSummary || [];
       const totalPaid = summaries.reduce((s, r) => s + Number(r.total_paid), 0);
       const totalFees = summaries.reduce((s, r) => s + Number(r.total_fees), 0);
@@ -86,12 +107,14 @@ const AdminDashboard = () => {
       }
       setBarData(Object.entries(formMap).map(([f, d]) => ({ name: `Form ${f}`, ...d })));
 
-      // Recent payments
-      const { data: payData } = await supabase
+      // Recent payments (selected term)
+      let payQuery = supabase
         .from("payments")
         .select("amount, created_at, status, method, student_profile_id, profile:profiles!payments_student_profile_id_fkey(first_name, last_name, registration_number, form)")
         .order("created_at", { ascending: false })
         .limit(5);
+      if (termId) payQuery = payQuery.eq("term_id", termId);
+      const { data: payData } = await payQuery;
 
       if (payData && payData.length > 0) {
         setRecentPayments(payData.map((p: any) => {
@@ -151,10 +174,25 @@ const AdminDashboard = () => {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-2xl font-bold text-foreground">Admin Dashboard</h2>
-            {currentTerm && (
-              <Badge className="bg-primary text-primary-foreground">{currentTerm}</Badge>
+            {terms.length > 0 && (
+              <Select value={selectedTermId ?? undefined} onValueChange={setSelectedTermId}>
+                <SelectTrigger className="w-56 h-9">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  {terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_current ? " (current)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {selectedTerm && !selectedTerm.is_current && (
+              <Badge className="bg-warning text-warning-foreground">Viewing past term</Badge>
             )}
           </div>
+
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
