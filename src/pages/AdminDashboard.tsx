@@ -106,12 +106,14 @@ const AdminDashboard = () => {
       }
       setBarData(Object.entries(formMap).map(([f, d]) => ({ name: `Form ${f}`, ...d })));
 
-      // Recent payments
-      const { data: payData } = await supabase
+      // Recent payments (selected term)
+      let payQuery = supabase
         .from("payments")
         .select("amount, created_at, status, method, student_profile_id, profile:profiles!payments_student_profile_id_fkey(first_name, last_name, registration_number, form)")
         .order("created_at", { ascending: false })
         .limit(5);
+      if (termId) payQuery = payQuery.eq("term_id", termId);
+      const { data: payData } = await payQuery;
 
       if (payData && payData.length > 0) {
         setRecentPayments(payData.map((p: any) => {
