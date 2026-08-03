@@ -143,12 +143,31 @@ const AdminPayments = () => {
   const [editForm, setEditForm] = useState({ amount: "", method: "", status: "paid", description: "" });
   const [editSaving, setEditSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [terms, setTerms] = useState<{ id: string; name: string; is_active: boolean }[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPayments();
+    const loadTerms = async () => {
+      const { data } = await supabase
+        .from("academic_terms")
+        .select("id, name, is_active")
+        .order("created_at", { ascending: false });
+      if (data && data.length) {
+        setTerms(data as any);
+        const active = (data as any[]).find((t) => t.is_active) || data[0];
+        setSelectedTermId(active.id);
+      } else {
+        setSelectedTermId("__all__");
+      }
+    };
+    loadTerms();
     fetchStudents();
-    fetchFeeSummary();
   }, []);
+
+  useEffect(() => {
+    if (selectedTermId === null) return;
+    fetchPayments();
+  }, [selectedTermId]);
 
   const fetchStudents = async () => {
     const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone, form, stream").order("first_name");
@@ -156,7 +175,9 @@ const AdminPayments = () => {
   };
 
   const fetchFeeSummary = async () => {
-    const { data } = await supabase.rpc("get_student_fee_summary");
+    const { data } = selectedTermId && selectedTermId !== "__all__"
+      ? await supabase.rpc("get_student_fee_summary", { _term_id: selectedTermId })
+      : await supabase.rpc("get_student_fee_summary");
     if (data) {
       const map = new Map<string, FeeSummary>();
       for (const r of data as FeeSummary[]) map.set(r.profile_id, r);
@@ -168,10 +189,12 @@ const AdminPayments = () => {
 
   const fetchPayments = async () => {
     setLoading(true);
-    const { data: paymentData, error } = await supabase
+    let query = supabase
       .from("payments")
       .select("*, profile:profiles!payments_student_profile_id_fkey(id, first_name, last_name, registration_number, form, stream)")
       .order("created_at", { ascending: false });
+    if (selectedTermId && selectedTermId !== "__all__") query = query.eq("term_id", selectedTermId);
+    const { data: paymentData, error } = await query;
 
     if (error) {
       toast({ title: "Failed to load payments", description: error.message, variant: "destructive" });
@@ -192,6 +215,7 @@ const AdminPayments = () => {
     fetchFeeSummary();
     setLoading(false);
   };
+
 
 
   const openEditPayment = (p: PaymentRow) => {
