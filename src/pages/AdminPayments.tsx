@@ -613,8 +613,29 @@ const AdminPayments = () => {
     <DashboardLayout role="admin">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-2xl font-bold text-foreground">Payment Records</h2>
+            {terms.length > 0 && (
+              <Select value={selectedTermId ?? undefined} onValueChange={setSelectedTermId}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__all__">All terms</SelectItem>
+                  {terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_active ? " (Current)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {terms.length > 0 && selectedTermId !== "__all__" && !terms.find((t) => t.id === selectedTermId)?.is_active && (
+              <Badge className="bg-warning text-warning-foreground">Viewing past term</Badge>
+            )}
+          </div>
           <div className="flex gap-2 flex-wrap">
+
             <Button variant="outline" onClick={() => {
               setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
               setManualAmount("");
