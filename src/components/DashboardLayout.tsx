@@ -18,7 +18,9 @@ interface DashboardLayoutProps {
 
 const ownerLinks = [
   { label: "Overview", icon: LayoutDashboard, path: "/owner" },
+  { label: "Results Per Class", icon: GraduationCap, path: "/owner/results" },
 ];
+
 
 const adminLinks = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
