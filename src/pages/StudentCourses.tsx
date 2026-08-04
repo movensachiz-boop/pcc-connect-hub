@@ -3,6 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen } from "lucide-react";
 
+const gradeColorClass = (grade: string) => {
+  const letter = grade.trim().charAt(0).toUpperCase();
+  if (["D", "E", "F", "U"].includes(letter)) return "bg-destructive text-destructive-foreground";
+  return "bg-primary text-primary-foreground";
+};
+
 const courses = [
   { name: "Mathematics", code: "MATH401", teacher: "Mr. Otieno", grade: "A-", credits: 4 },
   { name: "Physics", code: "PHY401", teacher: "Mrs. Kamau", grade: "B+", credits: 3 },
@@ -32,7 +38,7 @@ const StudentCourses = () => (
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Teacher</span><span className="text-foreground">{c.teacher}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Credits</span><span className="text-foreground">{c.credits}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Current Grade</span><Badge className="bg-success text-success-foreground">{c.grade}</Badge></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Current Grade</span><Badge className={gradeColorClass(c.grade)}>{c.grade}</Badge></div>
               </div>
             </CardContent>
           </Card>
