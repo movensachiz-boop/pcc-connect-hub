@@ -38,6 +38,8 @@ import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import OwnerResults from "./pages/OwnerResults";
+
 import AdminAuditTrail from "./pages/AdminAuditTrail";
 import AdminInventory from "./pages/AdminInventory";
 import AdminProcurement from "./pages/AdminProcurement";
