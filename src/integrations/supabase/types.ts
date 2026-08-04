@@ -233,6 +233,69 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_marks: {
+        Row: {
+          created_at: string
+          exam_type: string
+          form: string
+          id: string
+          mark: number
+          max_mark: number
+          recorded_by: string | null
+          stream: string
+          student_profile_id: string
+          subject_id: string
+          subject_name: string | null
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_type: string
+          form: string
+          id?: string
+          mark: number
+          max_mark?: number
+          recorded_by?: string | null
+          stream: string
+          student_profile_id: string
+          subject_id: string
+          subject_name?: string | null
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_type?: string
+          form?: string
+          id?: string
+          mark?: number
+          max_mark?: number
+          recorded_by?: string | null
+          stream?: string
+          student_profile_id?: string
+          subject_id?: string
+          subject_name?: string | null
+          term?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_marks_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_marks_student_profile_id_fkey"
+            columns: ["student_profile_id"]
+            isOneToOne: false
+            referencedRelation: "student_roster"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_requirements: {
         Row: {
           amount: number

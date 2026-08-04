@@ -95,8 +95,23 @@ export default function TeacherMarks() {
     } finally { setLoading(false); }
   };
 
-  const loadMarks = () => {
+  const loadMarks = async () => {
     if (!subjectId) { setMarks({}); return; }
+    // Cloud first
+    const { data } = await supabase
+      .from("exam_marks" as any)
+      .select("student_profile_id, mark, max_mark")
+      .eq("form", form).eq("stream", stream).eq("subject_id", subjectId)
+      .eq("term", term).eq("exam_type", examType);
+    const rows = (data || []) as any[];
+    if (rows.length > 0) {
+      const m: Record<string, string> = {};
+      rows.forEach(r => { m[r.student_profile_id] = String(r.mark); });
+      setMarks(m);
+      if (rows[0].max_mark) setMaxMark(Number(rows[0].max_mark));
+      return;
+    }
+    // Fallback to any legacy local draft
     try {
       const raw = localStorage.getItem(marksKey(form, stream, subjectId, term, examType));
       const parsed = raw ? JSON.parse(raw) : {};
@@ -105,9 +120,9 @@ export default function TeacherMarks() {
     } catch { setMarks({}); }
   };
 
-  const save = () => {
+  const save = async () => {
     if (!subjectId) { toast.error("Pick a subject"); return; }
-    for (const [sid, v] of Object.entries(marks)) {
+    for (const [, v] of Object.entries(marks)) {
       if (v === "") continue;
       const n = Number(v);
       if (isNaN(n) || n < 0 || n > maxMark) {
@@ -115,12 +130,33 @@ export default function TeacherMarks() {
         return;
       }
     }
+    const subjectName = subjects.find(s => s.id === subjectId)?.name || subjectId;
+    const rows = Object.entries(marks)
+      .filter(([, v]) => v !== "" && !isNaN(Number(v)))
+      .map(([sid, v]) => ({
+        student_profile_id: sid,
+        form, stream,
+        subject_id: subjectId,
+        subject_name: subjectName,
+        term, exam_type: examType,
+        mark: Number(v),
+        max_mark: maxMark,
+        recorded_by: userId || null,
+      }));
+
     localStorage.setItem(
       marksKey(form, stream, subjectId, term, examType),
       JSON.stringify({ marks, maxMark, savedAt: new Date().toISOString(), by: fullName })
     );
-    toast.success("Marks saved");
+
+    if (rows.length === 0) { toast.success("Marks saved"); return; }
+    const { error } = await supabase
+      .from("exam_marks" as any)
+      .upsert(rows as any, { onConflict: "student_profile_id,subject_id,term,exam_type" });
+    if (error) { toast.error("Could not sync marks: " + error.message); return; }
+    toast.success("Marks saved and published to the school records");
   };
+
 
   const setMark = (id: string, v: string) => setMarks(m => ({ ...m, [id]: v }));
 

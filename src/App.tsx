@@ -38,6 +38,8 @@ import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import OwnerResults from "./pages/OwnerResults";
+
 import AdminAuditTrail from "./pages/AdminAuditTrail";
 import AdminInventory from "./pages/AdminInventory";
 import AdminProcurement from "./pages/AdminProcurement";
@@ -98,6 +100,8 @@ const App = () => (
             <Route path="/teacher/timetable" element={<TeacherTimetable />} />
             <Route path="/teacher/announcements" element={<AnnouncementsPage role="teacher" />} />
             <Route path="/owner" element={<OwnerDashboard />} />
+            <Route path="/owner/results" element={<OwnerResults />} />
+
             <Route path="/developer/sla" element={<DeveloperGuard><DeveloperSla /></DeveloperGuard>} />
             <Route path="/verify" element={<VerifyReceipt />} />
             <Route path="/phone-scan/:sessionId" element={<PhoneScan />} />
