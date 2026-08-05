@@ -1304,6 +1304,111 @@ export type Database = {
         }
         Relationships: []
       }
+      vacation_payments: {
+        Row: {
+          amount: number
+          cashier_user_id: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          method: string
+          receipt_number: string | null
+          status: string
+          term_id: string | null
+          updated_at: string
+          vacation_student_id: string
+        }
+        Insert: {
+          amount: number
+          cashier_user_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          method?: string
+          receipt_number?: string | null
+          status?: string
+          term_id?: string | null
+          updated_at?: string
+          vacation_student_id: string
+        }
+        Update: {
+          amount?: number
+          cashier_user_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          method?: string
+          receipt_number?: string | null
+          status?: string
+          term_id?: string | null
+          updated_at?: string
+          vacation_student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacation_payments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacation_payments_vacation_student_id_fkey"
+            columns: ["vacation_student_id"]
+            isOneToOne: false
+            referencedRelation: "vacation_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacation_students: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          first_name: string
+          gender: string
+          guardian_name: string | null
+          guardian_phone: string | null
+          id: string
+          is_active: boolean
+          last_name: string
+          notes: string | null
+          stream: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          first_name: string
+          gender?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          id?: string
+          is_active?: boolean
+          last_name: string
+          notes?: string | null
+          stream: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          first_name?: string
+          gender?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          notes?: string | null
+          stream?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       student_roster: {
