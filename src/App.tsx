@@ -17,6 +17,7 @@ import StudentProfileGate from "./components/StudentProfileGate";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminStudents from "./pages/AdminStudents";
 import AdminPayments from "./pages/AdminPayments";
+import AdminVacationSchool from "./pages/AdminVacationSchool";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
 import AdminSubjects from "./pages/AdminSubjects";
