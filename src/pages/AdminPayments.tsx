@@ -143,18 +143,18 @@ const AdminPayments = () => {
   const [editForm, setEditForm] = useState({ amount: "", method: "", status: "paid", description: "" });
   const [editSaving, setEditSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [terms, setTerms] = useState<{ id: string; name: string; is_active: boolean }[]>([]);
+  const [terms, setTerms] = useState<{ id: string; name: string; is_current: boolean }[]>([]);
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadTerms = async () => {
       const { data } = await supabase
         .from("academic_terms")
-        .select("id, name, is_active")
-        .order("created_at", { ascending: false });
+        .select("id, name, is_current")
+        .order("start_date", { ascending: false });
       if (data && data.length) {
         setTerms(data as any);
-        const active = (data as any[]).find((t) => t.is_active) || data[0];
+        const active = (data as any[]).find((t) => t.is_current) || data[0];
         setSelectedTermId(active.id);
       } else {
         setSelectedTermId("__all__");
@@ -624,13 +624,13 @@ const AdminPayments = () => {
                   <SelectItem value="__all__">All terms</SelectItem>
                   {terms.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
-                      {t.name}{t.is_active ? " (Current)" : ""}
+                      {t.name}{t.is_current ? " (Current)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
-            {terms.length > 0 && selectedTermId !== "__all__" && !terms.find((t) => t.id === selectedTermId)?.is_active && (
+            {terms.length > 0 && selectedTermId !== "__all__" && !terms.find((t) => t.id === selectedTermId)?.is_current && (
               <Badge className="bg-warning text-warning-foreground">Viewing past term</Badge>
             )}
           </div>
