@@ -17,6 +17,7 @@ import StudentProfileGate from "./components/StudentProfileGate";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminStudents from "./pages/AdminStudents";
 import AdminPayments from "./pages/AdminPayments";
+import AdminVacationSchool from "./pages/AdminVacationSchool";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
 import AdminSubjects from "./pages/AdminSubjects";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/student/shop" element={<StudentProfileGate><StudentInventory /></StudentProfileGate>} />
             <Route path="/admin" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminDashboard /></StaffGuard>} />
             <Route path="/admin/students" element={<StaffGuard deny={DENY_TM}><AdminStudents /></StaffGuard>} />
+            <Route path="/admin/vacation-school" element={<StaffGuard deny={DENY_TM}><AdminVacationSchool /></StaffGuard>} />
             <Route path="/admin/payments" element={<StaffGuard deny={DENY_TM}><AdminPayments /></StaffGuard>} />
             <Route path="/admin/reports" element={<StaffGuard deny={DENY_TM}><AdminReports /></StaffGuard>} />
             <Route path="/admin/announcements" element={<StaffGuard deny={DENY_TM}><AnnouncementsPage role="admin" /></StaffGuard>} />
