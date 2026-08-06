@@ -293,7 +293,6 @@ export default function CashierReports() {
     }
   };
 
-  const isOversight = role === "admin" || role === "owner" || role === "developer";
   const ownSessions = role === "cashier" ? sessions.filter(s => s.cashier_user_id === userId) : sessions;
   const cashierOptions = useMemo(
     () => Array.from(new Set(ownSessions.map(s => s.cashier_name))).sort(),
