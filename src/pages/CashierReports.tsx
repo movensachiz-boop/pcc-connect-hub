@@ -207,7 +207,8 @@ export default function CashierReports() {
         .gte("created_at", dayStart).lte("created_at", dayEnd),
     ]);
 
-    const mine = (uid: string | null | undefined) => !s.cashier_user_id || uid === s.cashier_user_id;
+    // Records with no cashier stamped are counted in the day's report (unattributed takings)
+    const mine = (uid: string | null | undefined) => !s.cashier_user_id || !uid || uid === s.cashier_user_id;
     const audit = ((auditRes.data as any[]) || []).filter(r => mine(r.actor_user_id));
     const vac = ((vacRes.data as any[]) || []).filter(r => mine(r.cashier_user_id));
     const inv = ((invRes.data as any[]) || []).filter(r => mine(r.cashier_user_id));
