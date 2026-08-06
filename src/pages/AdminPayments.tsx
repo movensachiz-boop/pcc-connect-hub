@@ -185,9 +185,9 @@ const AdminPayments = () => {
   };
 
   const fetchFeeSummary = async () => {
-    const { data } = selectedTermId && selectedTermId !== "__all__"
-      ? await supabase.rpc("get_student_fee_summary", { _term_id: selectedTermId })
-      : await supabase.rpc("get_student_fee_summary");
+    const { data } = await supabase.rpc("get_student_fee_summary", {
+      _term_id: selectedTermId && selectedTermId !== "__all__" ? selectedTermId : (null as any),
+    });
     if (data) {
       const map = new Map<string, FeeSummary>();
       for (const r of data as FeeSummary[]) map.set(r.profile_id, r);

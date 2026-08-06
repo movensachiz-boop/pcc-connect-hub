@@ -16,7 +16,17 @@ import { useToast } from "@/hooks/use-toast";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { titleCaseName } from "@/lib/normalize";
 
-const STREAMS = ["G1", "G2", "G22", "Blue", "Sciences", "Commercials", "Arts"];
+const STREAMS = [
+  "Form 1 G1", "Form 1 G2", "Form 1 G22", "Form 1 Blue",
+  "Form 2 G1", "Form 2 G2", "Form 2 G22", "Form 2 Blue",
+  "Form 3 G1", "Form 3 G2", "Form 3 G22", "Form 3 Blue",
+  "Form 4 G1", "Form 4 G2", "Form 4 G22", "Form 4 Blue",
+  "Form 5 Sciences", "Form 5 Commercials", "Form 5 Arts",
+  "Form 6 Sciences", "Form 6 Commercials", "Form 6 Arts",
+  "Form 1 External", "Form 2 External", "Form 3 External", "Form 4 External",
+  "Form 5 External", "Form 6 External",
+  "External",
+];
 const METHODS = ["Cash", "EcoCash", "Bank Transfer", "Swipe", "Other"];
 
 interface VStudent {
@@ -192,6 +202,7 @@ const AdminVacationSchool = () => {
       amount: `$${Number(p.amount).toFixed(2)}`,
       method: p.method,
       description: `VACATION SCHOOL — ${p.description || "Vacation School Fees"}`,
+      schoolName: "Progress Centre College",
     };
   };
 

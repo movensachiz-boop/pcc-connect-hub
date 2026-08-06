@@ -12,7 +12,11 @@ interface ReceiptData {
   method: string;
   description?: string;
   verificationHash?: string;
+  schoolName?: string;
 }
+
+const SCHOOL = (data: { schoolName?: string }) =>
+  (data.schoolName || "PROGRESS CHRISTIAN CENTRE").toUpperCase();
 
 // Simple hash display: show first 16 + last 8 chars
 const formatHash = (hash: string) => {
@@ -91,7 +95,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(255, 255, 255);
-  doc.text("PROGRESS CHRISTIAN CENTRE  |  11729 Mkoba 14 Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, y + 6.5, { align: "center" });
+  doc.text(SCHOOL(data) + "  |  11729 Mkoba 14 Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, y + 6.5, { align: "center" });
   y += 18;
 
   // ── Title ──
@@ -252,7 +256,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setTextColor(80, 80, 80);
   doc.text("Fees are due at the beginning of each term. Late payments may incur additional charges.", margin, y);
   y += 5;
-  doc.text("For any questions, please contact the school bursar at Progress Christian Centre.", margin, y);
+  doc.text(`For any questions, please contact the school bursar at ${data.schoolName || "Progress Christian Centre"}.`, margin, y);
   y += 15;
 
   // ── Signature line ──
@@ -277,7 +281,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   // ── Footer with security notice ──
   doc.setFontSize(6.5);
   doc.setTextColor(150, 150, 150);
-  doc.text("This is a computer-generated receipt from Progress Christian Centre. It is protected by SHA-256 cryptographic verification.", pw / 2, 278, { align: "center" });
+  doc.text(`This is a computer-generated receipt from ${data.schoolName || "Progress Christian Centre"}. It is protected by SHA-256 cryptographic verification.`, pw / 2, 278, { align: "center" });
   doc.text(`Document ID: ${docId}  |  Generated: ${new Date().toISOString()}`, pw / 2, 282, { align: "center" });
   doc.text("Unauthorized reproduction or alteration of this document is prohibited.", pw / 2, 286, { align: "center" });
 
@@ -356,7 +360,7 @@ const renderThermalReceipt = async (doc: jsPDF, data: ReceiptData, logo: HTMLIma
     y += 18;
   }
 
-  centered("PROGRESS CHRISTIAN CENTRE", 9, "bold", 4);
+  centered(SCHOOL(data), 9, "bold", 4);
   centered("11729 Mkoba 14 Gweru, Zimbabwe", 6.2, "normal", 3.4);
   centered("+263 77 400 0143", 6.2, "normal", 3.4);
   y += 1;
