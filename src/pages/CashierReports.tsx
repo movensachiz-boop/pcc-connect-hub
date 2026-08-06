@@ -68,6 +68,8 @@ export default function CashierReports() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cashierFilter, setCashierFilter] = useState("all");
+  const [dayFilter, setDayFilter] = useState("");
   const [openingFloat, setOpeningFloat] = useState("0");
   const [closingCounted, setClosingCounted] = useState("");
   const [closeNotes, setCloseNotes] = useState("");
