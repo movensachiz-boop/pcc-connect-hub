@@ -57,6 +57,8 @@ const AdminStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [terms, setTerms] = useState<{ id: string; name: string; is_current: boolean }[]>([]);
+  const [studentTermId, setStudentTermId] = useState<string>("__all__");
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -895,6 +897,20 @@ const AdminStudents = () => {
                 <Users size={14} />
                 {showDuplicatesOnly ? `Showing Duplicates (${duplicateIds.size})` : `Find Duplicates${duplicateIds.size > 0 ? ` (${duplicateIds.size})` : ""}`}
               </Button>
+              <Select
+                value={studentTermId}
+                onValueChange={(v) => { setStudentTermId(v); setLoading(true); fetchStudents(v === "__all__" ? null : v); }}
+              >
+                <SelectTrigger className="w-full sm:w-[190px]">
+                  <SelectValue placeholder="Term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All terms</SelectItem>
+                  {terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}{t.is_current ? " (current)" : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <div className="relative sm:ml-auto w-full sm:w-64">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
