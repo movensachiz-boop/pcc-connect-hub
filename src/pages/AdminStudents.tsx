@@ -186,10 +186,10 @@ const AdminStudents = () => {
     return `${first}${num}${last}`;
   };
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (termId: string | null = studentTermId) => {
     try {
       const { data, error } = await supabase.functions.invoke("manage-students", {
-        body: { action: "list_students" },
+        body: { action: "list_students", term_id: termId },
       });
       if (error || data?.error) {
         console.error("Failed to fetch students:", data?.error || error);
@@ -204,7 +204,15 @@ const AdminStudents = () => {
   };
 
   useEffect(() => {
-    fetchStudents();
+    const loadTerms = async () => {
+      const { data } = await supabase
+        .from("academic_terms")
+        .select("id, name, is_current")
+        .order("start_date", { ascending: false });
+      if (data) setTerms(data as any);
+    };
+    loadTerms();
+    fetchStudents(null);
   }, []);
 
   useEffect(() => {

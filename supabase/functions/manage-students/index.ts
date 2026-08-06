@@ -205,7 +205,8 @@ Deno.serve(async (req) => {
       }
 
       // Get fee summaries
-      const { data: feeSummaries } = await supabaseAdmin.rpc("get_student_fee_summary");
+      const termFilter = payload?.term_id && payload.term_id !== "__all__" ? payload.term_id : null;
+      const { data: feeSummaries } = await supabaseAdmin.rpc("get_student_fee_summary", { _term_id: termFilter });
       const feeMap = new Map();
       if (feeSummaries) {
         for (const fs of feeSummaries) {
