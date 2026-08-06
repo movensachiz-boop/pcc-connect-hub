@@ -291,7 +291,55 @@ export default function CashierReports() {
     }
   };
 
-  const visibleSessions = role === "cashier" ? sessions.filter(s => s.cashier_user_id === userId) : sessions;
+  const isOversight = role === "admin" || role === "owner" || role === "developer";
+  const ownSessions = role === "cashier" ? sessions.filter(s => s.cashier_user_id === userId) : sessions;
+  const cashierOptions = useMemo(
+    () => Array.from(new Set(ownSessions.map(s => s.cashier_name))).sort(),
+    [ownSessions]
+  );
+  const visibleSessions = useMemo(
+    () => ownSessions.filter(s =>
+      (cashierFilter === "all" || s.cashier_name === cashierFilter) &&
+      (!dayFilter || s.business_date === dayFilter)
+    ),
+    [ownSessions, cashierFilter, dayFilter]
+  );
+
+  // Combines every cashier's receipts and outflows for one day into a single PDF
+  const downloadCombinedDayReport = async () => {
+    const date = dayFilter || today();
+    const daySessions = ownSessions.filter(s => s.business_date === date &&
+      (cashierFilter === "all" || s.cashier_name === cashierFilter));
+    if (!daySessions.length) return toast({ title: "No sessions on that date", variant: "destructive" });
+
+    const receipts: CashTxn[] = [];
+    const outflows: CashOutflow[] = [];
+    let float = 0, counted = 0, anyCounted = false;
+    for (const s of daySessions) {
+      const data = await collectSessionData(s);
+      data.receipts.forEach(r => receipts.push({ ...r, description: `[${s.cashier_name}] ${r.description}` }));
+      data.outflows.forEach(o => outflows.push({ ...o, reason: `[${s.cashier_name}] ${o.reason}` }));
+      float += Number(s.opening_float || 0);
+      if (s.closing_counted != null) { counted += Number(s.closing_counted); anyCounted = true; }
+    }
+    receipts.sort((a, b) => a.time.localeCompare(b.time));
+    outflows.sort((a, b) => a.time.localeCompare(b.time));
+
+    await generateCashReport({
+      cashierName: cashierFilter === "all"
+        ? `All Cashiers (${daySessions.map(s => s.cashier_name).join(", ")})`
+        : cashierFilter,
+      businessDate: date,
+      openedAt: new Date(daySessions[daySessions.length - 1].opened_at).toLocaleString(),
+      closedAt: undefined,
+      openingFloat: float,
+      closingCounted: anyCounted ? counted : null,
+      receipts,
+      outflows,
+      notes: `Combined day report covering ${daySessions.length} cashier session(s).`,
+    });
+    toast({ title: "Combined report downloaded", description: `${date} — ${daySessions.length} session(s)` });
+  };
 
   return (
     <DashboardLayout role="admin">
