@@ -203,6 +203,113 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_movements: {
+        Row: {
+          amount: number
+          business_date: string
+          cashier_name: string
+          cashier_user_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          movement_type: string
+          occurred_at: string
+          reason: string | null
+          recipient: string | null
+          reference: string | null
+          session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          business_date?: string
+          cashier_name?: string
+          cashier_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          movement_type: string
+          occurred_at?: string
+          reason?: string | null
+          recipient?: string | null
+          reference?: string | null
+          session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          business_date?: string
+          cashier_name?: string
+          cashier_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          movement_type?: string
+          occurred_at?: string
+          reason?: string | null
+          recipient?: string | null
+          reference?: string | null
+          session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_sessions: {
+        Row: {
+          business_date: string
+          cashier_name: string
+          cashier_user_id: string | null
+          closed_at: string | null
+          closing_counted: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          opened_at: string
+          opening_float: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_date?: string
+          cashier_name?: string
+          cashier_user_id?: string | null
+          closed_at?: string | null
+          closing_counted?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_float?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_date?: string
+          cashier_name?: string
+          cashier_user_id?: string | null
+          closed_at?: string | null
+          closing_counted?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opening_float?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       device_sessions: {
         Row: {
           created_at: string
