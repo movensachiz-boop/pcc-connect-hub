@@ -145,6 +145,16 @@ const AdminPayments = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [terms, setTerms] = useState<{ id: string; name: string; is_current: boolean }[]>([]);
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+  const [paymentSearch, setPaymentSearch] = useState("");
+
+  const filteredPayments = payments.filter((p) => {
+    const q = paymentSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [p.studentName, p.regNo, p.receipt_number, p.method, p.status, p.description, String(p.amount)]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(q));
+  });
+
 
   useEffect(() => {
     const loadTerms = async () => {
