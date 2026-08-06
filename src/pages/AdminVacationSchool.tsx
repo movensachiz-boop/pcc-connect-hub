@@ -161,13 +161,15 @@ const AdminVacationSchool = () => {
     if (!payStudentId) { toast({ title: "Select a learner", variant: "destructive" }); return; }
     if (!num || num <= 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
     setSaving(true);
-    const payload = {
+    const { data: { user } } = await supabase.auth.getUser();
+    const payload: Record<string, any> = {
       vacation_student_id: payStudentId,
       amount: num,
       method,
       status: "paid",
       description: description.trim() || "Vacation School Fees",
     };
+    if (!editingPayment) payload.cashier_user_id = user?.id ?? null;
     const { error } = editingPayment
       ? await supabase.from("vacation_payments" as any).update(payload).eq("id", editingPayment.id)
       : await supabase.from("vacation_payments" as any).insert(payload as any);
