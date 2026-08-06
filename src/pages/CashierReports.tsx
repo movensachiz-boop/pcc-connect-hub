@@ -430,7 +430,29 @@ export default function CashierReports() {
             <TabsTrigger value="summary">Summary & Inventory</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="days">
+          <TabsContent value="days" className="space-y-3">
+            <Card>
+              <CardContent className="p-4 flex flex-wrap items-end gap-3">
+                <div className="space-y-1">
+                  <Label>Cashier</Label>
+                  <Select value={cashierFilter} onValueChange={setCashierFilter}>
+                    <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All cashiers</SelectItem>
+                      {cashierOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Date</Label>
+                  <Input type="date" className="w-44" value={dayFilter} onChange={e => setDayFilter(e.target.value)} />
+                </div>
+                {dayFilter && <Button variant="ghost" onClick={() => setDayFilter("")}>Clear date</Button>}
+                <Button className="gap-1.5 ml-auto" onClick={downloadCombinedDayReport}>
+                  <FileDown size={14} /> Combined day report
+                </Button>
+              </CardContent>
+            </Card>
             <Card>
               <CardContent className="p-0">
                 <Table>
