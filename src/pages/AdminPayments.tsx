@@ -691,18 +691,30 @@ const AdminPayments = () => {
         )}
 
         <Card className="shadow-card">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between gap-3 flex-wrap">
             <CardTitle className="text-base">All Transactions</CardTitle>
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search name, reg no, receipt, method..."
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : payments.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">No payments recorded yet.</div>
+            ) : filteredPayments.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                {payments.length === 0 ? "No payments recorded yet." : "No payments match your search."}
+              </div>
             ) : (
               <Table>
+
                 <TableHeader>
                   <TableRow className="bg-secondary">
                     <TableHead>Receipt #</TableHead>
