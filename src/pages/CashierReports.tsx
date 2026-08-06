@@ -354,9 +354,23 @@ export default function CashierReports() {
   // Combines every cashier's receipts and outflows for one day into a single PDF
   const downloadCombinedDayReport = async () => {
     const date = dayFilter || today();
-    const daySessions = ownSessions.filter(s => s.business_date === date &&
+    let daySessions = ownSessions.filter(s => s.business_date === date &&
       (cashierFilter === "all" || s.cashier_name === cashierFilter));
-    if (!daySessions.length) return toast({ title: "No sessions on that date", variant: "destructive" });
+    if (!daySessions.length) {
+      // No day was opened — still report on everything transacted that date
+      daySessions = [{
+        id: `virtual-${date}`,
+        cashier_user_id: role === "cashier" ? userId : null,
+        cashier_name: cashierFilter !== "all" ? cashierFilter : (role === "cashier" ? userLabel : "All Cashiers"),
+        business_date: date,
+        opened_at: atHour(date, AUTO_OPEN_HOUR),
+        closed_at: null,
+        opening_float: 0,
+        closing_counted: null,
+        status: "auto",
+        notes: "No day was opened — auto-generated from trading hours (07:00–16:00).",
+      }];
+    }
 
     const receipts: CashTxn[] = [];
     const outflows: CashOutflow[] = [];
