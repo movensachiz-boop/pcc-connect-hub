@@ -43,6 +43,7 @@ import OwnerResults from "./pages/OwnerResults";
 
 import AdminAuditTrail from "./pages/AdminAuditTrail";
 import AdminInventory from "./pages/AdminInventory";
+import CashierReports from "./pages/CashierReports";
 import AdminProcurement from "./pages/AdminProcurement";
 import StudentInventory from "./pages/StudentInventory";
 import StaffGuard from "./components/StaffGuard";
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/admin/students" element={<StaffGuard deny={DENY_TM}><AdminStudents /></StaffGuard>} />
             <Route path="/admin/vacation-school" element={<StaffGuard deny={DENY_TM}><AdminVacationSchool /></StaffGuard>} />
             <Route path="/admin/payments" element={<StaffGuard deny={DENY_TM}><AdminPayments /></StaffGuard>} />
+            <Route path="/admin/cash-desk" element={<StaffGuard deny={DENY_TM}><CashierReports /></StaffGuard>} />
             <Route path="/admin/reports" element={<StaffGuard deny={DENY_TM}><AdminReports /></StaffGuard>} />
             <Route path="/admin/announcements" element={<StaffGuard deny={DENY_TM}><AnnouncementsPage role="admin" /></StaffGuard>} />
             <Route path="/admin/settings" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminSettings /></StaffGuard>} />
