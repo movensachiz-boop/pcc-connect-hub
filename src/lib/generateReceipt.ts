@@ -12,7 +12,11 @@ interface ReceiptData {
   method: string;
   description?: string;
   verificationHash?: string;
+  schoolName?: string;
 }
+
+const SCHOOL = (data: { schoolName?: string }) =>
+  (data.schoolName || "PROGRESS CHRISTIAN CENTRE").toUpperCase();
 
 // Simple hash display: show first 16 + last 8 chars
 const formatHash = (hash: string) => {
