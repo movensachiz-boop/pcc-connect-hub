@@ -84,20 +84,65 @@ export default function CashierReports() {
     [sessions, userId]
   );
 
-  const load = async () => {
+  // Trading hours: auto-open at 07:00, auto-close at 16:00
+  const AUTO_OPEN_HOUR = 7;
+  const AUTO_CLOSE_HOUR = 16;
+  const atHour = (date: string, hour: number) => new Date(`${date}T${String(hour).padStart(2, "0")}:00:00`).toISOString();
+
+  const autoManageDay = async (rows: Session[], uid: string | null, label: string) => {
+    if (!uid) return false;
+    let changed = false;
+    const now = new Date();
+    const d = today();
+
+    // Auto-close any of my sessions left open from a previous day or past 16:00 today
+    const stale = rows.filter(s => s.status === "open" && s.cashier_user_id === uid &&
+      (s.business_date < d || now.getHours() >= AUTO_CLOSE_HOUR));
+    for (const s of stale) {
+      await supabase.from("cash_sessions").update({
+        status: "closed",
+        closed_at: atHour(s.business_date, AUTO_CLOSE_HOUR),
+        notes: s.notes || "Auto-closed at 16:00 (trading hours).",
+      }).eq("id", s.id);
+      changed = true;
+    }
+
+    // Auto-open today's session during trading hours if none exists yet
+    const hasToday = rows.some(s => s.business_date === d && s.cashier_user_id === uid);
+    if (!hasToday && now.getHours() >= AUTO_OPEN_HOUR && now.getHours() < AUTO_CLOSE_HOUR) {
+      await supabase.from("cash_sessions").insert({
+        cashier_user_id: uid,
+        cashier_name: label,
+        business_date: d,
+        opened_at: atHour(d, AUTO_OPEN_HOUR),
+        opening_float: 0,
+        status: "open",
+        notes: "Auto-opened at 07:00 (trading hours).",
+      });
+      changed = true;
+    }
+    return changed;
+  };
+
+  const load = async (skipAuto = false) => {
     const { data: { user } } = await supabase.auth.getUser();
-    setUserId(user?.id ?? null);
-    setUserLabel(titleCaseName((user?.email || "cashier").split("@")[0].replace(/[._-]+/g, " ")));
+    const uid = user?.id ?? null;
+    const label = titleCaseName((user?.email || "cashier").split("@")[0].replace(/[._-]+/g, " "));
+    setUserId(uid);
+    setUserLabel(label);
     const [s, m] = await Promise.all([
       supabase.from("cash_sessions").select("*").order("business_date", { ascending: false }).order("opened_at", { ascending: false }).limit(200),
       supabase.from("cash_movements").select("*").order("occurred_at", { ascending: false }).limit(500),
     ]);
-    setSessions((s.data as any) || []);
+    const rows: Session[] = (s.data as any) || [];
+    if (!skipAuto && await autoManageDay(rows, uid, label)) return load(true);
+    setSessions(rows);
     setMovements((m.data as any) || []);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+
 
   const openDay = async () => {
     if (mySession) return;
