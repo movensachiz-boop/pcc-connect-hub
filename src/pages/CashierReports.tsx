@@ -68,6 +68,8 @@ export default function CashierReports() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cashierFilter, setCashierFilter] = useState("all");
+  const [dayFilter, setDayFilter] = useState("");
   const [openingFloat, setOpeningFloat] = useState("0");
   const [closingCounted, setClosingCounted] = useState("");
   const [closeNotes, setCloseNotes] = useState("");
@@ -291,7 +293,54 @@ export default function CashierReports() {
     }
   };
 
-  const visibleSessions = role === "cashier" ? sessions.filter(s => s.cashier_user_id === userId) : sessions;
+  const ownSessions = role === "cashier" ? sessions.filter(s => s.cashier_user_id === userId) : sessions;
+  const cashierOptions = useMemo(
+    () => Array.from(new Set(ownSessions.map(s => s.cashier_name))).sort(),
+    [ownSessions]
+  );
+  const visibleSessions = useMemo(
+    () => ownSessions.filter(s =>
+      (cashierFilter === "all" || s.cashier_name === cashierFilter) &&
+      (!dayFilter || s.business_date === dayFilter)
+    ),
+    [ownSessions, cashierFilter, dayFilter]
+  );
+
+  // Combines every cashier's receipts and outflows for one day into a single PDF
+  const downloadCombinedDayReport = async () => {
+    const date = dayFilter || today();
+    const daySessions = ownSessions.filter(s => s.business_date === date &&
+      (cashierFilter === "all" || s.cashier_name === cashierFilter));
+    if (!daySessions.length) return toast({ title: "No sessions on that date", variant: "destructive" });
+
+    const receipts: CashTxn[] = [];
+    const outflows: CashOutflow[] = [];
+    let float = 0, counted = 0, anyCounted = false;
+    for (const s of daySessions) {
+      const data = await collectSessionData(s);
+      data.receipts.forEach(r => receipts.push({ ...r, description: `[${s.cashier_name}] ${r.description}` }));
+      data.outflows.forEach(o => outflows.push({ ...o, reason: `[${s.cashier_name}] ${o.reason}` }));
+      float += Number(s.opening_float || 0);
+      if (s.closing_counted != null) { counted += Number(s.closing_counted); anyCounted = true; }
+    }
+    receipts.sort((a, b) => a.time.localeCompare(b.time));
+    outflows.sort((a, b) => a.time.localeCompare(b.time));
+
+    await generateCashReport({
+      cashierName: cashierFilter === "all"
+        ? `All Cashiers (${daySessions.map(s => s.cashier_name).join(", ")})`
+        : cashierFilter,
+      businessDate: date,
+      openedAt: new Date(daySessions[daySessions.length - 1].opened_at).toLocaleString(),
+      closedAt: undefined,
+      openingFloat: float,
+      closingCounted: anyCounted ? counted : null,
+      receipts,
+      outflows,
+      notes: `Combined day report covering ${daySessions.length} cashier session(s).`,
+    });
+    toast({ title: "Combined report downloaded", description: `${date} — ${daySessions.length} session(s)` });
+  };
 
   return (
     <DashboardLayout role="admin">
@@ -380,7 +429,29 @@ export default function CashierReports() {
             <TabsTrigger value="summary">Summary & Inventory</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="days">
+          <TabsContent value="days" className="space-y-3">
+            <Card>
+              <CardContent className="p-4 flex flex-wrap items-end gap-3">
+                <div className="space-y-1">
+                  <Label>Cashier</Label>
+                  <Select value={cashierFilter} onValueChange={setCashierFilter}>
+                    <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All cashiers</SelectItem>
+                      {cashierOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Date</Label>
+                  <Input type="date" className="w-44" value={dayFilter} onChange={e => setDayFilter(e.target.value)} />
+                </div>
+                {dayFilter && <Button variant="ghost" onClick={() => setDayFilter("")}>Clear date</Button>}
+                <Button className="gap-1.5 ml-auto" onClick={downloadCombinedDayReport}>
+                  <FileDown size={14} /> Combined day report
+                </Button>
+              </CardContent>
+            </Card>
             <Card>
               <CardContent className="p-0">
                 <Table>
