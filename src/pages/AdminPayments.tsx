@@ -1051,33 +1051,8 @@ const AdminPayments = () => {
                     </div>
                   </>
                 )}
-                <div className="space-y-1">
-                  <Label className="text-xs">Or link to existing student</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search student..."
-                      value={studentSearch}
-                      onChange={(e) => setStudentSearch(e.target.value)}
-                      className="pl-9 h-8 text-xs"
-                    />
-                  </div>
-                  <Select value={selectedStudentId} onValueChange={(v) => {
-                    setSelectedStudentId(v);
-                    const s = students.find(x => x.id === v);
-                    if (s) { setNewFirstName(s.first_name); setNewLastName(s.last_name); }
-                  }}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choose existing (optional)" /></SelectTrigger>
-                    <SelectContent>
-                      {filteredStudents.map(s => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.first_name} {s.last_name} ({s.registration_number}){s.form || s.stream ? ` — ${formatClass(s)}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
+
 
 
               <div className="grid grid-cols-2 gap-4">
