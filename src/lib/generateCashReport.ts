@@ -440,7 +440,7 @@ export const generateMovementVoucher = async (d: MovementVoucherData) => {
     startY: y,
     margin: { left: margin, right: margin },
     body: [
-      ["Voucher No.", d.voucherNo, "Date & Time", d.dateTime],
+      ["Receipt No.", d.voucherNo, "Date & Time", d.dateTime],
       ["Business Date", d.businessDate, "Category", d.typeLabel],
       ["Issued By", d.issuedBy || "—", "Received By", d.receivedBy || "—"],
       ["Reference", d.reference || "—", "Amount", money(d.amount)],
