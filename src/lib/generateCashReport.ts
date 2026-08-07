@@ -456,8 +456,13 @@ const renderVoucherThermal = async (
   row("Date/Time:", d.dateTime);
   row("Business Date:", d.businessDate);
   row("Category:", d.typeLabel);
-  row("Issued By:", d.issuedBy || "—");
-  row("Received By:", d.receivedBy || "—");
+  if (d.kind === "in") {
+    row("Received From:", d.issuedBy || "—");
+    row("Received By (Cashier):", d.receivedBy || "—");
+  } else {
+    row("Issued By (Cashier):", d.issuedBy || "—");
+    row("Paid To:", d.receivedBy || "—");
+  }
   if (d.reference) row("Reference:", d.reference);
   if (d.reason) row("Reason:", d.reason);
 
