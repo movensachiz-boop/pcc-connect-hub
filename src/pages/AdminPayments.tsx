@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { formatClass, titleCaseName } from "@/lib/normalize";
 import DashboardLayout from "@/components/DashboardLayout";
+import MoneyMovementDialog from "@/components/MoneyMovementDialog";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -645,6 +647,8 @@ const AdminPayments = () => {
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
+            <MoneyMovementDialog />
+
 
             <Button variant="outline" onClick={() => {
               setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
