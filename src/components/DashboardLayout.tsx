@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activityLog";
+import OfflineSyncBadge from "@/components/OfflineSyncBadge";
+
 import {
   LayoutDashboard, Users, Receipt, Bell, FileText, Settings,
   LogOut, Menu, X, BookOpen, CalendarDays, ChevronRight, GraduationCap, School, Calendar, ClipboardList, HelpCircle, ShieldCheck, Package, ShoppingBag, ShoppingCart, PenSquare, Sun, Wallet
