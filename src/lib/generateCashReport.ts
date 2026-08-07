@@ -433,7 +433,7 @@ export const generateMovementVoucher = async (d: MovementVoucherData) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11.5);
   doc.setTextColor(255, 255, 255);
-  doc.text(d.kind === "in" ? "CASH RECEIVED VOUCHER" : "CASH PAYMENT VOUCHER", pw / 2, y + 6, { align: "center" });
+  doc.text(d.kind === "in" ? "OFFICIAL CASH RECEIPT" : "CASH PAYMENT RECEIPT", pw / 2, y + 6, { align: "center" });
   y += 13;
 
   autoTable(doc, {
@@ -463,23 +463,39 @@ export const generateMovementVoucher = async (d: MovementVoucherData) => {
   doc.setFontSize(13);
   doc.setTextColor(...PRIMARY);
   doc.text(`${d.kind === "in" ? "AMOUNT RECEIVED" : "AMOUNT PAID OUT"}: ${money(d.amount)}`, pw / 2, y + 9, { align: "center" });
-  y += 26;
+  y += 22;
 
-  const colW = (pw - 2 * margin) / 2;
+  // Official stamp box
+  const stampW = 56;
+  const stampH = 34;
+  const stampX = pw - margin - stampW;
+  doc.setDrawColor(160, 160, 160);
+  doc.setLineWidth(0.4);
+  doc.setLineDashPattern([1.5, 1.5], 0);
+  doc.rect(stampX, y, stampW, stampH);
+  doc.setLineDashPattern([], 0);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(150, 150, 150);
+  doc.text("OFFICIAL STAMP", stampX + stampW / 2, y + stampH / 2 + 1, { align: "center" });
+
+  const sigY = y + stampH - 4;
+  const colW = (pw - 2 * margin - stampW - 6) / 2;
   [`Issued By: ${d.issuedBy || ""}`, `Received By: ${d.receivedBy || ""}`].forEach((label, i) => {
-    const x = margin + i * colW + 4;
+    const x = margin + i * colW;
     doc.setDrawColor(120, 120, 120);
-    doc.line(x, y, x + colW - 10, y);
+    doc.line(x, sigY, x + colW - 8, sigY);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
-    doc.text(label, x, y + 4.5);
-    doc.text("Signature & Date", x, y + 9);
+    doc.text(label, x, sigY + 4.5);
+    doc.text("Signature & Date", x, sigY + 9);
   });
+  y = sigY;
 
   doc.setFontSize(7.5);
   doc.setTextColor(120, 120, 120);
   doc.text(`Generated ${new Date().toLocaleString()} • Progress Christian Centre Accounts`, pw / 2, 287, { align: "center" });
 
-  doc.save(`${d.kind === "in" ? "Cash_Received" : "Cash_Payment"}_Voucher_${d.voucherNo}.pdf`);
+  doc.save(`${d.kind === "in" ? "Cash_Received" : "Cash_Payment"}_Receipt_${d.voucherNo}.pdf`);
 };
