@@ -275,7 +275,8 @@ export default function CashierReports() {
     const cashIns = sessMoves.filter(m => !isOutflow(m.movement_type));
     cashIns.forEach(m => receipts.push({
       time: timeOf(m.occurred_at), reference: m.reference || "—",
-      description: m.reason || "Cash injection", method: "Cash", amount: Number(m.amount), source: "Fees",
+      description: `${m.recipient ? `Received from ${m.recipient}` : "Cash injection"}${m.reason ? ` — ${m.reason}` : ""}`,
+      method: "Cash", amount: Number(m.amount), source: "Fees",
     }));
 
     const outflows: CashOutflow[] = sessMoves.filter(m => isOutflow(m.movement_type)).map(m => ({
