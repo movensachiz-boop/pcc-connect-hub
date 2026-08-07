@@ -18,7 +18,7 @@ import {
   generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher,
   CashTxn, CashOutflow, PeriodRow, InventoryReportRow,
 } from "@/lib/generateCashReport";
-import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer } from "lucide-react";
+import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer, Trash2 } from "lucide-react";
 
 interface Session {
   id: string;
