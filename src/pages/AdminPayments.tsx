@@ -128,9 +128,11 @@ const AdminPayments = () => {
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [manualAmount, setManualAmount] = useState("");
-  const [manualMethod, setManualMethod] = useState("");
+  const [manualMethod, setManualMethod] = useState("Bank Deposit");
   const [manualRef, setManualRef] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
+
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [patternWarnings, setPatternWarnings] = useState<string[]>([]);
   const [quickRegister, setQuickRegister] = useState(false);
@@ -560,14 +562,16 @@ const AdminPayments = () => {
     setRegistering(false);
   };
 
-  const filteredStudents = students
-    .filter(s => {
-      if (studentSearch === "") return true;
-      const queryTokens = lookupTokens(studentSearch);
+  const matchStudents = (query: string) => {
+    const queryTokens = lookupTokens(query);
+    return students.filter((s) => {
       const target = normalizeLookupText(`${s.first_name} ${s.last_name} ${s.registration_number} ${s.form || ""} ${s.stream || ""}`);
       return queryTokens.every((token) => target.includes(token));
-    })
-    .slice(0, 80);
+    });
+  };
+
+  const filteredStudents = (studentSearch === "" ? students : matchStudents(studentSearch)).slice(0, 80);
+
 
   const getPaidStudentList = (): PaidStudent[] => {
     const paidStatuses = ["paid", "completed", "confirmed"];
@@ -651,9 +655,10 @@ const AdminPayments = () => {
 
 
             <Button variant="outline" onClick={() => {
-              setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
+              setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Bank Deposit", reference_number: "" });
               setManualAmount("");
-              setManualMethod("Cash");
+              setManualMethod("Bank Deposit");
+
               setManualRef("");
               setSelectedStudentId("");
               setStudentSearch("");
@@ -943,6 +948,55 @@ const AdminPayments = () => {
           <div className="flex-1 overflow-y-auto pr-2 space-y-4">
           {scannedData && (
             <>
+              <div className="space-y-1 rounded-md border p-3 bg-muted/30">
+                <Label className="text-xs">Search existing student</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search student..."
+                    value={studentSearch}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setStudentSearch(v);
+                      const match = v.trim() ? matchStudents(v)[0] : undefined;
+                      if (match) {
+                        setSelectedStudentId(match.id);
+                        setNewFirstName(match.first_name);
+                        setNewLastName(match.last_name);
+                        setScannedData((d) => ({ ...(d || {}), depositor_name: `${match.first_name} ${match.last_name}` }));
+                      } else {
+                        setSelectedStudentId("");
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        amountRef.current?.focus();
+                      }
+                    }}
+                    className="pl-9 h-9"
+                  />
+                </div>
+                <Select value={selectedStudentId} onValueChange={(v) => {
+                  setSelectedStudentId(v);
+                  const s = students.find(x => x.id === v);
+                  if (s) {
+                    setNewFirstName(s.first_name);
+                    setNewLastName(s.last_name);
+                    setScannedData((d) => ({ ...(d || {}), depositor_name: `${s.first_name} ${s.last_name}` }));
+                  }
+                }}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choose existing (optional)" /></SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {filteredStudents.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.first_name} {s.last_name} ({s.registration_number}){s.form || s.stream ? ` — ${formatClass(s)}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>Depositor / Student Name</Label>
                 <Input
@@ -951,6 +1005,7 @@ const AdminPayments = () => {
                   placeholder="Name on deposit slip or student name"
                 />
               </div>
+
 
               <div className="space-y-2">
                 <Label>Bank</Label>
@@ -1051,40 +1106,27 @@ const AdminPayments = () => {
                     </div>
                   </>
                 )}
-                <div className="space-y-1">
-                  <Label className="text-xs">Or link to existing student</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search student..."
-                      value={studentSearch}
-                      onChange={(e) => setStudentSearch(e.target.value)}
-                      className="pl-9 h-8 text-xs"
-                    />
-                  </div>
-                  <Select value={selectedStudentId} onValueChange={(v) => {
-                    setSelectedStudentId(v);
-                    const s = students.find(x => x.id === v);
-                    if (s) { setNewFirstName(s.first_name); setNewLastName(s.last_name); }
-                  }}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choose existing (optional)" /></SelectTrigger>
-                    <SelectContent>
-                      {filteredStudents.map(s => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.first_name} {s.last_name} ({s.registration_number}){s.form || s.stream ? ` — ${formatClass(s)}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
+
 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Amount ($) *</Label>
-                  <Input value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} type="number" />
+                  <Input
+                    ref={amountRef}
+                    value={manualAmount}
+                    onChange={(e) => setManualAmount(e.target.value)}
+                    type="number"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (!saving) handleSavePayment();
+                      }
+                    }}
+                  />
                 </div>
+
                 <div className="space-y-2">
                   <Label>Method</Label>
                   <Select value={manualMethod} onValueChange={setManualMethod}>
