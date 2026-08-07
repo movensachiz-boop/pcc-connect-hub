@@ -480,8 +480,15 @@ export default function CashierReports() {
                           <Input type="number" value={mv.amount} onChange={e => setMv({ ...mv, amount: e.target.value })} />
                         </div>
                         <div>
-                          <Label className="text-xs">Paid to / Collected by / Bank</Label>
-                          <Input value={mv.recipient} onChange={e => setMv({ ...mv, recipient: e.target.value })} placeholder="e.g. Mr Moyo (Admin) or CBZ Bank" />
+                          <Label className="text-xs">
+                            {mv.movement_type === "cash_in" ? "Received from (payer / source)" : "Paid to / Collected by / Bank"}
+                          </Label>
+                          <Input
+                            value={mv.recipient}
+                            onChange={e => setMv({ ...mv, recipient: e.target.value })}
+                            placeholder={mv.movement_type === "cash_in" ? "e.g. Mrs Ncube (Admin float) or Head Office" : "e.g. Mr Moyo (Admin) or CBZ Bank"}
+                          />
+
                         </div>
                         <div>
                           <Label className="text-xs">Reason</Label>
