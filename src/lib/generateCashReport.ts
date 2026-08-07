@@ -393,18 +393,143 @@ const amountInWords = (n: number) => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
-export const generateMovementVoucher = async (d: MovementVoucherData) => {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const pw = 210;
-  const margin = 16;
+const TW = 80; // 80mm thermal roll
+const TM = 4;
+
+const renderVoucherThermal = async (
+  doc: jsPDF,
+  d: MovementVoucherData,
+  logo: HTMLImageElement | null,
+) => {
+  const cw = TW - TM * 2;
+  const cx = TW / 2;
   const cur = d.currency || "USD";
   const money = (n: number) => `${cur} ${Number(n || 0).toFixed(2)}`;
-  let y = 14;
+  let y = 5;
 
-  doc.setDrawColor(...BLUE);
-  doc.setLineWidth(0.6);
-  doc.rect(8, 8, pw - 16, 160);
+  const dashed = (yPos: number) => {
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.1);
+    for (let x = TM; x < TW - TM; x += 2) doc.line(x, yPos, Math.min(x + 1, TW - TM), yPos);
+  };
 
+  const centered = (text: string, size: number, style: "normal" | "bold" = "normal", gap = 3.6) => {
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    doc.setTextColor(0);
+    (doc.splitTextToSize(text, cw) as string[]).forEach((line) => {
+      doc.text(line, cx, y, { align: "center" });
+      y += gap;
+    });
+  };
+
+  const row = (label: string, value: string) => {
+    const valueX = 26;
+    const lines = doc.splitTextToSize(value || "-", TW - valueX - TM) as string[];
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(80);
+    doc.text(label, TM, y);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0);
+    lines.forEach((line, i) => doc.text(line, TW - TM, y + i * 3.4, { align: "right" }));
+    y += Math.max(4.2, lines.length * 3.4);
+  };
+
+  if (logo) {
+    doc.addImage(logo, "PNG", cx - 8, y, 16, 16);
+    y += 18;
+  }
+
+  centered("PROGRESS CHRISTIAN CENTRE", 9, "bold", 4);
+  centered("11729 Mkoba 14, Gweru, Zimbabwe", 6.2, "normal", 3.2);
+  centered("Tel: +263 77 400 0143", 6.2, "normal", 3.2);
+  y += 1;
+
+  dashed(y);
+  y += 4;
+  centered(d.kind === "in" ? "OFFICIAL CASH RECEIPT" : "CASH PAYMENT RECEIPT", 9, "bold", 4.4);
+  dashed(y);
+  y += 4;
+
+  row("Receipt No:", d.voucherNo);
+  row("Date/Time:", d.dateTime);
+  row("Business Date:", d.businessDate);
+  row("Category:", d.typeLabel);
+  row("Issued By:", d.issuedBy || "—");
+  row("Received By:", d.receivedBy || "—");
+  if (d.reference) row("Reference:", d.reference);
+  if (d.reason) row("Reason:", d.reason);
+
+  y += 1;
+  dashed(y);
+  y += 4.5;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(0);
+  doc.text(d.kind === "in" ? "AMOUNT RECEIVED" : "AMOUNT PAID OUT", TM, y);
+  doc.setFontSize(11);
+  doc.text(money(d.amount), TW - TM, y, { align: "right" });
+  y += 5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.setTextColor(70);
+  (doc.splitTextToSize(`${cur} ${amountInWords(d.amount)}`, cw) as string[]).forEach((line) => {
+    doc.text(line, cx, y, { align: "center" });
+    y += 3;
+  });
+
+  y += 1.5;
+  dashed(y);
+  y += 5;
+
+  // Stamp box
+  const stampW = 34;
+  const stampH = 20;
+  doc.setDrawColor(150);
+  doc.setLineWidth(0.3);
+  doc.setLineDashPattern([1.2, 1.2], 0);
+  doc.rect(cx - stampW / 2, y, stampW, stampH);
+  doc.setLineDashPattern([], 0);
+  doc.setFontSize(6);
+  doc.setTextColor(150);
+  doc.text("OFFICIAL STAMP", cx, y + stampH / 2 + 1, { align: "center" });
+  y += stampH + 7;
+
+  // Signature lines
+  doc.setDrawColor(120);
+  doc.setLineWidth(0.2);
+  [["Issued By", d.issuedBy], ["Received By", d.receivedBy]].forEach(([label, name]) => {
+    doc.line(TM, y, TW - TM, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    doc.setTextColor(80);
+    doc.text(`${label}: ${name || ""}`, TM, y + 3.2);
+    doc.text("Signature & Date", TW - TM, y + 3.2, { align: "right" });
+    y += 10;
+  });
+
+  dashed(y);
+  y += 4;
+  doc.setFontSize(5.5);
+  doc.setTextColor(120);
+  doc.text(`Generated ${new Date().toLocaleString()}`, cx, y, { align: "center" });
+  y += 3;
+  doc.text("Progress Christian Centre Accounts", cx, y, { align: "center" });
+  y += 3;
+
+  return y;
+};
+
+export const generateMovementVoucher = async (
+  d: MovementVoucherData,
+  mode: "save" | "print" = "print",
+) => {
+  const printWindow = mode === "print" ? window.open("", "_blank") : null;
+
+  let logo: HTMLImageElement | null = null;
   try {
     const logoModule = await import("@/assets/pcc-logo.png");
     const img = new Image();
@@ -414,88 +539,45 @@ export const generateMovementVoucher = async (d: MovementVoucherData) => {
       img.onerror = () => reject();
       img.src = logoModule.default;
     });
-    doc.addImage(img, "PNG", margin, y, 20, 20);
+    logo = img;
   } catch {}
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(...PRIMARY);
-  doc.text("PROGRESS CHRISTIAN CENTRE", margin + 24, y + 6);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(80, 80, 80);
-  doc.text("11729 Mkoba 14, Gweru, Zimbabwe", margin + 24, y + 11);
-  doc.text("Tel: +263 77 400 0143  |  www.progresscentresys.com", margin + 24, y + 15);
-  y += 24;
+  const measuring = new jsPDF({ unit: "mm", format: [TW, 500] });
+  const measured = await renderVoucherThermal(measuring, d, logo);
+  const height = Math.max(120, Math.ceil(measured + 8));
+  const doc = new jsPDF({ unit: "mm", format: [TW, height] });
+  await renderVoucherThermal(doc, d, logo);
 
-  doc.setFillColor(...BLUE);
-  doc.rect(margin, y, pw - 2 * margin, 9, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text(d.kind === "in" ? "OFFICIAL CASH RECEIPT" : "CASH PAYMENT RECEIPT", pw / 2, y + 6, { align: "center" });
-  y += 13;
+  const fileName = `${d.kind === "in" ? "Cash_Received" : "Cash_Payment"}_Receipt_${d.voucherNo}.pdf`;
 
-  autoTable(doc, {
-    startY: y,
-    margin: { left: margin, right: margin },
-    body: [
-      ["Receipt No.", d.voucherNo, "Date & Time", d.dateTime],
-      ["Business Date", d.businessDate, "Category", d.typeLabel],
-      ["Issued By", d.issuedBy || "—", "Received By", d.receivedBy || "—"],
-      ["Reference", d.reference || "—", "Amount", money(d.amount)],
-      [{ content: "Reason / Purpose", styles: { fontStyle: "bold" as const, fillColor: [240, 245, 250] as [number, number, number] } }, { content: d.reason || "—", colSpan: 3 }],
-      [{ content: "Amount in words", styles: { fontStyle: "bold" as const, fillColor: [240, 245, 250] as [number, number, number] } }, { content: `${cur} ${amountInWords(d.amount)}`, colSpan: 3 }],
-    ],
-    theme: "grid",
-    styles: { fontSize: 9.5, cellPadding: 3, lineColor: [210, 210, 210], textColor: [30, 30, 30] },
-    columnStyles: {
-      0: { fontStyle: "bold", fillColor: [240, 245, 250], cellWidth: 34 },
-      2: { fontStyle: "bold", fillColor: [240, 245, 250], cellWidth: 34 },
-    },
-  });
-  // @ts-ignore
-  y = doc.lastAutoTable.finalY + 10;
+  if (mode !== "print") {
+    doc.save(fileName);
+    return;
+  }
 
-  doc.setFillColor(240, 245, 250);
-  doc.rect(margin, y, pw - 2 * margin, 14, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(...PRIMARY);
-  doc.text(`${d.kind === "in" ? "AMOUNT RECEIVED" : "AMOUNT PAID OUT"}: ${money(d.amount)}`, pw / 2, y + 9, { align: "center" });
-  y += 22;
-
-  // Official stamp box
-  const stampW = 56;
-  const stampH = 34;
-  const stampX = pw - margin - stampW;
-  doc.setDrawColor(160, 160, 160);
-  doc.setLineWidth(0.4);
-  doc.setLineDashPattern([1.5, 1.5], 0);
-  doc.rect(stampX, y, stampW, stampH);
-  doc.setLineDashPattern([], 0);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor(150, 150, 150);
-  doc.text("OFFICIAL STAMP", stampX + stampW / 2, y + stampH / 2 + 1, { align: "center" });
-
-  const sigY = y + stampH - 4;
-  const colW = (pw - 2 * margin - stampW - 6) / 2;
-  [`Issued By: ${d.issuedBy || ""}`, `Received By: ${d.receivedBy || ""}`].forEach((label, i) => {
-    const x = margin + i * colW;
-    doc.setDrawColor(120, 120, 120);
-    doc.line(x, sigY, x + colW - 8, sigY);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(80, 80, 80);
-    doc.text(label, x, sigY + 4.5);
-    doc.text("Signature & Date", x, sigY + 9);
-  });
-  y = sigY;
-
-  doc.setFontSize(7.5);
-  doc.setTextColor(120, 120, 120);
-  doc.text(`Generated ${new Date().toLocaleString()} • Progress Christian Centre Accounts`, pw / 2, 287, { align: "center" });
-
-  doc.save(`${d.kind === "in" ? "Cash_Received" : "Cash_Payment"}_Receipt_${d.voucherNo}.pdf`);
+  doc.autoPrint();
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const target = printWindow || window.open(url, "_blank");
+  if (!target) {
+    URL.revokeObjectURL(url);
+    doc.save(fileName);
+    return;
+  }
+  if (printWindow) target.location.href = url;
+  let started = false;
+  const startPrint = () => {
+    if (started) return;
+    started = true;
+    target.focus();
+    target.print();
+  };
+  target.onload = () => window.setTimeout(startPrint, 350);
+  target.onafterprint = () => {
+    target.close();
+    URL.revokeObjectURL(url);
+  };
+  window.setTimeout(startPrint, 900);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
+
