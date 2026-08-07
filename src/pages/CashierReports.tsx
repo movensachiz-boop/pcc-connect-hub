@@ -607,7 +607,12 @@ export default function CashierReports() {
                         <TableCell>{timeOf(m.occurred_at)}</TableCell>
                         <TableCell>{m.cashier_name}</TableCell>
                         <TableCell>{typeLabel(m.movement_type)}</TableCell>
-                        <TableCell>{m.recipient || "—"}</TableCell>
+                        <TableCell>
+                          {m.recipient
+                            ? `${isOutflow(m.movement_type) ? "To: " : "From: "}${m.recipient}`
+                            : "—"}
+                        </TableCell>
+
                         <TableCell className="max-w-[240px] truncate">{m.reason || "—"}</TableCell>
                         <TableCell className={`text-right font-semibold ${isOutflow(m.movement_type) ? "text-destructive" : "text-success"}`}>
                           {isOutflow(m.movement_type) ? "-" : "+"}US${Number(m.amount).toFixed(2)}
