@@ -275,7 +275,8 @@ export default function CashierReports() {
     const cashIns = sessMoves.filter(m => !isOutflow(m.movement_type));
     cashIns.forEach(m => receipts.push({
       time: timeOf(m.occurred_at), reference: m.reference || "—",
-      description: m.reason || "Cash injection", method: "Cash", amount: Number(m.amount), source: "Fees",
+      description: `${m.recipient ? `Received from ${m.recipient}` : "Cash injection"}${m.reason ? ` — ${m.reason}` : ""}`,
+      method: "Cash", amount: Number(m.amount), source: "Fees",
     }));
 
     const outflows: CashOutflow[] = sessMoves.filter(m => isOutflow(m.movement_type)).map(m => ({
@@ -479,8 +480,15 @@ export default function CashierReports() {
                           <Input type="number" value={mv.amount} onChange={e => setMv({ ...mv, amount: e.target.value })} />
                         </div>
                         <div>
-                          <Label className="text-xs">Paid to / Collected by / Bank</Label>
-                          <Input value={mv.recipient} onChange={e => setMv({ ...mv, recipient: e.target.value })} placeholder="e.g. Mr Moyo (Admin) or CBZ Bank" />
+                          <Label className="text-xs">
+                            {mv.movement_type === "cash_in" ? "Received from (payer / source)" : "Paid to / Collected by / Bank"}
+                          </Label>
+                          <Input
+                            value={mv.recipient}
+                            onChange={e => setMv({ ...mv, recipient: e.target.value })}
+                            placeholder={mv.movement_type === "cash_in" ? "e.g. Mrs Ncube (Admin float) or Head Office" : "e.g. Mr Moyo (Admin) or CBZ Bank"}
+                          />
+
                         </div>
                         <div>
                           <Label className="text-xs">Reason</Label>
@@ -584,7 +592,7 @@ export default function CashierReports() {
                       <TableHead>Time</TableHead>
                       <TableHead>Cashier</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>To / By</TableHead>
+                      <TableHead>Received from / Paid to</TableHead>
                       <TableHead>Reason</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead className="text-right">Receipt</TableHead>
@@ -599,7 +607,12 @@ export default function CashierReports() {
                         <TableCell>{timeOf(m.occurred_at)}</TableCell>
                         <TableCell>{m.cashier_name}</TableCell>
                         <TableCell>{typeLabel(m.movement_type)}</TableCell>
-                        <TableCell>{m.recipient || "—"}</TableCell>
+                        <TableCell>
+                          {m.recipient
+                            ? `${isOutflow(m.movement_type) ? "To: " : "From: "}${m.recipient}`
+                            : "—"}
+                        </TableCell>
+
                         <TableCell className="max-w-[240px] truncate">{m.reason || "—"}</TableCell>
                         <TableCell className={`text-right font-semibold ${isOutflow(m.movement_type) ? "text-destructive" : "text-success"}`}>
                           {isOutflow(m.movement_type) ? "-" : "+"}US${Number(m.amount).toFixed(2)}
