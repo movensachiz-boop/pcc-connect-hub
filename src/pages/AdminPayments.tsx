@@ -488,7 +488,7 @@ const AdminPayments = () => {
       amount: parseFloat(manualAmount),
       method: manualMethod || "Bank Deposit",
       status: "paid",
-      paynow_reference: manualRef || null,
+      paynow_reference: refClean || null,
       description: "Deposit slip payment",
       deposit_slip_url: depositSlipUrl,
       bank_name: scannedData?.bank_name || null,
@@ -497,7 +497,15 @@ const AdminPayments = () => {
     }).select().single();
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      const dup = (error as { code?: string }).code === "23505";
+      toast({
+        title: dup ? "Duplicate reference — payment blocked" : "Error",
+        description: dup
+          ? `Reference ${refClean} already exists on another payment. Recording it again is flagged as a possible fraudulent duplicate.`
+          : error.message,
+        variant: "destructive",
+      });
+
     } else {
       // Send SMS notification to guardian
       const student = students.find(s => s.id === studentId);
