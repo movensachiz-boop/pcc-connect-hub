@@ -638,7 +638,11 @@ export default function CashierReports() {
                               <Button size="sm" variant="outline" className="gap-1" onClick={() => printMovement(m)}>
                                 <Printer size={14} /> Print
                               </Button>
+                              <Button size="sm" variant="ghost" className="ml-1 text-destructive" onClick={() => deleteMovement(m)} title="Delete record">
+                                <Trash2 size={14} />
+                              </Button>
                             </TableCell>
+
                           </TableRow>
                         ))}
                       </TableBody>
