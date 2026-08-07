@@ -1,0 +1,1 @@
+CREATE POLICY "Admins delete sales" ON public.inventory_sales FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'owner') OR public.has_role(auth.uid(), 'developer'));
