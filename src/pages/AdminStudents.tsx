@@ -58,7 +58,7 @@ const AdminStudents = () => {
   const [search, setSearch] = useState("");
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [terms, setTerms] = useState<{ id: string; name: string; is_current: boolean }[]>([]);
-  const [studentTermId, setStudentTermId] = useState<string>("__all__");
+  const [studentTermId, setStudentTermId] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -211,10 +211,18 @@ const AdminStudents = () => {
         .from("academic_terms")
         .select("id, name, is_current")
         .order("start_date", { ascending: false });
-      if (data) setTerms(data as any);
+      if (data && data.length) {
+        setTerms(data as any);
+        // Default to the current term so each term's fees & payments stay separate
+        const active = (data as any[]).find((t) => t.is_current) || data[0];
+        setStudentTermId(active.id);
+        fetchStudents(active.id);
+      } else {
+        setStudentTermId("__all__");
+        fetchStudents(null);
+      }
     };
     loadTerms();
-    fetchStudents(null);
   }, []);
 
   useEffect(() => {
