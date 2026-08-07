@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { titleCaseName } from "@/lib/normalize";
 import { generateMovementVoucher } from "@/lib/generateCashReport";
+import { saveOrQueue } from "@/lib/offlineQueue";
+
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 
 const OUT_TYPES = [
@@ -48,7 +50,7 @@ export default function MoneyMovementDialog({ onSaved }: { onSaved?: () => void 
       .eq("status", "open")
       .maybeSingle();
 
-    const { data, error } = await supabase.from("cash_movements").insert({
+    const row = {
       session_id: sess?.id ?? null,
       cashier_user_id: user?.id ?? null,
       cashier_name: label,
@@ -58,12 +60,25 @@ export default function MoneyMovementDialog({ onSaved }: { onSaved?: () => void 
       recipient: form.recipient || null,
       reason: form.reason || null,
       reference: form.reference || null,
-    }).select().single();
+    };
+    const res = await saveOrQueue("cash_movements", row, `${form.movement_type} $${amount}`);
     setSaving(false);
-    if (error) return toast({ title: "Could not record", description: error.message, variant: "destructive" });
+    if (res.error) return toast({ title: "Could not record", description: res.error.message, variant: "destructive" });
+
+    const data = (res.data ?? {
+      id: `local-${Date.now()}`,
+      reference: form.reference || null,
+      occurred_at: new Date().toISOString(),
+      business_date: date,
+    }) as { id: string; reference: string | null; occurred_at: string; business_date: string };
 
     setKind(null);
-    toast({ title: "Recorded", description: "Receipt sent to the printer." });
+    toast({
+      title: res.queued ? "Saved on this device" : "Recorded",
+      description: res.queued
+        ? "No internet — it will upload to the cloud automatically once you're back online."
+        : "Receipt sent to the printer.",
+    });
     const out = form.movement_type !== "cash_in";
     const typeLabel = out ? (OUT_TYPES.find(t => t.value === form.movement_type)?.label || form.movement_type) : IN_TYPE.label;
     await generateMovementVoucher({
@@ -78,6 +93,7 @@ export default function MoneyMovementDialog({ onSaved }: { onSaved?: () => void 
       reason: form.reason || null,
       reference: form.reference || null,
     });
+
     onSaved?.();
   };
 

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activityLog";
+import OfflineSyncBadge from "@/components/OfflineSyncBadge";
+
 import {
   LayoutDashboard, Users, Receipt, Bell, FileText, Settings,
   LogOut, Menu, X, BookOpen, CalendarDays, ChevronRight, GraduationCap, School, Calendar, ClipboardList, HelpCircle, ShieldCheck, Package, ShoppingBag, ShoppingCart, PenSquare, Sun, Wallet
@@ -183,11 +185,13 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             <h1 className="text-lg font-bold text-foreground capitalize">{role} Portal</h1>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <OfflineSyncBadge />
             <Button variant="ghost" size="icon" className="relative rounded-full">
               <Bell size={18} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive ring-2 ring-card" />
             </Button>
           </div>
+
         </header>
         <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
           <div className="animate-fade-in">

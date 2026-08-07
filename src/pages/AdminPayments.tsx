@@ -21,6 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import BulkPaymentDialog from "@/components/BulkPaymentDialog";
 import PaymentsBackupPanel from "@/components/PaymentsBackupPanel";
+import { saveOrQueue } from "@/lib/offlineQueue";
+
 
 interface PaymentRow {
   id: string;
@@ -483,7 +485,7 @@ const AdminPayments = () => {
       }
     }
 
-    const { data: paymentData, error } = await supabase.from("payments").insert({
+    const res = await saveOrQueue("payments", {
       student_profile_id: studentId,
       amount: parseFloat(manualAmount),
       method: manualMethod || "Bank Deposit",
@@ -494,10 +496,12 @@ const AdminPayments = () => {
       bank_name: scannedData?.bank_name || null,
       swift_code: scannedData?.swift_code || null,
       transaction_id_format: scannedData?.transaction_id_format || null,
-    }).select().single();
+    }, `Payment $${manualAmount}`);
+    const paymentData = res.data as { receipt_number?: string } | undefined;
+    const error = res.error;
 
     if (error) {
-      const dup = (error as { code?: string }).code === "23505";
+      const dup = error.code === "23505";
       toast({
         title: dup ? "Duplicate reference — payment blocked" : "Error",
         description: dup
@@ -507,6 +511,7 @@ const AdminPayments = () => {
       });
 
     } else {
+
       // Send SMS notification to guardian
       const student = students.find(s => s.id === studentId);
       if (student?.guardian_phone) {
@@ -525,7 +530,13 @@ const AdminPayments = () => {
           // Payment saved, notification failed silently
         }
       }
-      toast({ title: "Payment Recorded", description: "Payment saved successfully." });
+      toast({
+        title: res.queued ? "Saved on this device" : "Payment Recorded",
+        description: res.queued
+          ? "No internet — this payment will upload to the cloud automatically once you're back online."
+          : "Payment saved successfully.",
+      });
+
       setConfirmDialogOpen(false);
       setScannedData(null);
       setSlipFile(null);
