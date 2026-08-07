@@ -15,10 +15,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { titleCaseName } from "@/lib/normalize";
 import {
-  generateCashReport, generatePeriodCashReport, generateInventoryReport,
+  generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher,
   CashTxn, CashOutflow, PeriodRow, InventoryReportRow,
 } from "@/lib/generateCashReport";
-import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package } from "lucide-react";
+import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer } from "lucide-react";
 
 interface Session {
   id: string;
