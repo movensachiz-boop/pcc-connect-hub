@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { titleCaseName } from "@/lib/normalize";
 import { generateMovementVoucher } from "@/lib/generateCashReport";
+import { saveOrQueue } from "@/lib/offlineQueue";
+
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 
 const OUT_TYPES = [
