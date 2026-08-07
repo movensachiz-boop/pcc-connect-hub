@@ -90,10 +90,17 @@ const StudentDashboard = () => {
         }
       }
 
+      // Current term (payments are counted per term so terms stay separate)
+      const { data: curTerm } = await supabase
+        .from("academic_terms")
+        .select("id")
+        .eq("is_current", true)
+        .maybeSingle();
+
       // Load payments
       const { data: paymentData } = await supabase
         .from("payments")
-        .select("id, receipt_number, created_at, amount, method, status")
+        .select("id, receipt_number, created_at, amount, method, status, term_id")
         .eq("student_profile_id", prof.id)
         .order("created_at", { ascending: false })
         .limit(10);
@@ -102,6 +109,7 @@ const StudentDashboard = () => {
         setPayments(paymentData);
         const paid = paymentData
           .filter((p: any) => p.status === "paid" || p.status === "completed")
+          .filter((p: any) => (curTerm?.id ? p.term_id === curTerm.id : true))
           .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
         setTotalPaid(paid);
       }
