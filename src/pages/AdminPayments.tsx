@@ -483,7 +483,7 @@ const AdminPayments = () => {
       }
     }
 
-    const { data: paymentData, error } = await supabase.from("payments").insert({
+    const res = await saveOrQueue("payments", {
       student_profile_id: studentId,
       amount: parseFloat(manualAmount),
       method: manualMethod || "Bank Deposit",
@@ -494,10 +494,12 @@ const AdminPayments = () => {
       bank_name: scannedData?.bank_name || null,
       swift_code: scannedData?.swift_code || null,
       transaction_id_format: scannedData?.transaction_id_format || null,
-    }).select().single();
+    }, `Payment $${manualAmount}`);
+    const paymentData = res.data as { receipt_number?: string } | undefined;
+    const error = res.error;
 
     if (error) {
-      const dup = (error as { code?: string }).code === "23505";
+      const dup = error.code === "23505";
       toast({
         title: dup ? "Duplicate reference — payment blocked" : "Error",
         description: dup
@@ -507,6 +509,7 @@ const AdminPayments = () => {
       });
 
     } else {
+
       // Send SMS notification to guardian
       const student = students.find(s => s.id === studentId);
       if (student?.guardian_phone) {
