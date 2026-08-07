@@ -1178,6 +1178,7 @@ const AdminPayments = () => {
                       <SelectItem value="Mobile Money">Mobile Money</SelectItem>
                       <SelectItem value="Cash">Cash</SelectItem>
                       <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Swipe">Swipe</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1238,6 +1239,7 @@ const AdminPayments = () => {
                   <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                   <SelectItem value="EcoCash">EcoCash</SelectItem>
                   <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                  <SelectItem value="Swipe">Swipe</SelectItem>
                   <SelectItem value="Paynow">Paynow</SelectItem>
                 </SelectContent>
               </Select>
