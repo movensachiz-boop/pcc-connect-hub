@@ -655,9 +655,10 @@ const AdminPayments = () => {
 
 
             <Button variant="outline" onClick={() => {
-              setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
+              setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Bank Deposit", reference_number: "" });
               setManualAmount("");
-              setManualMethod("Cash");
+              setManualMethod("Bank Deposit");
+
               setManualRef("");
               setSelectedStudentId("");
               setStudentSearch("");
