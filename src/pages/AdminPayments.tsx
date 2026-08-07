@@ -128,9 +128,11 @@ const AdminPayments = () => {
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [manualAmount, setManualAmount] = useState("");
-  const [manualMethod, setManualMethod] = useState("");
+  const [manualMethod, setManualMethod] = useState("Bank Deposit");
   const [manualRef, setManualRef] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
+
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [patternWarnings, setPatternWarnings] = useState<string[]>([]);
   const [quickRegister, setQuickRegister] = useState(false);
