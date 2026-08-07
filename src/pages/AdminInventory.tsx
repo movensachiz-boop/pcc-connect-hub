@@ -246,7 +246,9 @@ export default function AdminInventory() {
                             <TableCell className="text-right">
                               <Button size="sm" variant="ghost" onClick={() => reprintSale(s)} title="A4 PDF"><ReceiptIcon size={14} /></Button>
                               <Button size="sm" variant="ghost" onClick={() => reprintSale(s, true)} title="80mm thermal"><Printer size={14} /></Button>
+                              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteSale(s)} title="Delete sale"><Trash2 size={14} /></Button>
                             </TableCell>
+
                           </TableRow>
                         );
                       })}
