@@ -506,7 +506,10 @@ const renderVoucherThermal = async (
   // Signature lines
   doc.setDrawColor(120);
   doc.setLineWidth(0.2);
-  [["Issued By", d.issuedBy], ["Received By", d.receivedBy]].forEach(([label, name]) => {
+  (d.kind === "in"
+    ? [["Received From", d.issuedBy], ["Received By (Cashier)", d.receivedBy]]
+    : [["Issued By (Cashier)", d.issuedBy], ["Paid To", d.receivedBy]]
+  ).forEach(([label, name]) => {
     doc.line(TM, y, TW - TM, y);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6);
