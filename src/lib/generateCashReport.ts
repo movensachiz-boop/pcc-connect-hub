@@ -362,3 +362,124 @@ export const generateInventoryReport = async (
 
   doc.save(`Inventory_Report_${periodLabel.replace(/[^\w]+/g, "_")}.pdf`);
 };
+
+export interface MovementVoucherData {
+  voucherNo: string;
+  kind: "in" | "out";
+  typeLabel: string;
+  amount: number;
+  currency?: string;
+  dateTime: string;
+  issuedBy: string;
+  receivedBy: string;
+  reason?: string | null;
+  reference?: string | null;
+  businessDate: string;
+}
+
+const amountInWords = (n: number) => {
+  const ones = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  const tens = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+  const conv = (num: number): string => {
+    if (num < 20) return ones[num];
+    if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? `-${ones[num % 10]}` : "");
+    if (num < 1000) return `${ones[Math.floor(num / 100)]} hundred${num % 100 ? ` and ${conv(num % 100)}` : ""}`;
+    if (num < 1000000) return `${conv(Math.floor(num / 1000))} thousand${num % 1000 ? ` ${conv(num % 1000)}` : ""}`;
+    return `${conv(Math.floor(num / 1000000))} million${num % 1000000 ? ` ${conv(num % 1000000)}` : ""}`;
+  };
+  const whole = Math.floor(Math.abs(n));
+  const cents = Math.round((Math.abs(n) - whole) * 100);
+  const s = `${conv(whole)}${cents ? ` and ${cents}/100` : ""} only`;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
+export const generateMovementVoucher = async (d: MovementVoucherData) => {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pw = 210;
+  const margin = 16;
+  const cur = d.currency || "USD";
+  const money = (n: number) => `${cur} ${Number(n || 0).toFixed(2)}`;
+  let y = 14;
+
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(0.6);
+  doc.rect(8, 8, pw - 16, 160);
+
+  try {
+    const logoModule = await import("@/assets/pcc-logo.png");
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = logoModule.default;
+    });
+    doc.addImage(img, "PNG", margin, y, 20, 20);
+  } catch {}
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...PRIMARY);
+  doc.text("PROGRESS CHRISTIAN CENTRE", margin + 24, y + 6);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text("11729 Mkoba 14, Gweru, Zimbabwe", margin + 24, y + 11);
+  doc.text("Tel: +263 77 400 0143  |  www.progresscentresys.com", margin + 24, y + 15);
+  y += 24;
+
+  doc.setFillColor(...BLUE);
+  doc.rect(margin, y, pw - 2 * margin, 9, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(d.kind === "in" ? "CASH RECEIVED VOUCHER" : "CASH PAYMENT VOUCHER", pw / 2, y + 6, { align: "center" });
+  y += 13;
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    body: [
+      ["Voucher No.", d.voucherNo, "Date & Time", d.dateTime],
+      ["Business Date", d.businessDate, "Category", d.typeLabel],
+      ["Issued By", d.issuedBy || "—", "Received By", d.receivedBy || "—"],
+      ["Reference", d.reference || "—", "Amount", money(d.amount)],
+      [{ content: "Reason / Purpose", styles: { fontStyle: "bold" as const, fillColor: [240, 245, 250] as [number, number, number] } }, { content: d.reason || "—", colSpan: 3 }],
+      [{ content: "Amount in words", styles: { fontStyle: "bold" as const, fillColor: [240, 245, 250] as [number, number, number] } }, { content: `${cur} ${amountInWords(d.amount)}`, colSpan: 3 }],
+    ],
+    theme: "grid",
+    styles: { fontSize: 9.5, cellPadding: 3, lineColor: [210, 210, 210], textColor: [30, 30, 30] },
+    columnStyles: {
+      0: { fontStyle: "bold", fillColor: [240, 245, 250], cellWidth: 34 },
+      2: { fontStyle: "bold", fillColor: [240, 245, 250], cellWidth: 34 },
+    },
+  });
+  // @ts-ignore
+  y = doc.lastAutoTable.finalY + 10;
+
+  doc.setFillColor(240, 245, 250);
+  doc.rect(margin, y, pw - 2 * margin, 14, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...PRIMARY);
+  doc.text(`${d.kind === "in" ? "AMOUNT RECEIVED" : "AMOUNT PAID OUT"}: ${money(d.amount)}`, pw / 2, y + 9, { align: "center" });
+  y += 26;
+
+  const colW = (pw - 2 * margin) / 2;
+  [`Issued By: ${d.issuedBy || ""}`, `Received By: ${d.receivedBy || ""}`].forEach((label, i) => {
+    const x = margin + i * colW + 4;
+    doc.setDrawColor(120, 120, 120);
+    doc.line(x, y, x + colW - 10, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(label, x, y + 4.5);
+    doc.text("Signature & Date", x, y + 9);
+  });
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Generated ${new Date().toLocaleString()} • Progress Christian Centre Accounts`, pw / 2, 287, { align: "center" });
+
+  doc.save(`${d.kind === "in" ? "Cash_Received" : "Cash_Payment"}_Voucher_${d.voucherNo}.pdf`);
+};
