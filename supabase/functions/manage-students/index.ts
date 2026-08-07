@@ -204,8 +204,20 @@ Deno.serve(async (req) => {
         from += batchSize;
       }
 
-      // Get fee summaries
-      const termFilter = payload?.term_id && payload.term_id !== "__all__" ? payload.term_id : null;
+      // Get fee summaries — default to the CURRENT term so terms stay separate
+      let termFilter: string | null = null;
+      if (payload?.term_id === "__all__") {
+        termFilter = null;
+      } else if (payload?.term_id) {
+        termFilter = payload.term_id;
+      } else {
+        const { data: curTerm } = await supabaseAdmin
+          .from("academic_terms")
+          .select("id")
+          .eq("is_current", true)
+          .maybeSingle();
+        termFilter = curTerm?.id ?? null;
+      }
       const { data: feeSummaries } = await supabaseAdmin.rpc("get_student_fee_summary", { _term_id: termFilter });
       const feeMap = new Map();
       if (feeSummaries) {
