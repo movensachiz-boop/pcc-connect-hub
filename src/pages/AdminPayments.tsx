@@ -403,9 +403,29 @@ const AdminPayments = () => {
     if (!selectedStudentId && (!newFirstName.trim() || !newLastName.trim())) {
       toast({ title: "Missing Info", description: "Enter student first and last name.", variant: "destructive" });
       return;
+
+    // Reference number is optional, but if given it must be unique (duplicate = suspected fraud)
+    const refClean = manualRef.trim();
+    if (refClean) {
+      const { data: dupes } = await supabase
+        .from("payments")
+        .select("receipt_number, amount, created_at, status")
+        .ilike("paynow_reference", refClean)
+        .neq("status", "voided")
+        .limit(1);
+      if (dupes && dupes.length > 0) {
+        const d = dupes[0];
+        toast({
+          title: "Duplicate reference — payment blocked",
+          description: `Reference ${refClean} was already recorded on receipt ${d.receipt_number || "—"} ($${Number(d.amount).toFixed(2)}, ${new Date(d.created_at).toLocaleDateString()}). This is flagged as a possible fraudulent duplicate.`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setSaving(true);
+
 
     // Auto-register student if none selected
     let studentId = selectedStudentId;
