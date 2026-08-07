@@ -21,6 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import BulkPaymentDialog from "@/components/BulkPaymentDialog";
 import PaymentsBackupPanel from "@/components/PaymentsBackupPanel";
+import { saveOrQueue } from "@/lib/offlineQueue";
+
 
 interface PaymentRow {
   id: string;
