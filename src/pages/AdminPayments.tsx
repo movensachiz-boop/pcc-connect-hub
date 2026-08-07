@@ -534,8 +534,26 @@ const AdminPayments = () => {
         title: res.queued ? "Saved on this device" : "Payment Recorded",
         description: res.queued
           ? "No internet — this payment will upload to the cloud automatically once you're back online."
-          : "Payment saved successfully.",
+          : "Payment saved — printing thermal receipt.",
       });
+
+      // Auto-print thermal receipt
+      try {
+        const saved = res.data as { id?: string; receipt_number?: string; verification_hash?: string } | undefined;
+        generateThermalReceipt({
+          receiptNo: saved?.receipt_number || saved?.id?.slice(0, 12) || `TMP-${Date.now().toString().slice(-8)}`,
+          studentName: student ? titleCaseName(`${student.first_name} ${student.last_name}`) : "Student",
+          regNo: student?.registration_number || "N/A",
+          studentClass: student ? formatClass(student) : undefined,
+          date: new Date().toLocaleDateString(),
+          amount: `$${parseFloat(manualAmount).toFixed(2)}`,
+          method: manualMethod || "Bank Deposit",
+          description: "Deposit slip payment",
+          verificationHash: saved?.verification_hash || undefined,
+        }, "print");
+      } catch {
+        // printing failed silently
+      }
 
       setConfirmDialogOpen(false);
       setScannedData(null);
@@ -1178,6 +1196,7 @@ const AdminPayments = () => {
                       <SelectItem value="Mobile Money">Mobile Money</SelectItem>
                       <SelectItem value="Cash">Cash</SelectItem>
                       <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Swipe">Swipe</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1238,6 +1257,7 @@ const AdminPayments = () => {
                   <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                   <SelectItem value="EcoCash">EcoCash</SelectItem>
                   <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                  <SelectItem value="Swipe">Swipe</SelectItem>
                   <SelectItem value="Paynow">Paynow</SelectItem>
                 </SelectContent>
               </Select>
