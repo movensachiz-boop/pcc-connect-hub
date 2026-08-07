@@ -582,54 +582,64 @@ export default function CashierReports() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="movements">
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Cashier</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Received from / Paid to</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">Receipt</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {movements.length === 0 ? (
-                      <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Nothing recorded yet</TableCell></TableRow>
-                    ) : movements.map(m => (
-                      <TableRow key={m.id}>
-                        <TableCell>{m.business_date}</TableCell>
-                        <TableCell>{timeOf(m.occurred_at)}</TableCell>
-                        <TableCell>{m.cashier_name}</TableCell>
-                        <TableCell>{typeLabel(m.movement_type)}</TableCell>
-                        <TableCell>
-                          {m.recipient
-                            ? `${isOutflow(m.movement_type) ? "To: " : "From: "}${m.recipient}`
-                            : "—"}
-                        </TableCell>
-
-                        <TableCell className="max-w-[240px] truncate">{m.reason || "—"}</TableCell>
-                        <TableCell className={`text-right font-semibold ${isOutflow(m.movement_type) ? "text-destructive" : "text-success"}`}>
-                          {isOutflow(m.movement_type) ? "-" : "+"}US${Number(m.amount).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button size="sm" variant="outline" className="gap-1" onClick={() => printMovement(m)}>
-                            <Printer size={14} /> Print
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+          <TabsContent value="movements" className="space-y-4">
+            {([
+              { key: "in", title: "Money In (Cash Received)", who: "Received from", empty: "No money-in recorded yet" },
+              { key: "out", title: "Money Out (Payments / Transfers)", who: "Paid to", empty: "No money-out recorded yet" },
+            ] as const).map(sec => {
+              const rows = movements.filter(m => (sec.key === "out") === isOutflow(m.movement_type));
+              const total = rows.reduce((s, m) => s + Number(m.amount || 0), 0);
+              return (
+                <Card key={sec.key}>
+                  <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-base">{sec.title}</CardTitle>
+                    <span className={`text-sm font-semibold ${sec.key === "out" ? "text-destructive" : "text-success"}`}>
+                      {sec.key === "out" ? "-" : "+"}US${total.toFixed(2)}
+                    </span>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Time</TableHead>
+                          <TableHead>Cashier</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>{sec.who}</TableHead>
+                          <TableHead>Reason</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="text-right">Receipt</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rows.length === 0 ? (
+                          <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">{sec.empty}</TableCell></TableRow>
+                        ) : rows.map(m => (
+                          <TableRow key={m.id}>
+                            <TableCell>{m.business_date}</TableCell>
+                            <TableCell>{timeOf(m.occurred_at)}</TableCell>
+                            <TableCell>{m.cashier_name}</TableCell>
+                            <TableCell>{typeLabel(m.movement_type)}</TableCell>
+                            <TableCell>{m.recipient || "—"}</TableCell>
+                            <TableCell className="max-w-[240px] truncate">{m.reason || "—"}</TableCell>
+                            <TableCell className={`text-right font-semibold ${sec.key === "out" ? "text-destructive" : "text-success"}`}>
+                              {sec.key === "out" ? "-" : "+"}US${Number(m.amount).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button size="sm" variant="outline" className="gap-1" onClick={() => printMovement(m)}>
+                                <Printer size={14} /> Print
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </TabsContent>
+
 
           <TabsContent value="summary">
             <Card>

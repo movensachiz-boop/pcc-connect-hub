@@ -456,8 +456,13 @@ const renderVoucherThermal = async (
   row("Date/Time:", d.dateTime);
   row("Business Date:", d.businessDate);
   row("Category:", d.typeLabel);
-  row("Issued By:", d.issuedBy || "—");
-  row("Received By:", d.receivedBy || "—");
+  if (d.kind === "in") {
+    row("Received From:", d.issuedBy || "—");
+    row("Received By (Cashier):", d.receivedBy || "—");
+  } else {
+    row("Issued By (Cashier):", d.issuedBy || "—");
+    row("Paid To:", d.receivedBy || "—");
+  }
   if (d.reference) row("Reference:", d.reference);
   if (d.reason) row("Reason:", d.reason);
 
@@ -501,7 +506,10 @@ const renderVoucherThermal = async (
   // Signature lines
   doc.setDrawColor(120);
   doc.setLineWidth(0.2);
-  [["Issued By", d.issuedBy], ["Received By", d.receivedBy]].forEach(([label, name]) => {
+  (d.kind === "in"
+    ? [["Received From", d.issuedBy], ["Received By (Cashier)", d.receivedBy]]
+    : [["Issued By (Cashier)", d.issuedBy], ["Paid To", d.receivedBy]]
+  ).forEach(([label, name]) => {
     doc.line(TM, y, TW - TM, y);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6);
