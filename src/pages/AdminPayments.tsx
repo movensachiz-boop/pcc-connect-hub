@@ -1083,8 +1083,20 @@ const AdminPayments = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Amount ($) *</Label>
-                  <Input value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} type="number" />
+                  <Input
+                    ref={amountRef}
+                    value={manualAmount}
+                    onChange={(e) => setManualAmount(e.target.value)}
+                    type="number"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (!saving) handleSavePayment();
+                      }
+                    }}
+                  />
                 </div>
+
                 <div className="space-y-2">
                   <Label>Method</Label>
                   <Select value={manualMethod} onValueChange={setManualMethod}>
