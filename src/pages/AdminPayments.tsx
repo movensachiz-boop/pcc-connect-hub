@@ -645,6 +645,8 @@ const AdminPayments = () => {
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
+            <MoneyMovementDialog />
+
 
             <Button variant="outline" onClick={() => {
               setScannedData({ depositor_name: "", bank_name: "", date: "", amount: "", method: "Cash", reference_number: "" });
