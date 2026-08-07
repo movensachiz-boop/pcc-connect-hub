@@ -188,6 +188,15 @@ export default function CashierReports() {
     });
   };
 
+  const deleteMovement = async (m: Movement) => {
+    if (!confirm(`Delete this ${isOutflow(m.movement_type) ? "money out" : "money in"} record of US$${Number(m.amount).toFixed(2)}? This cannot be undone.`)) return;
+    const { error } = await supabase.from("cash_movements").delete().eq("id", m.id);
+    if (error) return toast({ title: "Could not delete", description: error.message, variant: "destructive" });
+    toast({ title: "Deleted", description: "Record removed from the day's totals." });
+    load();
+  };
+
+
   const addMovement = async () => {
     const amount = Number(mv.amount);
     if (!amount || amount <= 0) return toast({ title: "Enter a valid amount", variant: "destructive" });
