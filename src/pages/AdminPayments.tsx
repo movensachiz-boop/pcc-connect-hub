@@ -1173,8 +1173,10 @@ const AdminPayments = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Reference Number</Label>
+                <Label>Reference Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
                 <Input value={manualRef} onChange={(e) => setManualRef(e.target.value)} placeholder="e.g. DEP-123456" />
+                <p className="text-xs text-muted-foreground">Leave blank for manual entries. If entered, a reference already used on another payment will be rejected as a duplicate.</p>
+
               </div>
             </>
           )}
