@@ -592,7 +592,7 @@ export default function CashierReports() {
                       <TableHead>Time</TableHead>
                       <TableHead>Cashier</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>To / By</TableHead>
+                      <TableHead>Received from / Paid to</TableHead>
                       <TableHead>Reason</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead className="text-right">Receipt</TableHead>
