@@ -530,7 +530,13 @@ const AdminPayments = () => {
           // Payment saved, notification failed silently
         }
       }
-      toast({ title: "Payment Recorded", description: "Payment saved successfully." });
+      toast({
+        title: res.queued ? "Saved on this device" : "Payment Recorded",
+        description: res.queued
+          ? "No internet — this payment will upload to the cloud automatically once you're back online."
+          : "Payment saved successfully.",
+      });
+
       setConfirmDialogOpen(false);
       setScannedData(null);
       setSlipFile(null);
