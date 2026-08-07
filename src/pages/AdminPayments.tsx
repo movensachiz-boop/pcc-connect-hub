@@ -560,14 +560,16 @@ const AdminPayments = () => {
     setRegistering(false);
   };
 
-  const filteredStudents = students
-    .filter(s => {
-      if (studentSearch === "") return true;
-      const queryTokens = lookupTokens(studentSearch);
+  const matchStudents = (query: string) => {
+    const queryTokens = lookupTokens(query);
+    return students.filter((s) => {
       const target = normalizeLookupText(`${s.first_name} ${s.last_name} ${s.registration_number} ${s.form || ""} ${s.stream || ""}`);
       return queryTokens.every((token) => target.includes(token));
-    })
-    .slice(0, 80);
+    });
+  };
+
+  const filteredStudents = (studentSearch === "" ? students : matchStudents(studentSearch)).slice(0, 80);
+
 
   const getPaidStudentList = (): PaidStudent[] => {
     const paidStatuses = ["paid", "completed", "confirmed"];
