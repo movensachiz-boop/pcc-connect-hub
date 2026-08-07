@@ -123,6 +123,14 @@ export default function AdminInventory() {
     setSaleDialog(false); setCart({}); setSaleStudent(""); fetchAll();
   };
 
+  const deleteSale = async (sale: Sale) => {
+    if (!confirm(`Delete sale ${sale.receipt_number || ""}? This cannot be undone.`)) return;
+    const { error } = await supabase.from("inventory_sales").delete().eq("id", sale.id);
+    if (error) return toast.error(error.message);
+    toast.success("Sale deleted"); fetchAll();
+  };
+
+
   const reprintSale = async (sale: Sale, thermal = false) => {
     const stu = profiles.find(p => p.id === sale.student_profile_id);
     const items: InventoryReceiptItem[] = (sale.items as any[]).map(i => ({ name: i.name, quantity: i.quantity, unit_price: i.unit_price, subtotal: i.subtotal }));
@@ -246,7 +254,9 @@ export default function AdminInventory() {
                             <TableCell className="text-right">
                               <Button size="sm" variant="ghost" onClick={() => reprintSale(s)} title="A4 PDF"><ReceiptIcon size={14} /></Button>
                               <Button size="sm" variant="ghost" onClick={() => reprintSale(s, true)} title="80mm thermal"><Printer size={14} /></Button>
+                              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteSale(s)} title="Delete sale"><Trash2 size={14} /></Button>
                             </TableCell>
+
                           </TableRow>
                         );
                       })}

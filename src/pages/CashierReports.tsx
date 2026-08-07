@@ -18,7 +18,7 @@ import {
   generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher,
   CashTxn, CashOutflow, PeriodRow, InventoryReportRow,
 } from "@/lib/generateCashReport";
-import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer } from "lucide-react";
+import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer, Trash2 } from "lucide-react";
 
 interface Session {
   id: string;
@@ -187,6 +187,15 @@ export default function CashierReports() {
       reference: m.reference,
     });
   };
+
+  const deleteMovement = async (m: Movement) => {
+    if (!confirm(`Delete this ${isOutflow(m.movement_type) ? "money out" : "money in"} record of US$${Number(m.amount).toFixed(2)}? This cannot be undone.`)) return;
+    const { error } = await supabase.from("cash_movements").delete().eq("id", m.id);
+    if (error) return toast({ title: "Could not delete", description: error.message, variant: "destructive" });
+    toast({ title: "Deleted", description: "Record removed from the day's totals." });
+    load();
+  };
+
 
   const addMovement = async () => {
     const amount = Number(mv.amount);
@@ -629,7 +638,11 @@ export default function CashierReports() {
                               <Button size="sm" variant="outline" className="gap-1" onClick={() => printMovement(m)}>
                                 <Printer size={14} /> Print
                               </Button>
+                              <Button size="sm" variant="ghost" className="ml-1 text-destructive" onClick={() => deleteMovement(m)} title="Delete record">
+                                <Trash2 size={14} />
+                              </Button>
                             </TableCell>
+
                           </TableRow>
                         ))}
                       </TableBody>
