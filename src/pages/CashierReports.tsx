@@ -587,11 +587,12 @@ export default function CashierReports() {
                       <TableHead>To / By</TableHead>
                       <TableHead>Reason</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Receipt</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {movements.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Nothing recorded yet</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Nothing recorded yet</TableCell></TableRow>
                     ) : movements.map(m => (
                       <TableRow key={m.id}>
                         <TableCell>{m.business_date}</TableCell>
@@ -603,7 +604,13 @@ export default function CashierReports() {
                         <TableCell className={`text-right font-semibold ${isOutflow(m.movement_type) ? "text-destructive" : "text-success"}`}>
                           {isOutflow(m.movement_type) ? "-" : "+"}US${Number(m.amount).toFixed(2)}
                         </TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => printMovement(m)}>
+                            <Printer size={14} /> Print
+                          </Button>
+                        </TableCell>
                       </TableRow>
+
                     ))}
                   </TableBody>
                 </Table>
