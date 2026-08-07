@@ -172,10 +172,26 @@ export default function CashierReports() {
     load();
   };
 
+  const printMovement = async (m: Movement) => {
+    const out = isOutflow(m.movement_type);
+    await generateMovementVoucher({
+      voucherNo: (m.reference || m.id).slice(0, 12).toUpperCase(),
+      kind: out ? "out" : "in",
+      typeLabel: typeLabel(m.movement_type),
+      amount: Number(m.amount),
+      dateTime: new Date(m.occurred_at).toLocaleString(),
+      businessDate: m.business_date,
+      issuedBy: out ? m.cashier_name : (m.recipient || "—"),
+      receivedBy: out ? (m.recipient || "—") : m.cashier_name,
+      reason: m.reason,
+      reference: m.reference,
+    });
+  };
+
   const addMovement = async () => {
     const amount = Number(mv.amount);
     if (!amount || amount <= 0) return toast({ title: "Enter a valid amount", variant: "destructive" });
-    const { error } = await supabase.from("cash_movements").insert({
+    const { data, error } = await supabase.from("cash_movements").insert({
       session_id: mySession?.id ?? null,
       cashier_user_id: userId,
       cashier_name: userLabel,
@@ -185,13 +201,15 @@ export default function CashierReports() {
       recipient: mv.recipient || null,
       reason: mv.reason || null,
       reference: mv.reference || null,
-    });
+    }).select().single();
     if (error) return toast({ title: "Could not record", description: error.message, variant: "destructive" });
     setMv({ movement_type: "bank_transfer", amount: "", recipient: "", reason: "", reference: "" });
     setMvOpen(false);
-    toast({ title: "Recorded", description: "Money movement added to today's records." });
+    toast({ title: "Recorded", description: "Voucher generated for this movement." });
+    if (data) await printMovement(data as any);
     load();
   };
+
 
   // Collects all receipts + outflows attributable to one session
   const collectSessionData = async (s: Session) => {
