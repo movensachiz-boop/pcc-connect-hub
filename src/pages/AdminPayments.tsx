@@ -403,6 +403,8 @@ const AdminPayments = () => {
     if (!selectedStudentId && (!newFirstName.trim() || !newLastName.trim())) {
       toast({ title: "Missing Info", description: "Enter student first and last name.", variant: "destructive" });
       return;
+    }
+
 
     // Reference number is optional, but if given it must be unique (duplicate = suspected fraud)
     const refClean = manualRef.trim();
