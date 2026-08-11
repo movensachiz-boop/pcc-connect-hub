@@ -146,28 +146,40 @@ export const generateCashReport = async (d: CashReportData) => {
   // @ts-ignore
   y = doc.lastAutoTable.finalY + 7;
 
-  // Reconciliation
-  const expected = Number(d.openingFloat || 0) + totalIn - totalOut;
+  // Reconciliation — only physical cash sits in the drawer
+  const isCash = (m: string) => /cash/i.test(m || "") && !/cashier/i.test(m || "");
+  const cashIn = d.receipts.filter((r) => isCash(r.method)).reduce((s, r) => s + Number(r.amount || 0), 0);
+  const nonCashIn = totalIn - cashIn;
+  const expected = Number(d.openingFloat || 0) + cashIn - totalOut;
   const counted = d.closingCounted == null ? null : Number(d.closingCounted);
   const variance = counted == null ? null : counted - expected;
 
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [["RECONCILIATION", "Amount"]],
+    head: [["RECONCILIATION (CASH DRAWER)", "Amount"]],
     body: [
       ["Opening float", money(d.openingFloat)],
-      ["Add: total received", money(totalIn)],
+      ["Add: cash received", money(cashIn)],
       ["Less: total disbursed / banked", `(${money(totalOut)})`],
-      ["Expected closing balance", money(expected)],
+      ["Expected cash on hand", money(expected)],
       ["Actual cash counted at close", counted == null ? "—" : money(counted)],
       ["Variance (over / short)", variance == null ? "—" : money(variance)],
+      ["Non-cash received (bank / swipe / mobile)", money(nonCashIn)],
+      ["Total received (all methods)", money(totalIn)],
     ],
     theme: "grid",
     headStyles: { fillColor: [...PRIMARY], textColor: [255, 255, 255], fontSize: 9 },
     bodyStyles: { fontSize: 9, cellPadding: 2.4 },
     columnStyles: { 0: { cellWidth: pw - 2 * margin - 45 }, 1: { halign: "right", cellWidth: 45, fontStyle: "bold" } },
+    didParseCell: (h) => {
+      if (h.section === "body" && h.row.index >= 6) {
+        h.cell.styles.textColor = [110, 110, 110];
+        h.cell.styles.fontStyle = h.column.index === 1 ? "normal" : "italic";
+      }
+    },
   });
+
   // @ts-ignore
   y = doc.lastAutoTable.finalY + 6;
 
