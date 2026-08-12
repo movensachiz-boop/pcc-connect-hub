@@ -417,8 +417,17 @@ export default function CashierReports() {
       float += Number(s.opening_float || 0);
       if (s.closing_counted != null) { counted += Number(s.closing_counted); anyCounted = true; }
     }
-    receipts.sort((a, b) => a.time.localeCompare(b.time));
-    outflows.sort((a, b) => a.time.localeCompare(b.time));
+    // A cashier can have more than one session on the same day. Each session
+    // query sees that cashier's full day, so remove repeated transactions from
+    // the combined report before calculating totals.
+    const uniqueReceipts = Array.from(new Map(receipts.map(r => [
+      `${r.source}|${r.reference}|${r.time}|${r.method}|${r.amount}`,
+      r,
+    ])).values()).sort((a, b) => a.time.localeCompare(b.time));
+    const uniqueOutflows = Array.from(new Map(outflows.map(o => [
+      `${o.reference}|${o.time}|${o.type}|${o.recipient}|${o.amount}`,
+      o,
+    ])).values()).sort((a, b) => a.time.localeCompare(b.time));
 
     const combined = {
       cashierName: cashierFilter === "all"
@@ -429,8 +438,8 @@ export default function CashierReports() {
       closedAt: undefined,
       openingFloat: float,
       closingCounted: anyCounted ? counted : null,
-      receipts,
-      outflows,
+      receipts: uniqueReceipts,
+      outflows: uniqueOutflows,
       notes: `Combined day report covering ${daySessions.length} cashier session(s).`,
     };
     if (thermal) await generateThermalCashReport(combined, "print");
