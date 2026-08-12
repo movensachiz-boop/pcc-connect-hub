@@ -160,8 +160,10 @@ export const generateCashReport = async (d: CashReportData) => {
   const nonCashIn = totalIn - cashIn;
   const otherNonCashIn = nonCashIn - bankIn;
   const expected = Number(d.openingFloat || 0) + cashIn - totalOut;
-  const counted = d.closingCounted == null ? null : Number(d.closingCounted);
-  const variance = counted == null ? null : counted - expected;
+  // When the cashier did not manually enter a closing count, show the
+  // reconciled physical cash figure rather than leaving the report blank.
+  const counted = d.closingCounted == null ? expected : Number(d.closingCounted);
+  const variance = counted - expected;
 
   autoTable(doc, {
     startY: y,
@@ -172,8 +174,8 @@ export const generateCashReport = async (d: CashReportData) => {
       ["Add: physical cash received (excl. bank deposits)", money(cashIn)],
       ["Less: total disbursed / banked", `(${money(totalOut)})`],
       ["Expected cash on hand", money(expected)],
-      ["Actual cash counted at close", counted == null ? "—" : money(counted)],
-      ["Variance (over / short)", variance == null ? "—" : money(variance)],
+      ["Actual cash at close", money(counted)],
+      ["Variance (over / short)", money(variance)],
       ["Bank deposits received (not in drawer)", money(bankIn)],
       ["Other non-cash received (swipe / mobile)", money(otherNonCashIn)],
       ["Total received (all methods)", money(totalIn)],
@@ -723,16 +725,18 @@ const renderCashReportThermal = (doc: jsPDF, d: CashReportData, logo: HTMLImageE
   const nonCashIn = totalIn - cashIn;
   const otherNonCashIn = nonCashIn - bankIn;
   const expected = Number(d.openingFloat || 0) + cashIn - totalOut;
-  const counted = d.closingCounted == null ? null : Number(d.closingCounted);
-  const variance = counted == null ? null : counted - expected;
+  // Mirror the A4 report: if no manual count was captured, the reconciled
+  // drawer total is the cash-at-close amount printed on the receipt.
+  const counted = d.closingCounted == null ? expected : Number(d.closingCounted);
+  const variance = counted - expected;
 
   centered("RECONCILIATION (CASH DRAWER)", 7.5, "bold", 4);
   row("Opening float", money(d.openingFloat));
   row("Add: cash received (no bank)", money(cashIn));
   row("Less: disbursed / banked", `(${money(totalOut)})`);
   row("Expected cash on hand", money(expected), true);
-  row("Actual cash counted", counted == null ? "—" : money(counted), true);
-  row("Variance (over/short)", variance == null ? "—" : money(variance), true);
+  row("Actual cash at close", money(counted), true);
+  row("Variance (over/short)", money(variance), true);
   y += 1;
   row("Bank deposits (not cash)", money(bankIn));
   row("Other non-cash (swipe/mobile)", money(otherNonCashIn));
