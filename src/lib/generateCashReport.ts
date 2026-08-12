@@ -811,3 +811,230 @@ export const generateThermalCashReport = async (
   window.setTimeout(startPrint, 900);
   window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
+
+// ── Shared thermal helpers for summary/accounts reports ──
+const loadThermalLogo = async (): Promise<HTMLImageElement | null> => {
+  try {
+    const logoModule = await import("@/assets/pcc-logo.png");
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = logoModule.default;
+    });
+    return img;
+  } catch {
+    return null;
+  }
+};
+
+const printThermalDoc = (doc: jsPDF, fileName: string, mode: "save" | "print", printWindow: Window | null) => {
+  if (mode !== "print") {
+    doc.save(fileName);
+    return;
+  }
+  doc.autoPrint();
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const target = printWindow || window.open(url, "_blank");
+  if (!target) {
+    URL.revokeObjectURL(url);
+    doc.save(fileName);
+    return;
+  }
+  if (printWindow) target.location.href = url;
+  let started = false;
+  const startPrint = () => {
+    if (started) return;
+    started = true;
+    target.focus();
+    target.print();
+  };
+  target.onload = () => window.setTimeout(startPrint, 350);
+  target.onafterprint = () => {
+    target.close();
+    URL.revokeObjectURL(url);
+  };
+  window.setTimeout(startPrint, 900);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+};
+
+const thermalKit = (doc: jsPDF) => {
+  const cw = TW - TM * 2;
+  const cx = TW / 2;
+  const state = { y: 5 };
+  const dashed = () => {
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.1);
+    for (let x = TM; x < TW - TM; x += 2) doc.line(x, state.y, Math.min(x + 1, TW - TM), state.y);
+    state.y += 3.5;
+  };
+  const centered = (text: string, size: number, style: "normal" | "bold" = "normal", gap = 3.4) => {
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    doc.setTextColor(0);
+    (doc.splitTextToSize(text, cw) as string[]).forEach((line) => {
+      doc.text(line, cx, state.y, { align: "center" });
+      state.y += gap;
+    });
+  };
+  const row = (label: string, value: string, bold = false) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.8);
+    doc.setTextColor(80);
+    doc.text(label, TM, state.y);
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setTextColor(0);
+    const lines = doc.splitTextToSize(value || "-", TW - 30 - TM) as string[];
+    lines.forEach((line, i) => doc.text(line, TW - TM, state.y + i * 3.2, { align: "right" }));
+    state.y += Math.max(4, lines.length * 3.2);
+  };
+  const lineItem = (left: string, right: string) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.2);
+    doc.setTextColor(40);
+    const lines = doc.splitTextToSize(left, cw - 20) as string[];
+    lines.forEach((l, i) => doc.text(l, TM, state.y + i * 2.9));
+    doc.text(right, TW - TM, state.y, { align: "right" });
+    state.y += Math.max(3.4, lines.length * 2.9);
+  };
+  const header = (logo: HTMLImageElement | null, title: string) => {
+    if (logo) {
+      doc.addImage(logo, "PNG", cx - 8, state.y, 16, 16);
+      state.y += 18;
+    }
+    centered("PROGRESS CHRISTIAN CENTRE", 9, "bold", 4);
+    centered("11729 Mkoba 14, Gweru, Zimbabwe", 6, "normal", 3);
+    centered("Tel: +263 77 400 0143", 6, "normal", 3.2);
+    dashed();
+    centered(title, 8.5, "bold", 4);
+    dashed();
+  };
+  const signatures = (labels: string[]) => {
+    state.y += 3;
+    doc.setDrawColor(120);
+    doc.setLineWidth(0.2);
+    labels.forEach((label) => {
+      doc.line(TM, state.y, TW - TM, state.y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(5.8);
+      doc.setTextColor(80);
+      doc.text(label, TM, state.y + 3);
+      doc.text("Signature & Date", TW - TM, state.y + 3, { align: "right" });
+      state.y += 9.5;
+    });
+    dashed();
+    doc.setFontSize(5.5);
+    doc.setTextColor(120);
+    doc.text(`Generated ${new Date().toLocaleString()}`, cx, state.y, { align: "center" });
+    state.y += 3;
+    doc.text("Progress Christian Centre Accounts", cx, state.y, { align: "center" });
+    state.y += 3;
+  };
+  return { state, dashed, centered, row, lineItem, header, signatures };
+};
+
+// ── 80mm thermal: cash collection summary (accounts) ──
+const renderPeriodThermal = (
+  doc: jsPDF,
+  rows: PeriodRow[],
+  fromDate: string,
+  toDate: string,
+  currency: string,
+  logo: HTMLImageElement | null,
+) => {
+  const k = thermalKit(doc);
+  const money = (n: number) => `${currency} ${Number(n || 0).toFixed(2)}`;
+  k.header(logo, "CASH COLLECTION SUMMARY");
+  k.row("Period from:", fromDate, true);
+  k.row("Period to:", toDate, true);
+  k.dashed();
+
+  const tIn = rows.reduce((s, r) => s + r.received, 0);
+  const tOut = rows.reduce((s, r) => s + r.disbursed, 0);
+
+  if (!rows.length) {
+    k.centered("No sessions in this period", 6, "normal", 3.6);
+  } else {
+    rows.forEach((r) => {
+      k.lineItem(`${r.date}  ${r.cashier}`, money(r.net));
+      k.lineItem(`   In ${money(r.received)} / Out ${money(r.disbursed)}`, "");
+    });
+  }
+  k.dashed();
+  k.row("Total received", money(tIn), true);
+  k.row("Total disbursed", `(${money(tOut)})`, true);
+  k.row("OVERALL NET", money(tIn - tOut), true);
+  k.dashed();
+  k.signatures(["Prepared By (Cashier / Accounts)", "Approved By (Administrator)"]);
+  return k.state.y;
+};
+
+export const generateThermalPeriodCashReport = async (
+  rows: PeriodRow[],
+  fromDate: string,
+  toDate: string,
+  currency = "USD",
+  mode: "save" | "print" = "print",
+) => {
+  const printWindow = mode === "print" ? window.open("", "_blank") : null;
+  const logo = await loadThermalLogo();
+  const measuring = new jsPDF({ unit: "mm", format: [TW, 3000] });
+  const measured = renderPeriodThermal(measuring, rows, fromDate, toDate, currency, logo);
+  const height = Math.max(120, Math.ceil(measured + 8));
+  const doc = new jsPDF({ unit: "mm", format: [TW, height] });
+  renderPeriodThermal(doc, rows, fromDate, toDate, currency, logo);
+  printThermalDoc(doc, `Cash_Summary_Thermal_${fromDate}_to_${toDate}.pdf`, mode, printWindow);
+};
+
+// ── 80mm thermal: inventory accounts report ──
+const renderInventoryThermal = (
+  doc: jsPDF,
+  rows: InventoryReportRow[],
+  periodLabel: string,
+  totals: { salesThisPeriod: number; priorTermSettled: number; stockValue: number },
+  currency: string,
+  logo: HTMLImageElement | null,
+) => {
+  const k = thermalKit(doc);
+  const money = (n: number) => `${currency} ${Number(n || 0).toFixed(2)}`;
+  k.header(logo, "INVENTORY ACCOUNTS REPORT");
+  k.row("Period:", periodLabel, true);
+  k.dashed();
+
+  const sold = rows.filter((r) => r.soldQty > 0);
+  k.centered("ITEMS SOLD", 7.5, "bold", 4);
+  if (!sold.length) {
+    k.centered("No sales in this period", 6, "normal", 3.6);
+  } else {
+    sold.forEach((r) => k.lineItem(`${r.name} x${r.soldQty} (${r.category})`, money(r.soldValue)));
+  }
+  k.dashed();
+  k.row("Sales this period", money(totals.salesThisPeriod), true);
+  k.row("Prior-term settled", money(totals.priorTermSettled));
+  k.row("Stock value on hand", money(totals.stockValue), true);
+  k.dashed();
+  k.centered("STOCK ON HAND", 7.5, "bold", 4);
+  rows.forEach((r) => k.lineItem(`${r.name}`, `${r.stock} @ ${money(r.price)}`));
+  k.dashed();
+  k.signatures(["Storekeeper", "Verified By (Accounts)"]);
+  return k.state.y;
+};
+
+export const generateThermalInventoryReport = async (
+  rows: InventoryReportRow[],
+  periodLabel: string,
+  totals: { salesThisPeriod: number; priorTermSettled: number; stockValue: number },
+  currency = "USD",
+  mode: "save" | "print" = "print",
+) => {
+  const printWindow = mode === "print" ? window.open("", "_blank") : null;
+  const logo = await loadThermalLogo();
+  const measuring = new jsPDF({ unit: "mm", format: [TW, 3000] });
+  const measured = renderInventoryThermal(measuring, rows, periodLabel, totals, currency, logo);
+  const height = Math.max(120, Math.ceil(measured + 8));
+  const doc = new jsPDF({ unit: "mm", format: [TW, height] });
+  renderInventoryThermal(doc, rows, periodLabel, totals, currency, logo);
+  printThermalDoc(doc, `Inventory_Report_Thermal_${periodLabel.replace(/\s+/g, "_")}.pdf`, mode, printWindow);
+};
