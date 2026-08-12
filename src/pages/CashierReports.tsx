@@ -16,6 +16,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { titleCaseName } from "@/lib/normalize";
 import {
   generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher, generateThermalCashReport,
+  generateThermalPeriodCashReport, generateThermalInventoryReport,
   CashTxn, CashOutflow, PeriodRow, InventoryReportRow,
 } from "@/lib/generateCashReport";
 import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer, Trash2 } from "lucide-react";
@@ -318,7 +319,7 @@ export default function CashierReports() {
     toast({ title: thermal ? "Thermal receipt sent to printer" : "Report downloaded", description: `${s.cashier_name} — ${s.business_date}` });
   };
 
-  const downloadPeriodReport = async () => {
+  const downloadPeriodReport = async (thermal = false) => {
     const inRange = sessions.filter(s => s.business_date >= from && s.business_date <= to);
     if (!inRange.length) return toast({ title: "No sessions in that period", variant: "destructive" });
     const rows: PeriodRow[] = [];
@@ -329,10 +330,11 @@ export default function CashierReports() {
       rows.push({ date: s.business_date, cashier: s.cashier_name, received: rec, disbursed: dis, net: rec - dis });
     }
     rows.sort((a, b) => a.date.localeCompare(b.date) || a.cashier.localeCompare(b.cashier));
-    await generatePeriodCashReport(rows, from, to);
+    if (thermal) await generateThermalPeriodCashReport(rows, from, to, "USD", "print");
+    else await generatePeriodCashReport(rows, from, to);
   };
 
-  const downloadInventoryReport = async () => {
+  const downloadInventoryReport = async (thermal = false) => {
     setInvBusy(true);
     try {
       const fromIso = new Date(`${from}T00:00:00`).toISOString();
@@ -363,7 +365,9 @@ export default function CashierReports() {
         .filter(s => /last term|previous term|arrear|carried|balance/i.test(String(s.notes || "")))
         .reduce((a, s) => a + Number(s.total_amount || 0), 0);
       const stockValue = items.reduce((a, i) => a + Number(i.price || 0) * Number(i.stock_quantity || 0), 0);
-      await generateInventoryReport(rows, `${from} to ${to}`, { salesThisPeriod, priorTermSettled, stockValue });
+      const totals = { salesThisPeriod, priorTermSettled, stockValue };
+      if (thermal) await generateThermalInventoryReport(rows, `${from} to ${to}`, totals, "USD", "print");
+      else await generateInventoryReport(rows, `${from} to ${to}`, totals);
     } finally {
       setInvBusy(false);
     }
