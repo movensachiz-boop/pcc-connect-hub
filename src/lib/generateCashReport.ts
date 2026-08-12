@@ -601,3 +601,213 @@ export const generateMovementVoucher = async (
   window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
 
+
+// ── 80mm thermal version of the daily cash & accounting report ──
+const renderCashReportThermal = (doc: jsPDF, d: CashReportData, logo: HTMLImageElement | null) => {
+  const cw = TW - TM * 2;
+  const cx = TW / 2;
+  const cur = d.currency || "USD";
+  const money = (n: number) => `${cur} ${Number(n || 0).toFixed(2)}`;
+  let y = 5;
+
+  const dashed = () => {
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.1);
+    for (let x = TM; x < TW - TM; x += 2) doc.line(x, y, Math.min(x + 1, TW - TM), y);
+    y += 3.5;
+  };
+
+  const centered = (text: string, size: number, style: "normal" | "bold" = "normal", gap = 3.4) => {
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    doc.setTextColor(0);
+    (doc.splitTextToSize(text, cw) as string[]).forEach((line) => {
+      doc.text(line, cx, y, { align: "center" });
+      y += gap;
+    });
+  };
+
+  const row = (label: string, value: string, bold = false) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.8);
+    doc.setTextColor(80);
+    doc.text(label, TM, y);
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setTextColor(0);
+    const lines = doc.splitTextToSize(value || "-", TW - 30 - TM) as string[];
+    lines.forEach((line, i) => doc.text(line, TW - TM, y + i * 3.2, { align: "right" }));
+    y += Math.max(4, lines.length * 3.2);
+  };
+
+  const lineItem = (left: string, right: string) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.2);
+    doc.setTextColor(40);
+    const lines = doc.splitTextToSize(left, cw - 20) as string[];
+    lines.forEach((l, i) => doc.text(l, TM, y + i * 2.9));
+    doc.text(right, TW - TM, y, { align: "right" });
+    y += Math.max(3.4, lines.length * 2.9);
+  };
+
+  if (logo) {
+    doc.addImage(logo, "PNG", cx - 8, y, 16, 16);
+    y += 18;
+  }
+
+  centered("PROGRESS CHRISTIAN CENTRE", 9, "bold", 4);
+  centered("11729 Mkoba 14, Gweru, Zimbabwe", 6, "normal", 3);
+  centered("Tel: +263 77 400 0143", 6, "normal", 3.2);
+  dashed();
+  centered("DAILY CASH & ACCOUNTING REPORT", 8.5, "bold", 4);
+  dashed();
+
+  row("Cashier:", d.cashierName, true);
+  row("Business Date:", d.businessDate, true);
+  row("Day Opened:", d.openedAt || "—");
+  row("Day Closed:", d.closedAt || "Still open");
+  dashed();
+
+  const totalIn = d.receipts.reduce((s, r) => s + Number(r.amount || 0), 0);
+  const totalOut = d.outflows.reduce((s, r) => s + Number(r.amount || 0), 0);
+
+  centered("A. MONEY RECEIVED", 7.5, "bold", 4);
+  if (!d.receipts.length) {
+    centered("No receipts recorded", 6, "normal", 3.4);
+  } else {
+    d.receipts.forEach((r) => lineItem(`${r.time}  ${r.description} (${r.method})`, money(r.amount)));
+  }
+  y += 0.5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(0);
+  doc.text("TOTAL RECEIVED", TM, y);
+  doc.text(money(totalIn), TW - TM, y, { align: "right" });
+  y += 4;
+  dashed();
+
+  centered("B. MONEY DISBURSED / BANKED", 7.5, "bold", 4);
+  if (!d.outflows.length) {
+    centered("No disbursements recorded", 6, "normal", 3.4);
+  } else {
+    d.outflows.forEach((o) => lineItem(`${o.time}  ${o.type} — ${o.recipient}`, money(o.amount)));
+  }
+  y += 0.5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text("TOTAL DISBURSED", TM, y);
+  doc.text(money(totalOut), TW - TM, y, { align: "right" });
+  y += 4;
+  dashed();
+
+  const isCash = (m: string) => /cash/i.test(m || "") && !/cashier/i.test(m || "");
+  const cashIn = d.receipts.filter((r) => isCash(r.method)).reduce((s, r) => s + Number(r.amount || 0), 0);
+  const nonCashIn = totalIn - cashIn;
+  const expected = Number(d.openingFloat || 0) + cashIn - totalOut;
+  const counted = d.closingCounted == null ? null : Number(d.closingCounted);
+  const variance = counted == null ? null : counted - expected;
+
+  centered("RECONCILIATION (CASH DRAWER)", 7.5, "bold", 4);
+  row("Opening float", money(d.openingFloat));
+  row("Add: cash received", money(cashIn));
+  row("Less: disbursed / banked", `(${money(totalOut)})`);
+  row("Expected cash on hand", money(expected), true);
+  row("Actual cash counted", counted == null ? "—" : money(counted), true);
+  row("Variance (over/short)", variance == null ? "—" : money(variance), true);
+  y += 1;
+  row("Non-cash received", money(nonCashIn));
+  row("Total received (all)", money(totalIn));
+  dashed();
+
+  if (d.notes) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    doc.setTextColor(70);
+    (doc.splitTextToSize(`Notes: ${d.notes}`, cw) as string[]).forEach((l) => {
+      doc.text(l, TM, y);
+      y += 3;
+    });
+    y += 1;
+    dashed();
+  }
+
+  y += 3;
+  doc.setDrawColor(120);
+  doc.setLineWidth(0.2);
+  ["Cashier (cash counted)", "Received By (transfers/cash)", "Verified By (Accounts)"].forEach((label) => {
+    doc.line(TM, y, TW - TM, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5.8);
+    doc.setTextColor(80);
+    doc.text(label, TM, y + 3);
+    doc.text("Signature & Date", TW - TM, y + 3, { align: "right" });
+    y += 9.5;
+  });
+
+  dashed();
+  doc.setFontSize(5.5);
+  doc.setTextColor(120);
+  doc.text(`Generated ${new Date().toLocaleString()}`, cx, y, { align: "center" });
+  y += 3;
+  doc.text("Progress Christian Centre Accounts", cx, y, { align: "center" });
+  y += 3;
+
+  return y;
+};
+
+export const generateThermalCashReport = async (
+  d: CashReportData,
+  mode: "save" | "print" = "print",
+) => {
+  const printWindow = mode === "print" ? window.open("", "_blank") : null;
+
+  let logo: HTMLImageElement | null = null;
+  try {
+    const logoModule = await import("@/assets/pcc-logo.png");
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = logoModule.default;
+    });
+    logo = img;
+  } catch {}
+
+  const measuring = new jsPDF({ unit: "mm", format: [TW, 2000] });
+  const measured = renderCashReportThermal(measuring, d, logo);
+  const height = Math.max(150, Math.ceil(measured + 10));
+  const doc = new jsPDF({ unit: "mm", format: [TW, height] });
+  renderCashReportThermal(doc, d, logo);
+
+  const fileName = `Cash_Report_Thermal_${d.cashierName.replace(/\s+/g, "_")}_${d.businessDate}.pdf`;
+
+  if (mode !== "print") {
+    doc.save(fileName);
+    return;
+  }
+
+  doc.autoPrint();
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const target = printWindow || window.open(url, "_blank");
+  if (!target) {
+    URL.revokeObjectURL(url);
+    doc.save(fileName);
+    return;
+  }
+  if (printWindow) target.location.href = url;
+  let started = false;
+  const startPrint = () => {
+    if (started) return;
+    started = true;
+    target.focus();
+    target.print();
+  };
+  target.onload = () => window.setTimeout(startPrint, 350);
+  target.onafterprint = () => {
+    target.close();
+    URL.revokeObjectURL(url);
+  };
+  window.setTimeout(startPrint, 900);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+};
