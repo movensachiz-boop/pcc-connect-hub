@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { titleCaseName } from "@/lib/normalize";
 import {
-  generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher,
+  generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher, generateThermalCashReport,
   CashTxn, CashOutflow, PeriodRow, InventoryReportRow,
 } from "@/lib/generateCashReport";
 import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer, Trash2 } from "lucide-react";
@@ -300,9 +300,9 @@ export default function CashierReports() {
     return { receipts, outflows };
   };
 
-  const downloadSessionReport = async (s: Session) => {
+  const downloadSessionReport = async (s: Session, thermal = false) => {
     const { receipts, outflows } = await collectSessionData(s);
-    await generateCashReport({
+    const payload = {
       cashierName: s.cashier_name,
       businessDate: s.business_date,
       openedAt: new Date(s.opened_at).toLocaleString(),
@@ -312,8 +312,10 @@ export default function CashierReports() {
       receipts,
       outflows,
       notes: s.notes || undefined,
-    });
-    toast({ title: "Report downloaded", description: `${s.cashier_name} — ${s.business_date}` });
+    };
+    if (thermal) await generateThermalCashReport(payload, "print");
+    else await generateCashReport(payload);
+    toast({ title: thermal ? "Thermal receipt sent to printer" : "Report downloaded", description: `${s.cashier_name} — ${s.business_date}` });
   };
 
   const downloadPeriodReport = async () => {
@@ -381,7 +383,7 @@ export default function CashierReports() {
   );
 
   // Combines every cashier's receipts and outflows for one day into a single PDF
-  const downloadCombinedDayReport = async () => {
+  const downloadCombinedDayReport = async (thermal = false) => {
     const date = dayFilter || today();
     let daySessions = ownSessions.filter(s => s.business_date === date &&
       (cashierFilter === "all" || s.cashier_name === cashierFilter));
@@ -414,7 +416,7 @@ export default function CashierReports() {
     receipts.sort((a, b) => a.time.localeCompare(b.time));
     outflows.sort((a, b) => a.time.localeCompare(b.time));
 
-    await generateCashReport({
+    const combined = {
       cashierName: cashierFilter === "all"
         ? `All Cashiers (${daySessions.map(s => s.cashier_name).join(", ")})`
         : cashierFilter,
@@ -426,8 +428,10 @@ export default function CashierReports() {
       receipts,
       outflows,
       notes: `Combined day report covering ${daySessions.length} cashier session(s).`,
-    });
-    toast({ title: "Combined report downloaded", description: `${date} — ${daySessions.length} session(s)` });
+    };
+    if (thermal) await generateThermalCashReport(combined, "print");
+    else await generateCashReport(combined);
+    toast({ title: thermal ? "Thermal day report sent to printer" : "Combined report downloaded", description: `${date} — ${daySessions.length} session(s)` });
   };
 
   return (
@@ -542,8 +546,11 @@ export default function CashierReports() {
                   <Input type="date" className="w-44" value={dayFilter} onChange={e => setDayFilter(e.target.value)} />
                 </div>
                 {dayFilter && <Button variant="ghost" onClick={() => setDayFilter("")}>Clear date</Button>}
-                <Button className="gap-1.5 ml-auto" onClick={downloadCombinedDayReport}>
+                <Button className="gap-1.5 ml-auto" onClick={() => downloadCombinedDayReport(false)}>
                   <FileDown size={14} /> Combined day report
+                </Button>
+                <Button variant="outline" className="gap-1.5" onClick={() => downloadCombinedDayReport(true)}>
+                  <Printer size={14} /> Thermal receipt
                 </Button>
               </CardContent>
             </Card>
@@ -581,6 +588,9 @@ export default function CashierReports() {
                         <TableCell className="text-right">
                           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => downloadSessionReport(s)}>
                             <FileDown size={14} /> PDF
+                          </Button>
+                          <Button size="sm" variant="outline" className="gap-1.5 ml-1" onClick={() => downloadSessionReport(s, true)}>
+                            <Printer size={14} /> Thermal
                           </Button>
                         </TableCell>
                       </TableRow>
