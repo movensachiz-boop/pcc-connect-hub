@@ -147,9 +147,18 @@ export const generateCashReport = async (d: CashReportData) => {
   y = doc.lastAutoTable.finalY + 7;
 
   // Reconciliation — only physical cash sits in the drawer
-  const isCash = (m: string) => /cash/i.test(m || "") && !/cashier/i.test(m || "");
+  const NON_CASH_RE = /bank|deposit|transfer|swipe|card|pos|mobile|ecocash|onemoney|innbucks|omari|paynow|rtgs|zipit|cheque|check|online/i;
+  const isCash = (m: string) => {
+    const s = (m || "").trim();
+    if (!s) return false;
+    if (NON_CASH_RE.test(s)) return false;
+    return /cash/i.test(s) && !/cashier/i.test(s);
+  };
+  const isBank = (m: string) => /bank|deposit|transfer|rtgs|cheque|check/i.test(m || "");
   const cashIn = d.receipts.filter((r) => isCash(r.method)).reduce((s, r) => s + Number(r.amount || 0), 0);
+  const bankIn = d.receipts.filter((r) => isBank(r.method)).reduce((s, r) => s + Number(r.amount || 0), 0);
   const nonCashIn = totalIn - cashIn;
+  const otherNonCashIn = nonCashIn - bankIn;
   const expected = Number(d.openingFloat || 0) + cashIn - totalOut;
   const counted = d.closingCounted == null ? null : Number(d.closingCounted);
   const variance = counted == null ? null : counted - expected;
@@ -160,12 +169,13 @@ export const generateCashReport = async (d: CashReportData) => {
     head: [["RECONCILIATION (CASH DRAWER)", "Amount"]],
     body: [
       ["Opening float", money(d.openingFloat)],
-      ["Add: cash received", money(cashIn)],
+      ["Add: physical cash received (excl. bank deposits)", money(cashIn)],
       ["Less: total disbursed / banked", `(${money(totalOut)})`],
       ["Expected cash on hand", money(expected)],
       ["Actual cash counted at close", counted == null ? "—" : money(counted)],
       ["Variance (over / short)", variance == null ? "—" : money(variance)],
-      ["Non-cash received (bank / swipe / mobile)", money(nonCashIn)],
+      ["Bank deposits received (not in drawer)", money(bankIn)],
+      ["Other non-cash received (swipe / mobile)", money(otherNonCashIn)],
       ["Total received (all methods)", money(totalIn)],
     ],
     theme: "grid",
@@ -179,6 +189,7 @@ export const generateCashReport = async (d: CashReportData) => {
       }
     },
   });
+
 
   // @ts-ignore
   y = doc.lastAutoTable.finalY + 6;
