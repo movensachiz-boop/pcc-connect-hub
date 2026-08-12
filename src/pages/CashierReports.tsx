@@ -677,9 +677,15 @@ export default function CashierReports() {
                     <Label className="text-xs">To</Label>
                     <Input type="date" value={to} onChange={e => setTo(e.target.value)} />
                   </div>
-                  <Button className="gap-2" onClick={downloadPeriodReport}><FileDown size={16} /> Cash Summary PDF</Button>
-                  <Button variant="outline" className="gap-2" disabled={invBusy} onClick={downloadInventoryReport}>
+                  <Button className="gap-2" onClick={() => downloadPeriodReport(false)}><FileDown size={16} /> Cash Summary PDF</Button>
+                  <Button variant="outline" className="gap-2" onClick={() => downloadPeriodReport(true)}>
+                    <Printer size={16} /> Cash Summary Thermal
+                  </Button>
+                  <Button variant="outline" className="gap-2" disabled={invBusy} onClick={() => downloadInventoryReport(false)}>
                     <Package size={16} /> {invBusy ? "Preparing…" : "Inventory Report PDF"}
+                  </Button>
+                  <Button variant="outline" className="gap-2" disabled={invBusy} onClick={() => downloadInventoryReport(true)}>
+                    <Printer size={16} /> Inventory Thermal
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
