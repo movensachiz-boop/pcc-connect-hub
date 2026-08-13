@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, UserPlus, DollarSign, Printer, Download, Trash2, Pencil, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -51,7 +52,15 @@ interface VPayment {
   receipt_number: string | null;
   description: string | null;
   created_at: string;
+  verified?: boolean;
+  verified_at?: string | null;
 }
+
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 
 const AdminVacationSchool = () => {
   const { toast } = useToast();
@@ -60,6 +69,7 @@ const AdminVacationSchool = () => {
   const [payments, setPayments] = useState<VPayment[]>([]);
   const [streamFilter, setStreamFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [verifyDate, setVerifyDate] = useState<string>(todayStr());
 
   // registration form
   const [regOpen, setRegOpen] = useState(false);
@@ -209,6 +219,29 @@ const AdminVacationSchool = () => {
     return m;
   }, [students]);
 
+  const todaysPayments = useMemo(
+    () => payments.filter(p => new Date(p.created_at).toLocaleDateString("en-CA") === verifyDate),
+    [payments, verifyDate]
+  );
+  const verifiedCount = todaysPayments.filter(p => p.verified).length;
+  const todaysTotal = todaysPayments.reduce((s, p) => s + Number(p.amount), 0);
+  const verifiedTotal = todaysPayments.filter(p => p.verified).reduce((s, p) => s + Number(p.amount), 0);
+
+  const applyVerified = async (ids: string[], value: boolean) => {
+    if (ids.length === 0) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("vacation_payments" as any)
+      .update({ verified: value, verified_at: value ? new Date().toISOString() : null, verified_by: value ? (user?.id ?? null) : null } as any)
+      .in("id", ids);
+    if (error) { toast({ title: "Could not update verification", description: error.message, variant: "destructive" }); return; }
+    setPayments(prev => prev.map(p => ids.includes(p.id) ? { ...p, verified: value } : p));
+  };
+
+  const toggleVerified = (p: VPayment, value: boolean) => applyVerified([p.id], value);
+  const verifyAll = (value: boolean) =>
+    applyVerified(todaysPayments.filter(p => !!p.verified !== value).map(p => p.id), value);
+
   const receiptDataFor = (p: VPayment) => {
     const s = studentById[p.vacation_student_id];
     return {
@@ -305,8 +338,80 @@ const AdminVacationSchool = () => {
         <Tabs defaultValue="payments">
           <TabsList>
             <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="verify">Daily Verification</TabsTrigger>
             <TabsTrigger value="learners">Registered Learners</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="verify">
+            <Card className="shadow-card">
+              <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
+                <div>
+                  <CardTitle className="text-lg">Verify Today's Payments</CardTitle>
+                  <CardDescription>
+                    {verifyDate === todayStr() ? "Today" : verifyDate} — {todaysPayments.length} payment(s),
+                    {" "}{verifiedCount} verified, total ${todaysTotal.toFixed(2)} (verified ${verifiedTotal.toFixed(2)})
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input type="date" value={verifyDate} onChange={e => setVerifyDate(e.target.value)} className="w-[160px]" />
+                  <Button variant="outline" size="sm" onClick={() => verifyAll(true)} disabled={todaysPayments.length === 0}>
+                    Verify All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => verifyAll(false)} disabled={verifiedCount === 0}>
+                    Clear All
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading ? (
+                  <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div>
+                ) : todaysPayments.length === 0 ? (
+                  <p className="text-center py-10 text-muted-foreground">No payments recorded for this date</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-secondary">
+                        <TableHead className="w-[80px]">Verified</TableHead>
+                        <TableHead>Receipt</TableHead>
+                        <TableHead>Learner</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead className="text-right">Receipt</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {todaysPayments.map(p => {
+                        const s = studentById[p.vacation_student_id];
+                        return (
+                          <TableRow key={p.id} className={p.verified ? "bg-success/5" : undefined}>
+                            <TableCell>
+                              <Checkbox
+                                checked={!!p.verified}
+                                onCheckedChange={(c) => toggleVerified(p, !!c)}
+                                aria-label="Mark payment verified"
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{p.receipt_number || "—"}</TableCell>
+                            <TableCell>{s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}</TableCell>
+                            <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
+                            <TableCell>{p.method}</TableCell>
+                            <TableCell>{new Date(p.created_at).toLocaleTimeString()}</TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" title="Print receipt" onClick={() => printReceipt(receiptDataFor(p))}>
+                                <Printer size={16} />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="payments">
             <Card className="shadow-card">
