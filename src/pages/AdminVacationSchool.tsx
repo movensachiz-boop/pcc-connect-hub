@@ -488,7 +488,13 @@ const AdminVacationSchool = () => {
           <div className="space-y-4">
             <div>
               <Label>Learner</Label>
-              <Select value={payStudentId} onValueChange={setPayStudentId}>
+              <Select
+                value={payStudentId}
+                onValueChange={(v) => {
+                  setPayStudentId(v);
+                  if (!editingPayment) setAmount(defaultAmountFor(studentById[v]?.stream));
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder="Select learner" /></SelectTrigger>
                 <SelectContent>
                   {students
