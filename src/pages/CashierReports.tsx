@@ -189,6 +189,35 @@ export default function CashierReports() {
     });
   };
 
+  const [editM, setEditM] = useState<Movement | null>(null);
+  const [editForm, setEditForm] = useState({ amount: "", recipient: "", reason: "", reference: "" });
+
+  const startEdit = (m: Movement) => {
+    setEditForm({
+      amount: String(m.amount ?? ""),
+      recipient: m.recipient || "",
+      reason: m.reason || "",
+      reference: m.reference || "",
+    });
+    setEditM(m);
+  };
+
+  const saveEdit = async () => {
+    if (!editM) return;
+    const amount = Number(editForm.amount);
+    if (!amount || amount <= 0) return toast({ title: "Enter a valid amount", variant: "destructive" });
+    const { error } = await supabase.from("cash_movements").update({
+      amount,
+      recipient: editForm.recipient || null,
+      reason: editForm.reason || null,
+      reference: editForm.reference || null,
+    }).eq("id", editM.id);
+    if (error) return toast({ title: "Could not update", description: error.message, variant: "destructive" });
+    setEditM(null);
+    toast({ title: "Updated", description: "The amount has been corrected in the day's totals." });
+    load();
+  };
+
   const deleteMovement = async (m: Movement) => {
     if (!confirm(`Delete this ${isOutflow(m.movement_type) ? "money out" : "money in"} record of US$${Number(m.amount).toFixed(2)}? This cannot be undone.`)) return;
     const { error } = await supabase.from("cash_movements").delete().eq("id", m.id);
@@ -196,6 +225,7 @@ export default function CashierReports() {
     toast({ title: "Deleted", description: "Record removed from the day's totals." });
     load();
   };
+
 
 
   const addMovement = async () => {
