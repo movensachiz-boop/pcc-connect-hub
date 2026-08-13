@@ -19,7 +19,7 @@ import {
   generateThermalPeriodCashReport, generateThermalInventoryReport,
   CashTxn, CashOutflow, PeriodRow, InventoryReportRow,
 } from "@/lib/generateCashReport";
-import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer, Trash2 } from "lucide-react";
+import { DoorOpen, DoorClosed, FileDown, Plus, Wallet, Package, Printer, Trash2, Pencil } from "lucide-react";
 
 interface Session {
   id: string;
@@ -189,6 +189,35 @@ export default function CashierReports() {
     });
   };
 
+  const [editM, setEditM] = useState<Movement | null>(null);
+  const [editForm, setEditForm] = useState({ amount: "", recipient: "", reason: "", reference: "" });
+
+  const startEdit = (m: Movement) => {
+    setEditForm({
+      amount: String(m.amount ?? ""),
+      recipient: m.recipient || "",
+      reason: m.reason || "",
+      reference: m.reference || "",
+    });
+    setEditM(m);
+  };
+
+  const saveEdit = async () => {
+    if (!editM) return;
+    const amount = Number(editForm.amount);
+    if (!amount || amount <= 0) return toast({ title: "Enter a valid amount", variant: "destructive" });
+    const { error } = await supabase.from("cash_movements").update({
+      amount,
+      recipient: editForm.recipient || null,
+      reason: editForm.reason || null,
+      reference: editForm.reference || null,
+    }).eq("id", editM.id);
+    if (error) return toast({ title: "Could not update", description: error.message, variant: "destructive" });
+    setEditM(null);
+    toast({ title: "Updated", description: "The amount has been corrected in the day's totals." });
+    load();
+  };
+
   const deleteMovement = async (m: Movement) => {
     if (!confirm(`Delete this ${isOutflow(m.movement_type) ? "money out" : "money in"} record of US$${Number(m.amount).toFixed(2)}? This cannot be undone.`)) return;
     const { error } = await supabase.from("cash_movements").delete().eq("id", m.id);
@@ -196,6 +225,7 @@ export default function CashierReports() {
     toast({ title: "Deleted", description: "Record removed from the day's totals." });
     load();
   };
+
 
 
   const addMovement = async () => {
@@ -661,10 +691,14 @@ export default function CashierReports() {
                               <Button size="sm" variant="outline" className="gap-1" onClick={() => printMovement(m)}>
                                 <Printer size={14} /> Print
                               </Button>
+                              <Button size="sm" variant="ghost" className="ml-1" onClick={() => startEdit(m)} title="Edit amount">
+                                <Pencil size={14} />
+                              </Button>
                               <Button size="sm" variant="ghost" className="ml-1 text-destructive" onClick={() => deleteMovement(m)} title="Delete record">
                                 <Trash2 size={14} />
                               </Button>
                             </TableCell>
+
 
                           </TableRow>
                         ))}
@@ -674,7 +708,36 @@ export default function CashierReports() {
                 </Card>
               );
             })}
+            <Dialog open={editM !== null} onOpenChange={o => !o && setEditM(null)}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    Edit {editM && isOutflow(editM.movement_type) ? "money out" : "money in"} record
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Amount (USD)</Label>
+                    <Input type="number" value={editForm.amount} onChange={e => setEditForm({ ...editForm, amount: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>{editM && isOutflow(editM.movement_type) ? "Paid to" : "Received from"}</Label>
+                    <Input value={editForm.recipient} onChange={e => setEditForm({ ...editForm, recipient: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Reason / Description</Label>
+                    <Textarea rows={2} value={editForm.reason} onChange={e => setEditForm({ ...editForm, reason: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Reference (optional)</Label>
+                    <Input value={editForm.reference} onChange={e => setEditForm({ ...editForm, reference: e.target.value })} />
+                  </div>
+                  <Button className="w-full" onClick={saveEdit}>Save changes</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
+
 
 
           <TabsContent value="summary">
