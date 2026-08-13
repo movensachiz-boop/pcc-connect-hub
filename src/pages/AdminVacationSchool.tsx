@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, UserPlus, DollarSign, Printer, Download, Trash2, Pencil, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -68,6 +69,7 @@ const AdminVacationSchool = () => {
   const [payments, setPayments] = useState<VPayment[]>([]);
   const [streamFilter, setStreamFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [verifyDate, setVerifyDate] = useState<string>(todayStr());
 
   // registration form
   const [regOpen, setRegOpen] = useState(false);
