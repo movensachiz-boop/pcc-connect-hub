@@ -126,13 +126,17 @@ const AdminVacationSchool = () => {
       guardian_phone: guardianPhone.trim() || null,
       notes: notes.trim() || null,
     };
-    const { error } = editingStudent
-      ? await supabase.from("vacation_students" as any).update(payload).eq("id", editingStudent.id)
-      : await supabase.from("vacation_students" as any).insert(payload as any);
+    const wasEditing = !!editingStudent;
+    const { data: saved, error } = editingStudent
+      ? await supabase.from("vacation_students" as any).update(payload).eq("id", editingStudent.id).select().single()
+      : await supabase.from("vacation_students" as any).insert(payload as any).select().single();
     setSaving(false);
     if (error) { toast({ title: "Could not save", description: error.message, variant: "destructive" }); return; }
-    toast({ title: editingStudent ? "Learner updated" : "Learner registered" });
+    toast({ title: wasEditing ? "Learner updated" : "Learner registered" });
+    const newStudent = saved as any as VStudent | null;
+    if (newStudent) setStudents(prev => [newStudent, ...prev.filter(s => s.id !== newStudent.id)]);
     setRegOpen(false); resetStudentForm(); loadAll();
+    if (!wasEditing && newStudent) openNewPayment(newStudent.id, newStudent.stream);
   };
 
   const deleteStudent = async (s: VStudent) => {
