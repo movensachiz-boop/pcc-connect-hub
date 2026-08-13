@@ -509,7 +509,15 @@ const AdminVacationSchool = () => {
             </div>
             <div>
               <Label>Amount (USD)</Label>
-              <Input type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+              <Input
+                type="number"
+                min="1"
+                autoFocus
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (!saving) savePayment(); } }}
+                placeholder="0.00"
+              />
             </div>
             <div>
               <Label>Method</Label>
