@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { titleCaseName } from "@/lib/normalize";
+import { catToday, catHour, catTime, catDateTime, nowIso, nowDate } from "@/lib/catTime";
 import {
   generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher, generateThermalCashReport,
   generateThermalPeriodCashReport, generateThermalInventoryReport,
@@ -58,8 +59,8 @@ const MOVEMENT_TYPES = [
 const typeLabel = (v: string) => MOVEMENT_TYPES.find(t => t.value === v)?.label || v;
 const isOutflow = (v: string) => v !== "cash_in";
 
-const timeOf = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-const today = () => new Date().toISOString().slice(0, 10);
+const timeOf = (iso: string) => catTime(iso);
+const today = () => catToday();
 
 export default function CashierReports() {
   const { toast } = useToast();
@@ -93,12 +94,12 @@ export default function CashierReports() {
   const autoManageDay = async (rows: Session[], uid: string | null, label: string) => {
     if (!uid) return false;
     let changed = false;
-    const now = new Date();
+    const now = nowDate();
     const d = today();
 
     // Auto-close any of my sessions left open from a previous day or past 16:00 today
     const stale = rows.filter(s => s.status === "open" && s.cashier_user_id === uid &&
-      (s.business_date < d || now.getHours() >= AUTO_CLOSE_HOUR));
+      (s.business_date < d || catHour(now) >= AUTO_CLOSE_HOUR));
     for (const s of stale) {
       await supabase.from("cash_sessions").update({
         status: "closed",
@@ -110,7 +111,7 @@ export default function CashierReports() {
 
     // Auto-open today's session during trading hours if none exists yet
     const hasToday = rows.some(s => s.business_date === d && s.cashier_user_id === uid);
-    if (!hasToday && now.getHours() >= AUTO_OPEN_HOUR && now.getHours() < AUTO_CLOSE_HOUR) {
+    if (!hasToday && catHour(now) >= AUTO_OPEN_HOUR && catHour(now) < AUTO_CLOSE_HOUR) {
       await supabase.from("cash_sessions").insert({
         cashier_user_id: uid,
         cashier_name: label,
@@ -163,7 +164,7 @@ export default function CashierReports() {
     if (!mySession) return;
     const { error } = await supabase.from("cash_sessions").update({
       status: "closed",
-      closed_at: new Date().toISOString(),
+      closed_at: nowIso(),
       closing_counted: closingCounted === "" ? null : Number(closingCounted),
       notes: closeNotes || null,
     }).eq("id", mySession.id);
@@ -180,7 +181,7 @@ export default function CashierReports() {
       kind: out ? "out" : "in",
       typeLabel: typeLabel(m.movement_type),
       amount: Number(m.amount),
-      dateTime: new Date(m.occurred_at).toLocaleString(),
+      dateTime: catDateTime(m.occurred_at),
       businessDate: m.business_date,
       issuedBy: out ? m.cashier_name : (m.recipient || "—"),
       receivedBy: out ? (m.recipient || "—") : m.cashier_name,
@@ -502,7 +503,7 @@ export default function CashierReports() {
                 <div className="flex items-center gap-2">
                   <Badge className="bg-success text-success-foreground">Day open</Badge>
                   <span className="text-sm text-muted-foreground">
-                    Opened {new Date(mySession.opened_at).toLocaleTimeString()} • Float US${Number(mySession.opening_float).toFixed(2)}
+                    Opened {catTime(mySession.opened_at)} • Float US${Number(mySession.opening_float).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-end gap-3">
