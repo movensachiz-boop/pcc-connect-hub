@@ -708,7 +708,36 @@ export default function CashierReports() {
                 </Card>
               );
             })}
+            <Dialog open={editM !== null} onOpenChange={o => !o && setEditM(null)}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    Edit {editM && isOutflow(editM.movement_type) ? "money out" : "money in"} record
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Amount (USD)</Label>
+                    <Input type="number" value={editForm.amount} onChange={e => setEditForm({ ...editForm, amount: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>{editM && isOutflow(editM.movement_type) ? "Paid to" : "Received from"}</Label>
+                    <Input value={editForm.recipient} onChange={e => setEditForm({ ...editForm, recipient: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Reason / Description</Label>
+                    <Textarea rows={2} value={editForm.reason} onChange={e => setEditForm({ ...editForm, reason: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Reference (optional)</Label>
+                    <Input value={editForm.reference} onChange={e => setEditForm({ ...editForm, reference: e.target.value })} />
+                  </div>
+                  <Button className="w-full" onClick={saveEdit}>Save changes</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
+
 
 
           <TabsContent value="summary">
