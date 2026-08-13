@@ -51,7 +51,15 @@ interface VPayment {
   receipt_number: string | null;
   description: string | null;
   created_at: string;
+  verified?: boolean;
+  verified_at?: string | null;
 }
+
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 
 const AdminVacationSchool = () => {
   const { toast } = useToast();
