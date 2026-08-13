@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, UserPlus, DollarSign, Printer, Download, Trash2, Pencil, Sun } from "lucide-react";
-import { catTime, catToday, nowIso, nowDate } from "@/lib/catTime";
+import { catTime, catToday, catDate, nowIso, nowDate } from "@/lib/catTime";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
@@ -218,7 +218,7 @@ const AdminVacationSchool = () => {
   }, [students]);
 
   const todaysPayments = useMemo(
-    () => payments.filter(p => new Date(p.created_at).toLocaleDateString("en-CA") === verifyDate),
+    () => payments.filter(p => catToday(new Date(p.created_at)) === verifyDate),
     [payments, verifyDate]
   );
   const verifiedCount = todaysPayments.filter(p => p.verified).length;
@@ -247,7 +247,7 @@ const AdminVacationSchool = () => {
       studentName: s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "Vacation Learner",
       regNo: "VACATION SCHOOL",
       studentClass: s ? `Vacation School — ${s.stream}` : "Vacation School",
-      date: new Date(p.created_at).toLocaleDateString(),
+      date: catDate(p.created_at),
       amount: `$${Number(p.amount).toFixed(2)}`,
       method: p.method,
       description: `VACATION SCHOOL — ${p.description || "Vacation School Fees"}`,
@@ -441,7 +441,7 @@ const AdminVacationSchool = () => {
                             <TableCell><Badge variant="secondary">{s?.stream || "—"}</Badge></TableCell>
                             <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
                             <TableCell>{p.method}</TableCell>
-                            <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>{catDate(p.created_at)}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
                                 <Button variant="ghost" size="icon" title="Print receipt" onClick={() => printReceipt(receiptDataFor(p))}>
