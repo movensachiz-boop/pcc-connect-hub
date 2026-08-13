@@ -57,10 +57,7 @@ interface VPayment {
   verified_at?: string | null;
 }
 
-const todayStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+const todayStr = () => catToday();
 
 
 const AdminVacationSchool = () => {
