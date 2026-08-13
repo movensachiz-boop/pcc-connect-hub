@@ -147,10 +147,15 @@ const AdminVacationSchool = () => {
     loadAll();
   };
 
-  const openNewPayment = (studentId?: string) => {
+  const defaultAmountFor = (streamName?: string) =>
+    (streamName || "").toLowerCase().includes("external") ? "60" : "50";
+
+  const openNewPayment = (studentId?: string, streamName?: string) => {
     setEditingPayment(null);
     setPayStudentId(studentId || "");
-    setAmount(""); setMethod("Cash"); setDescription("Vacation School Fees");
+    const s = streamName ?? (studentId ? studentById[studentId]?.stream : undefined);
+    setAmount(studentId ? defaultAmountFor(s) : "");
+    setMethod("Cash"); setDescription("Vacation School Fees");
     setPayOpen(true);
   };
 
