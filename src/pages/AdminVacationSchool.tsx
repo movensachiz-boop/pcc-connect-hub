@@ -83,6 +83,9 @@ const AdminVacationSchool = () => {
 
   useEffect(() => { loadAll(); }, []);
 
+  // Auto-open the registration dialog when the page loads
+  useEffect(() => { setRegOpen(true); }, []);
+
   const loadAll = async () => {
     setLoading(true);
     const [{ data: s }, { data: p }] = await Promise.all([
