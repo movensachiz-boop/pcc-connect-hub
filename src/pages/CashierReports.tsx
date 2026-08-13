@@ -89,7 +89,7 @@ export default function CashierReports() {
   // Trading hours: auto-open at 07:00, auto-close at 16:00
   const AUTO_OPEN_HOUR = 7;
   const AUTO_CLOSE_HOUR = 16;
-  const atHour = (date: string, hour: number) => new Date(`${date}T${String(hour).padStart(2, "0")}:00:00`).toISOString();
+  const atHour = (date: string, hour: number) => catIsoAt(date, hour);
 
   const autoManageDay = async (rows: Session[], uid: string | null, label: string) => {
     if (!uid) return false;
@@ -254,8 +254,8 @@ export default function CashierReports() {
 
   // Collects all receipts + outflows attributable to one session
   const collectSessionData = async (s: Session) => {
-    const dayStart = new Date(`${s.business_date}T00:00:00`).toISOString();
-    const dayEnd = new Date(`${s.business_date}T23:59:59.999`).toISOString();
+    const dayStart = catDayStartIso(s.business_date);
+    const dayEnd = catDayEndIso(s.business_date);
 
     const [auditRes, vacRes, invRes] = await Promise.all([
       supabase.from("payment_audit_log").select("payment_id, student_profile_id, amount, method, receipt_number, created_at, actor_user_id, action")
@@ -337,8 +337,8 @@ export default function CashierReports() {
     const payload = {
       cashierName: s.cashier_name,
       businessDate: s.business_date,
-      openedAt: new Date(s.opened_at).toLocaleString(),
-      closedAt: s.closed_at ? new Date(s.closed_at).toLocaleString() : undefined,
+      openedAt: catDateTime(s.opened_at),
+      closedAt: s.closed_at ? catDateTime(s.closed_at) : undefined,
       openingFloat: Number(s.opening_float || 0),
       closingCounted: s.closing_counted,
       receipts,
@@ -368,8 +368,8 @@ export default function CashierReports() {
   const downloadInventoryReport = async (thermal = false) => {
     setInvBusy(true);
     try {
-      const fromIso = new Date(`${from}T00:00:00`).toISOString();
-      const toIso = new Date(`${to}T23:59:59.999`).toISOString();
+      const fromIso = catDayStartIso(from);
+      const toIso = catDayEndIso(to);
       const [itemsRes, salesRes] = await Promise.all([
         supabase.from("inventory_items").select("*").order("category").order("name"),
         supabase.from("inventory_sales").select("total_amount, items, created_at, notes").gte("created_at", fromIso).lte("created_at", toIso),
@@ -465,7 +465,7 @@ export default function CashierReports() {
         ? `All Cashiers (${daySessions.map(s => s.cashier_name).join(", ")})`
         : cashierFilter,
       businessDate: date,
-      openedAt: new Date(daySessions[daySessions.length - 1].opened_at).toLocaleString(),
+      openedAt: catDateTime(daySessions[daySessions.length - 1].opened_at),
       closedAt: undefined,
       openingFloat: float,
       closingCounted: anyCounted ? counted : null,
