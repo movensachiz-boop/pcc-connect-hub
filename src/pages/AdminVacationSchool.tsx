@@ -83,6 +83,9 @@ const AdminVacationSchool = () => {
 
   useEffect(() => { loadAll(); }, []);
 
+  // Auto-open the registration dialog when the page loads
+  useEffect(() => { setRegOpen(true); }, []);
+
   const loadAll = async () => {
     setLoading(true);
     const [{ data: s }, { data: p }] = await Promise.all([
@@ -123,13 +126,17 @@ const AdminVacationSchool = () => {
       guardian_phone: guardianPhone.trim() || null,
       notes: notes.trim() || null,
     };
-    const { error } = editingStudent
-      ? await supabase.from("vacation_students" as any).update(payload).eq("id", editingStudent.id)
-      : await supabase.from("vacation_students" as any).insert(payload as any);
+    const wasEditing = !!editingStudent;
+    const { data: saved, error } = editingStudent
+      ? await supabase.from("vacation_students" as any).update(payload).eq("id", editingStudent.id).select().single()
+      : await supabase.from("vacation_students" as any).insert(payload as any).select().single();
     setSaving(false);
     if (error) { toast({ title: "Could not save", description: error.message, variant: "destructive" }); return; }
-    toast({ title: editingStudent ? "Learner updated" : "Learner registered" });
+    toast({ title: wasEditing ? "Learner updated" : "Learner registered" });
+    const newStudent = saved as any as VStudent | null;
+    if (newStudent) setStudents(prev => [newStudent, ...prev.filter(s => s.id !== newStudent.id)]);
     setRegOpen(false); resetStudentForm(); loadAll();
+    if (!wasEditing && newStudent) openNewPayment(newStudent.id, newStudent.stream);
   };
 
   const deleteStudent = async (s: VStudent) => {
@@ -140,10 +147,15 @@ const AdminVacationSchool = () => {
     loadAll();
   };
 
-  const openNewPayment = (studentId?: string) => {
+  const defaultAmountFor = (streamName?: string) =>
+    (streamName || "").toLowerCase().includes("external") ? "60" : "50";
+
+  const openNewPayment = (studentId?: string, streamName?: string) => {
     setEditingPayment(null);
     setPayStudentId(studentId || "");
-    setAmount(""); setMethod("Cash"); setDescription("Vacation School Fees");
+    const s = streamName ?? (studentId ? studentById[studentId]?.stream : undefined);
+    setAmount(studentId ? defaultAmountFor(s) : "");
+    setMethod("Cash"); setDescription("Vacation School Fees");
     setPayOpen(true);
   };
 
@@ -170,13 +182,17 @@ const AdminVacationSchool = () => {
       description: description.trim() || "Vacation School Fees",
     };
     if (!editingPayment) payload.cashier_user_id = user?.id ?? null;
-    const { error } = editingPayment
-      ? await supabase.from("vacation_payments" as any).update(payload).eq("id", editingPayment.id)
-      : await supabase.from("vacation_payments" as any).insert(payload as any);
+    const wasEditing = !!editingPayment;
+    const { data: savedPay, error } = wasEditing
+      ? await supabase.from("vacation_payments" as any).update(payload).eq("id", editingPayment!.id).select().single()
+      : await supabase.from("vacation_payments" as any).insert(payload as any).select().single();
     setSaving(false);
     if (error) { toast({ title: "Could not save payment", description: error.message, variant: "destructive" }); return; }
-    toast({ title: editingPayment ? "Payment updated" : "Payment recorded" });
+    toast({ title: wasEditing ? "Payment updated" : "Payment recorded" });
     setPayOpen(false); loadAll();
+    if (!wasEditing && savedPay) {
+      try { await printReceipt(receiptDataFor(savedPay as any as VPayment)); } catch (e) { /* printing cancelled */ }
+    }
   };
 
   const deletePayment = async (p: VPayment) => {
@@ -472,7 +488,13 @@ const AdminVacationSchool = () => {
           <div className="space-y-4">
             <div>
               <Label>Learner</Label>
-              <Select value={payStudentId} onValueChange={setPayStudentId}>
+              <Select
+                value={payStudentId}
+                onValueChange={(v) => {
+                  setPayStudentId(v);
+                  if (!editingPayment) setAmount(defaultAmountFor(studentById[v]?.stream));
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder="Select learner" /></SelectTrigger>
                 <SelectContent>
                   {students
@@ -487,7 +509,15 @@ const AdminVacationSchool = () => {
             </div>
             <div>
               <Label>Amount (USD)</Label>
-              <Input type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+              <Input
+                type="number"
+                min="1"
+                autoFocus
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (!saving) savePayment(); } }}
+                placeholder="0.00"
+              />
             </div>
             <div>
               <Label>Method</Label>
