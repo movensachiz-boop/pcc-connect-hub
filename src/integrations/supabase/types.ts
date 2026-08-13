@@ -1425,6 +1425,9 @@ export type Database = {
           term_id: string | null
           updated_at: string
           vacation_student_id: string
+          verified: boolean
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           amount: number
@@ -1439,6 +1442,9 @@ export type Database = {
           term_id?: string | null
           updated_at?: string
           vacation_student_id: string
+          verified?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           amount?: number
@@ -1453,6 +1459,9 @@ export type Database = {
           term_id?: string | null
           updated_at?: string
           vacation_student_id?: string
+          verified?: boolean
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
