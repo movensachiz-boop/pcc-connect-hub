@@ -182,13 +182,17 @@ const AdminVacationSchool = () => {
       description: description.trim() || "Vacation School Fees",
     };
     if (!editingPayment) payload.cashier_user_id = user?.id ?? null;
-    const { error } = editingPayment
-      ? await supabase.from("vacation_payments" as any).update(payload).eq("id", editingPayment.id)
-      : await supabase.from("vacation_payments" as any).insert(payload as any);
+    const wasEditing = !!editingPayment;
+    const { data: savedPay, error } = wasEditing
+      ? await supabase.from("vacation_payments" as any).update(payload).eq("id", editingPayment!.id).select().single()
+      : await supabase.from("vacation_payments" as any).insert(payload as any).select().single();
     setSaving(false);
     if (error) { toast({ title: "Could not save payment", description: error.message, variant: "destructive" }); return; }
-    toast({ title: editingPayment ? "Payment updated" : "Payment recorded" });
+    toast({ title: wasEditing ? "Payment updated" : "Payment recorded" });
     setPayOpen(false); loadAll();
+    if (!wasEditing && savedPay) {
+      try { await printReceipt(receiptDataFor(savedPay as any as VPayment)); } catch (e) { /* printing cancelled */ }
+    }
   };
 
   const deletePayment = async (p: VPayment) => {
