@@ -105,3 +105,27 @@ export function initCatTime() {
   window.addEventListener("focus", () => { void syncCatTime(); });
   window.setInterval(() => { void syncCatTime(); }, 10 * 60 * 1000);
 }
+
+/** ISO instant (UTC) for a CAT wall-clock time on a given CAT date. */
+export function catIsoAt(date: string, hour = 0, minute = 0, second = 0, ms = 0): string {
+  const [y, m, d] = date.split("-").map(Number);
+  // CAT is UTC+2 with no DST, so subtract 2 hours to get UTC.
+  return new Date(Date.UTC(y, (m || 1) - 1, d || 1, hour - 2, minute, second, ms)).toISOString();
+}
+
+/** Start of a CAT business day as a UTC ISO string. */
+export function catDayStartIso(date: string) {
+  return catIsoAt(date, 0, 0, 0, 0);
+}
+
+/** End of a CAT business day as a UTC ISO string. */
+export function catDayEndIso(date: string) {
+  return catIsoAt(date, 23, 59, 59, 999);
+}
+
+/** Format any instant as a CAT date, e.g. "12/08/2026". */
+export function catDate(iso: string | Date): string {
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  const p = catParts(d);
+  return `${p.day}/${p.month}/${p.year}`;
+}
