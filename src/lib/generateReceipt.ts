@@ -1,3 +1,4 @@
+import { catDateTime, nowDate } from "@/lib/catTime";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
@@ -282,7 +283,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFontSize(6.5);
   doc.setTextColor(150, 150, 150);
   doc.text(`This is a computer-generated receipt from ${data.schoolName || "Progress Christian Centre"}. It is protected by SHA-256 cryptographic verification.`, pw / 2, 278, { align: "center" });
-  doc.text(`Document ID: ${docId}  |  Generated: ${new Date().toISOString()}`, pw / 2, 282, { align: "center" });
+  doc.text(`Document ID: ${docId}  |  Generated: ${catDateTime(nowDate())}`, pw / 2, 282, { align: "center" });
   doc.text("Unauthorized reproduction or alteration of this document is prohibited.", pw / 2, 286, { align: "center" });
 
   const safeName = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
