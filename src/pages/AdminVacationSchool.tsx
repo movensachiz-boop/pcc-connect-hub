@@ -217,6 +217,29 @@ const AdminVacationSchool = () => {
     return m;
   }, [students]);
 
+  const todaysPayments = useMemo(
+    () => payments.filter(p => new Date(p.created_at).toLocaleDateString("en-CA") === verifyDate),
+    [payments, verifyDate]
+  );
+  const verifiedCount = todaysPayments.filter(p => p.verified).length;
+  const todaysTotal = todaysPayments.reduce((s, p) => s + Number(p.amount), 0);
+  const verifiedTotal = todaysPayments.filter(p => p.verified).reduce((s, p) => s + Number(p.amount), 0);
+
+  const applyVerified = async (ids: string[], value: boolean) => {
+    if (ids.length === 0) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("vacation_payments" as any)
+      .update({ verified: value, verified_at: value ? new Date().toISOString() : null, verified_by: value ? (user?.id ?? null) : null } as any)
+      .in("id", ids);
+    if (error) { toast({ title: "Could not update verification", description: error.message, variant: "destructive" }); return; }
+    setPayments(prev => prev.map(p => ids.includes(p.id) ? { ...p, verified: value } : p));
+  };
+
+  const toggleVerified = (p: VPayment, value: boolean) => applyVerified([p.id], value);
+  const verifyAll = (value: boolean) =>
+    applyVerified(todaysPayments.filter(p => !!p.verified !== value).map(p => p.id), value);
+
   const receiptDataFor = (p: VPayment) => {
     const s = studentById[p.vacation_student_id];
     return {
