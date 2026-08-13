@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { titleCaseName } from "@/lib/normalize";
 import { generateMovementVoucher } from "@/lib/generateCashReport";
 import { saveOrQueue } from "@/lib/offlineQueue";
+import { catToday, catDateTime, nowIso } from "@/lib/catTime";
 
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 
@@ -21,7 +22,7 @@ const OUT_TYPES = [
 ];
 const IN_TYPE = { value: "cash_in", label: "Cash injection (top-up)" };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => catToday();
 
 export default function MoneyMovementDialog({ onSaved }: { onSaved?: () => void }) {
   const { toast } = useToast();
@@ -68,7 +69,7 @@ export default function MoneyMovementDialog({ onSaved }: { onSaved?: () => void 
     const data = (res.data ?? {
       id: `local-${Date.now()}`,
       reference: form.reference || null,
-      occurred_at: new Date().toISOString(),
+      occurred_at: nowIso(),
       business_date: date,
     }) as { id: string; reference: string | null; occurred_at: string; business_date: string };
 
@@ -86,7 +87,7 @@ export default function MoneyMovementDialog({ onSaved }: { onSaved?: () => void 
       kind: out ? "out" : "in",
       typeLabel,
       amount,
-      dateTime: new Date(data.occurred_at).toLocaleString(),
+      dateTime: catDateTime(data.occurred_at),
       businessDate: data.business_date,
       issuedBy: out ? label : (form.recipient || "—"),
       receivedBy: out ? (form.recipient || "—") : label,
