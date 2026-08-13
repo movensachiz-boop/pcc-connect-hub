@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { titleCaseName } from "@/lib/normalize";
-import { catToday, catHour, catTime, catDateTime, nowIso, nowDate } from "@/lib/catTime";
+import { catToday, catHour, catTime, catDateTime, catIsoAt, catDayStartIso, catDayEndIso, nowIso, nowDate } from "@/lib/catTime";
 import {
   generateCashReport, generatePeriodCashReport, generateInventoryReport, generateMovementVoucher, generateThermalCashReport,
   generateThermalPeriodCashReport, generateThermalInventoryReport,

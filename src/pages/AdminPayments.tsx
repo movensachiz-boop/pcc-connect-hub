@@ -18,6 +18,7 @@ import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/gen
 import { generatePaidLabels, generatePaidStudentsList, PaidStudent } from "@/lib/generatePaidLabels";
 import { generateFeesByClassPDF } from "@/lib/generateFeesByClass";
 import { useToast } from "@/hooks/use-toast";
+import { catDate, catDateTime, nowDate } from "@/lib/catTime";
 import { supabase } from "@/integrations/supabase/client";
 import BulkPaymentDialog from "@/components/BulkPaymentDialog";
 import PaymentsBackupPanel from "@/components/PaymentsBackupPanel";
@@ -290,7 +291,7 @@ const AdminPayments = () => {
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
       studentClass: p.studentClass,
-      date: new Date(p.created_at).toLocaleDateString(),
+      date: catDate(p.created_at),
       amount: `$${p.amount}`,
       method: p.method,
       description: p.description || undefined,
@@ -305,7 +306,7 @@ const AdminPayments = () => {
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
       studentClass: p.studentClass,
-      date: new Date(p.created_at).toLocaleDateString(),
+      date: catDate(p.created_at),
       amount: `$${p.amount}`,
       method: p.method,
       description: p.description || undefined,
@@ -320,7 +321,7 @@ const AdminPayments = () => {
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
       studentClass: p.studentClass,
-      date: new Date(p.created_at).toLocaleDateString(),
+      date: catDate(p.created_at),
       amount: `$${p.amount}`,
       method: p.method,
       description: p.description || undefined,
@@ -334,7 +335,7 @@ const AdminPayments = () => {
       studentName: p.studentName || "Unknown",
       regNo: p.regNo || "N/A",
       studentClass: p.studentClass,
-      date: new Date(p.created_at).toLocaleDateString(),
+      date: catDate(p.created_at),
       amount: `$${p.amount}`,
       method: p.method,
       description: p.description || undefined,
@@ -421,7 +422,7 @@ const AdminPayments = () => {
         const d = dupes[0];
         toast({
           title: "Duplicate reference — payment blocked",
-          description: `Reference ${refClean} was already recorded on receipt ${d.receipt_number || "—"} ($${Number(d.amount).toFixed(2)}, ${new Date(d.created_at).toLocaleDateString()}). This is flagged as a possible fraudulent duplicate.`,
+          description: `Reference ${refClean} was already recorded on receipt ${d.receipt_number || "—"} ($${Number(d.amount).toFixed(2)}, ${catDate(d.created_at)}). This is flagged as a possible fraudulent duplicate.`,
           variant: "destructive",
         });
         return;
@@ -545,7 +546,7 @@ const AdminPayments = () => {
           studentName: student ? titleCaseName(`${student.first_name} ${student.last_name}`) : "Student",
           regNo: student?.registration_number || "N/A",
           studentClass: student ? formatClass(student) : undefined,
-          date: new Date().toLocaleDateString(),
+          date: catDate(nowDate()),
           amount: `$${parseFloat(manualAmount).toFixed(2)}`,
           method: manualMethod || "Bank Deposit",
           description: "Deposit slip payment",
@@ -641,7 +642,7 @@ const AdminPayments = () => {
       if (existing) {
         existing.amount += Number(p.amount) || 0;
         if (new Date(p.created_at) > new Date(existing.date)) {
-          existing.date = new Date(p.created_at).toLocaleDateString();
+          existing.date = catDate(p.created_at);
         }
       } else {
         byStudent.set(p.student_profile_id, {
@@ -649,7 +650,7 @@ const AdminPayments = () => {
           regNo: p.regNo || "N/A",
           studentClass: p.studentClass || "—",
           amount: Number(p.amount) || 0,
-          date: new Date(p.created_at).toLocaleDateString(),
+          date: catDate(p.created_at),
         });
       }
     }
@@ -813,7 +814,7 @@ const AdminPayments = () => {
                       <TableCell>{p.regNo}</TableCell>
                       <TableCell>${p.amount}</TableCell>
                       <TableCell>{p.method}</TableCell>
-                      <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{catDate(p.created_at)}</TableCell>
                       <TableCell>
                         <Badge className={["paid","completed","confirmed"].includes(p.status) ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>
                           {p.status}

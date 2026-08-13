@@ -1,3 +1,4 @@
+import { catDateTime, nowDate } from "@/lib/catTime";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -224,7 +225,7 @@ export const generateCashReport = async (d: CashReportData) => {
 
   doc.setFontSize(7.5);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Generated ${new Date().toLocaleString()} • Progress Christian Centre Accounts`, pw / 2, ph - 10, { align: "center" });
+  doc.text(`Generated ${catDateTime(nowDate())} • Progress Christian Centre Accounts`, pw / 2, ph - 10, { align: "center" });
 
   doc.save(`Cash_Report_${d.cashierName.replace(/\s+/g, "_")}_${d.businessDate}.pdf`);
 };
@@ -298,7 +299,7 @@ export const generatePeriodCashReport = async (
 
   doc.setFontSize(7.5);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Generated ${new Date().toLocaleString()}`, pw / 2, ph - 10, { align: "center" });
+  doc.text(`Generated ${catDateTime(nowDate())}`, pw / 2, ph - 10, { align: "center" });
 
   doc.save(`Cash_Summary_${fromDate}_to_${toDate}.pdf`);
 };
@@ -383,7 +384,7 @@ export const generateInventoryReport = async (
 
   doc.setFontSize(7.5);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Generated ${new Date().toLocaleString()}`, pw / 2, ph - 10, { align: "center" });
+  doc.text(`Generated ${catDateTime(nowDate())}`, pw / 2, ph - 10, { align: "center" });
 
   doc.save(`Inventory_Report_${periodLabel.replace(/[^\w]+/g, "_")}.pdf`);
 };
@@ -548,7 +549,7 @@ const renderVoucherThermal = async (
   y += 4;
   doc.setFontSize(5.5);
   doc.setTextColor(120);
-  doc.text(`Generated ${new Date().toLocaleString()}`, cx, y, { align: "center" });
+  doc.text(`Generated ${catDateTime(nowDate())}`, cx, y, { align: "center" });
   y += 3;
   doc.text("Progress Christian Centre Accounts", cx, y, { align: "center" });
   y += 3;
@@ -772,7 +773,7 @@ const renderCashReportThermal = (doc: jsPDF, d: CashReportData, logo: HTMLImageE
   dashed();
   doc.setFontSize(5.5);
   doc.setTextColor(120);
-  doc.text(`Generated ${new Date().toLocaleString()}`, cx, y, { align: "center" });
+  doc.text(`Generated ${catDateTime(nowDate())}`, cx, y, { align: "center" });
   y += 3;
   doc.text("Progress Christian Centre Accounts", cx, y, { align: "center" });
   y += 3;
@@ -953,7 +954,7 @@ const thermalKit = (doc: jsPDF) => {
     dashed();
     doc.setFontSize(5.5);
     doc.setTextColor(120);
-    doc.text(`Generated ${new Date().toLocaleString()}`, cx, state.y, { align: "center" });
+    doc.text(`Generated ${catDateTime(nowDate())}`, cx, state.y, { align: "center" });
     state.y += 3;
     doc.text("Progress Christian Centre Accounts", cx, state.y, { align: "center" });
     state.y += 3;

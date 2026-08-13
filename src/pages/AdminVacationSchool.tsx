@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, UserPlus, DollarSign, Printer, Download, Trash2, Pencil, Sun } from "lucide-react";
+import { catTime, catToday, nowIso, nowDate } from "@/lib/catTime";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
@@ -232,7 +233,7 @@ const AdminVacationSchool = () => {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("vacation_payments" as any)
-      .update({ verified: value, verified_at: value ? new Date().toISOString() : null, verified_by: value ? (user?.id ?? null) : null } as any)
+      .update({ verified: value, verified_at: value ? nowIso() : null, verified_by: value ? (user?.id ?? null) : null } as any)
       .in("id", ids);
     if (error) { toast({ title: "Could not update verification", description: error.message, variant: "destructive" }); return; }
     setPayments(prev => prev.map(p => ids.includes(p.id) ? { ...p, verified: value } : p));
@@ -396,7 +397,7 @@ const AdminVacationSchool = () => {
                             <TableCell>{s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}</TableCell>
                             <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
                             <TableCell>{p.method}</TableCell>
-                            <TableCell>{new Date(p.created_at).toLocaleTimeString()}</TableCell>
+                            <TableCell>{catTime(p.created_at)}</TableCell>
                             <TableCell className="text-right">
                               <Button variant="ghost" size="icon" title="Print receipt" onClick={() => printReceipt(receiptDataFor(p))}>
                                 <Printer size={16} />

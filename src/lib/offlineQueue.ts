@@ -1,3 +1,4 @@
+import { nowIso } from "@/lib/catTime";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -60,7 +61,7 @@ export function enqueueWrite(table: QueuedTable, row: Record<string, unknown>, l
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     table,
     row,
-    created_at: new Date().toISOString(),
+    created_at: nowIso(),
     label,
   };
   write([...read(), item]);
