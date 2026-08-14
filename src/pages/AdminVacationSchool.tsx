@@ -463,7 +463,13 @@ const AdminVacationSchool = () => {
                         return (
                           <TableRow key={p.id}>
                             <TableCell className="font-medium">{p.receipt_number || "—"}</TableCell>
-                            <TableCell>{s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}</TableCell>
+                            <TableCell>
+                              {s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}
+                              {s && owingFor(s) > 0 && (
+                                <Badge variant="destructive" className="ml-2">Owes ${owingFor(s).toFixed(2)}</Badge>
+                              )}
+                            </TableCell>
+
                             <TableCell><Badge variant="secondary">{s?.stream || "—"}</Badge></TableCell>
                             <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
                             <TableCell>{p.method}</TableCell>
