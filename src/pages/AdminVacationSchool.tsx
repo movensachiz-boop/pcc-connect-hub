@@ -286,7 +286,7 @@ const AdminVacationSchool = () => {
     s ? Math.max(0, expectedFor(s.stream) - (paidByStudent[s.id] || 0)) : 0;
 
   const expectedTotal = filteredStudents.reduce((sum, s) => sum + expectedFor(s.stream), 0);
-  const paidTotalForFiltered = filteredStudents.reduce((sum, s) => sum + (paidByStudent[s.id] || 0), 0);
+  
   const outstandingTotal = filteredStudents.reduce((sum, s) => sum + owingFor(s), 0);
 
 
