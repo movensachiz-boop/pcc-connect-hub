@@ -323,7 +323,7 @@ const AdminVacationSchool = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
           <Card className="shadow-card">
             <CardHeader className="pb-2">
               <CardDescription>Registered Learners</CardDescription>
@@ -338,11 +338,26 @@ const AdminVacationSchool = () => {
           </Card>
           <Card className="shadow-card">
             <CardHeader className="pb-2">
+              <CardDescription>Expected (External $60 / Others $50)</CardDescription>
+              <CardTitle className="text-2xl">${expectedTotal.toFixed(2)}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
               <CardDescription>Total Collected</CardDescription>
               <CardTitle className="text-2xl text-success">${totalCollected.toFixed(2)}</CardTitle>
             </CardHeader>
           </Card>
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
+              <CardDescription>Outstanding</CardDescription>
+              <CardTitle className={`text-2xl ${outstandingTotal > 0 ? "text-destructive" : "text-success"}`}>
+                ${outstandingTotal.toFixed(2)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
+
 
         <Tabs defaultValue="payments">
           <TabsList>
