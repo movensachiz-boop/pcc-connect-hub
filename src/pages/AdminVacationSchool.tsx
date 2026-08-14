@@ -155,8 +155,11 @@ const AdminVacationSchool = () => {
     loadAll();
   };
 
-  const defaultAmountFor = (streamName?: string) =>
-    (streamName || "").toLowerCase().includes("external") ? "60" : "50";
+  const expectedFor = (streamName?: string) =>
+    (streamName || "").toLowerCase().includes("external") ? 60 : 50;
+
+  const defaultAmountFor = (streamName?: string) => String(expectedFor(streamName));
+
 
   const openNewPayment = (studentId?: string, streamName?: string) => {
     setEditingPayment(null);
@@ -279,6 +282,14 @@ const AdminVacationSchool = () => {
     return m;
   }, [payments]);
 
+  const owingFor = (s?: VStudent) =>
+    s ? Math.max(0, expectedFor(s.stream) - (paidByStudent[s.id] || 0)) : 0;
+
+  const expectedTotal = filteredStudents.reduce((sum, s) => sum + expectedFor(s.stream), 0);
+  
+  const outstandingTotal = filteredStudents.reduce((sum, s) => sum + owingFor(s), 0);
+
+
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
@@ -312,7 +323,7 @@ const AdminVacationSchool = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
           <Card className="shadow-card">
             <CardHeader className="pb-2">
               <CardDescription>Registered Learners</CardDescription>
@@ -327,11 +338,26 @@ const AdminVacationSchool = () => {
           </Card>
           <Card className="shadow-card">
             <CardHeader className="pb-2">
+              <CardDescription>Expected (External $60 / Others $50)</CardDescription>
+              <CardTitle className="text-2xl">${expectedTotal.toFixed(2)}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
               <CardDescription>Total Collected</CardDescription>
               <CardTitle className="text-2xl text-success">${totalCollected.toFixed(2)}</CardTitle>
             </CardHeader>
           </Card>
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
+              <CardDescription>Outstanding</CardDescription>
+              <CardTitle className={`text-2xl ${outstandingTotal > 0 ? "text-destructive" : "text-success"}`}>
+                ${outstandingTotal.toFixed(2)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
+
 
         <Tabs defaultValue="payments">
           <TabsList>
@@ -437,7 +463,13 @@ const AdminVacationSchool = () => {
                         return (
                           <TableRow key={p.id}>
                             <TableCell className="font-medium">{p.receipt_number || "—"}</TableCell>
-                            <TableCell>{s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}</TableCell>
+                            <TableCell>
+                              {s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}
+                              {s && owingFor(s) > 0 && (
+                                <Badge variant="destructive" className="ml-2">Owes ${owingFor(s).toFixed(2)}</Badge>
+                              )}
+                            </TableCell>
+
                             <TableCell><Badge variant="secondary">{s?.stream || "—"}</Badge></TableCell>
                             <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
                             <TableCell>{p.method}</TableCell>
@@ -486,18 +518,34 @@ const AdminVacationSchool = () => {
                         <TableHead>Stream</TableHead>
                         <TableHead>Guardian</TableHead>
                         <TableHead>Phone</TableHead>
+                        <TableHead>Expected</TableHead>
                         <TableHead>Total Paid</TableHead>
+                        <TableHead>Outstanding</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredStudents.map(s => (
+                      {filteredStudents.map(s => {
+                        const owing = owingFor(s);
+                        return (
                         <TableRow key={s.id}>
-                          <TableCell className="font-medium">{titleCaseName(`${s.first_name} ${s.last_name}`)}</TableCell>
+                          <TableCell className="font-medium">
+                            {titleCaseName(`${s.first_name} ${s.last_name}`)}
+                            {owing > 0 ? (
+                              <Badge variant="destructive" className="ml-2">Owes ${owing.toFixed(2)}</Badge>
+                            ) : (
+                              <Badge className="ml-2 bg-success text-success-foreground">Paid</Badge>
+                            )}
+                          </TableCell>
                           <TableCell><Badge variant="secondary">{s.stream}</Badge></TableCell>
                           <TableCell>{s.guardian_name || "—"}</TableCell>
                           <TableCell>{s.guardian_phone || "—"}</TableCell>
+                          <TableCell>${expectedFor(s.stream).toFixed(2)}</TableCell>
                           <TableCell>${(paidByStudent[s.id] || 0).toFixed(2)}</TableCell>
+                          <TableCell className={owing > 0 ? "text-destructive font-semibold" : "text-success"}>
+                            ${owing.toFixed(2)}
+                          </TableCell>
+
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="sm" className="gap-1" onClick={() => openNewPayment(s.id)}>
@@ -512,7 +560,9 @@ const AdminVacationSchool = () => {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
+
                     </TableBody>
                   </Table>
                 )}
