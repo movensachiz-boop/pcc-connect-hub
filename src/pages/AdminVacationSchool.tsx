@@ -512,18 +512,34 @@ const AdminVacationSchool = () => {
                         <TableHead>Stream</TableHead>
                         <TableHead>Guardian</TableHead>
                         <TableHead>Phone</TableHead>
+                        <TableHead>Expected</TableHead>
                         <TableHead>Total Paid</TableHead>
+                        <TableHead>Outstanding</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredStudents.map(s => (
+                      {filteredStudents.map(s => {
+                        const owing = owingFor(s);
+                        return (
                         <TableRow key={s.id}>
-                          <TableCell className="font-medium">{titleCaseName(`${s.first_name} ${s.last_name}`)}</TableCell>
+                          <TableCell className="font-medium">
+                            {titleCaseName(`${s.first_name} ${s.last_name}`)}
+                            {owing > 0 ? (
+                              <Badge variant="destructive" className="ml-2">Owes ${owing.toFixed(2)}</Badge>
+                            ) : (
+                              <Badge className="ml-2 bg-success text-success-foreground">Paid</Badge>
+                            )}
+                          </TableCell>
                           <TableCell><Badge variant="secondary">{s.stream}</Badge></TableCell>
                           <TableCell>{s.guardian_name || "—"}</TableCell>
                           <TableCell>{s.guardian_phone || "—"}</TableCell>
+                          <TableCell>${expectedFor(s.stream).toFixed(2)}</TableCell>
                           <TableCell>${(paidByStudent[s.id] || 0).toFixed(2)}</TableCell>
+                          <TableCell className={owing > 0 ? "text-destructive font-semibold" : "text-success"}>
+                            ${owing.toFixed(2)}
+                          </TableCell>
+
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="sm" className="gap-1" onClick={() => openNewPayment(s.id)}>
