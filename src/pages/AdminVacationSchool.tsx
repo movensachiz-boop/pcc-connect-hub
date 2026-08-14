@@ -155,8 +155,11 @@ const AdminVacationSchool = () => {
     loadAll();
   };
 
-  const defaultAmountFor = (streamName?: string) =>
-    (streamName || "").toLowerCase().includes("external") ? "60" : "50";
+  const expectedFor = (streamName?: string) =>
+    (streamName || "").toLowerCase().includes("external") ? 60 : 50;
+
+  const defaultAmountFor = (streamName?: string) => String(expectedFor(streamName));
+
 
   const openNewPayment = (studentId?: string, streamName?: string) => {
     setEditingPayment(null);
