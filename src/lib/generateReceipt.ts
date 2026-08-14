@@ -103,7 +103,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(30, 30, 30);
-  doc.text("Fees Invoice", pw / 2, y, { align: "center" });
+  doc.text("Fees Receipt", pw / 2, y, { align: "center" });
   y += 8;
 
   // ── Security document ID ──
@@ -114,7 +114,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.text(`Document ID: ${docId}`, pw / 2, y + 3, { align: "center" });
   y += 10;
 
-  // ── Invoice & Student Details (two-column table) ──
+  // ── Receipt & Student Details (two-column table) ──
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
@@ -287,7 +287,7 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.text("Unauthorized reproduction or alteration of this document is prohibited.", pw / 2, 286, { align: "center" });
 
   const safeName = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-  doc.save(`Fees_Invoice_${safeName}.pdf`);
+  doc.save(`Fees_Receipt_${safeName}.pdf`);
 };
 
 const XP80_WIDTH_MM = 80;
@@ -368,7 +368,7 @@ const renderThermalReceipt = async (doc: jsPDF, data: ReceiptData, logo: HTMLIma
 
   dashed(y);
   y += 4;
-  centered("FEES INVOICE", 10, "bold", 4.8);
+  centered("FEES RECEIPT", 10, "bold", 4.8);
   dashed(y);
   y += 4;
 
@@ -506,7 +506,7 @@ export const generateThermalReceipt = async (data: ReceiptData, mode: "save" | "
   await renderThermalReceipt(doc, data, logo);
 
   const safeName = data.studentName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-  const fileName = `Fees_Invoice_Thermal_${safeName}.pdf`;
+  const fileName = `Fees_Receipt_Thermal_${safeName}.pdf`;
 
   if (mode === "print") {
     openPdfForAutomaticPrint(doc, fileName, printWindow);
