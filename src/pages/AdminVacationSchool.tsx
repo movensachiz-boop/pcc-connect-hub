@@ -554,7 +554,9 @@ const AdminVacationSchool = () => {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
+
                     </TableBody>
                   </Table>
                 )}
