@@ -318,7 +318,9 @@ export default function CashierReports() {
       })),
     ].sort((a, b) => a.time.localeCompare(b.time));
 
-    const sessMoves = movements.filter(m => (m.session_id === s.id) || (!m.session_id && m.business_date === s.business_date && m.cashier_name === s.cashier_name));
+    const liveMoves = ((movRes.data as any[]) || []) as Movement[];
+    const sessMoves = liveMoves.filter(m => (m.session_id === s.id) || (!m.session_id && m.business_date === s.business_date && m.cashier_name === s.cashier_name));
+
     const cashIns = sessMoves.filter(m => !isOutflow(m.movement_type));
     cashIns.forEach(m => receipts.push({
       time: timeOf(m.occurred_at), reference: m.reference || "—",
