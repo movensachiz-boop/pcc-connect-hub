@@ -221,11 +221,14 @@ export default function CashierReports() {
 
   const deleteMovement = async (m: Movement) => {
     if (!confirm(`Delete this ${isOutflow(m.movement_type) ? "money out" : "money in"} record of US$${Number(m.amount).toFixed(2)}? This cannot be undone.`)) return;
-    const { error } = await supabase.from("cash_movements").delete().eq("id", m.id);
+    const { data, error } = await supabase.from("cash_movements").delete().eq("id", m.id).select("id");
     if (error) return toast({ title: "Could not delete", description: error.message, variant: "destructive" });
-    toast({ title: "Deleted", description: "Record removed from the day's totals." });
+    if (!data || !data.length) return toast({ title: "Not deleted", description: "You do not have permission to remove this record.", variant: "destructive" });
+    setMovements(prev => prev.filter(x => x.id !== m.id));
+    toast({ title: "Deleted", description: "Record removed from the day's totals and reports." });
     load();
   };
+
 
 
 
