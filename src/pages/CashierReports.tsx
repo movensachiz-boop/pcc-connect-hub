@@ -267,8 +267,9 @@ export default function CashierReports() {
       // Always read movements straight from the database so deleted records
       // never linger in a report from stale client state.
       supabase.from("cash_movements").select("*")
-        .or(`business_date.eq.${s.business_date},session_id.eq.${s.id}`),
+        .eq("business_date", s.business_date),
     ]);
+
 
 
     // Records with no cashier stamped are counted in the day's report (unattributed takings)
