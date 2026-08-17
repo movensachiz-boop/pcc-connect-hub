@@ -260,8 +260,11 @@ export default function CashierReports() {
     const dayStart = catDayStartIso(s.business_date);
     const dayEnd = catDayEndIso(s.business_date);
 
-    const [auditRes, vacRes, invRes, movRes] = await Promise.all([
-      supabase.from("payment_audit_log").select("payment_id, student_profile_id, amount, method, receipt_number, created_at, actor_user_id, action")
+    const [payRes, auditRes, vacRes, invRes, movRes] = await Promise.all([
+      // Live payments are the source of truth — deleted rows disappear and edits show current values
+      supabase.from("payments").select("id, student_profile_id, amount, method, status, receipt_number, created_at")
+        .gte("created_at", dayStart).lte("created_at", dayEnd),
+      supabase.from("payment_audit_log").select("payment_id, actor_user_id, action, created_at")
         .eq("action", "created").gte("created_at", dayStart).lte("created_at", dayEnd),
       supabase.from("vacation_payments").select("id, amount, method, receipt_number, created_at, cashier_user_id, vacation_student_id")
         .gte("created_at", dayStart).lte("created_at", dayEnd),
@@ -277,11 +280,15 @@ export default function CashierReports() {
 
     // Records with no cashier stamped are counted in the day's report (unattributed takings)
     const mine = (uid: string | null | undefined) => !s.cashier_user_id || !uid || uid === s.cashier_user_id;
-    const audit = ((auditRes.data as any[]) || []).filter(r => mine(r.actor_user_id));
+    const actorOf: Record<string, string | null> = {};
+    ((auditRes.data as any[]) || []).forEach(a => { if (a.payment_id) actorOf[a.payment_id] = a.actor_user_id ?? null; });
+    const pays = ((payRes.data as any[]) || [])
+      .filter(p => !["voided", "refunded", "cancelled", "failed"].includes(String(p.status || "").toLowerCase()))
+      .filter(p => mine(actorOf[p.id]));
     const vac = ((vacRes.data as any[]) || []).filter(r => mine(r.cashier_user_id));
     const inv = ((invRes.data as any[]) || []).filter(r => mine(r.cashier_user_id));
 
-    const profileIds = Array.from(new Set(audit.map(a => a.student_profile_id).filter(Boolean)));
+    const profileIds = Array.from(new Set(pays.map(a => a.student_profile_id).filter(Boolean)));
     let names: Record<string, string> = {};
     if (profileIds.length) {
       const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number").in("id", profileIds);
@@ -295,7 +302,7 @@ export default function CashierReports() {
     }
 
     const receipts: CashTxn[] = [
-      ...audit.map(a => ({
+      ...pays.map(a => ({
         time: timeOf(a.created_at),
         reference: a.receipt_number || "—",
         description: names[a.student_profile_id] || "Student payment",
@@ -303,6 +310,7 @@ export default function CashierReports() {
         amount: Number(a.amount || 0),
         source: "Fees" as const,
       })),
+
       ...vac.map(v => ({
         time: timeOf(v.created_at),
         reference: v.receipt_number || "—",
