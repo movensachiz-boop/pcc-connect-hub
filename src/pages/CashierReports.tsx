@@ -257,14 +257,19 @@ export default function CashierReports() {
     const dayStart = catDayStartIso(s.business_date);
     const dayEnd = catDayEndIso(s.business_date);
 
-    const [auditRes, vacRes, invRes] = await Promise.all([
+    const [auditRes, vacRes, invRes, movRes] = await Promise.all([
       supabase.from("payment_audit_log").select("payment_id, student_profile_id, amount, method, receipt_number, created_at, actor_user_id, action")
         .eq("action", "created").gte("created_at", dayStart).lte("created_at", dayEnd),
       supabase.from("vacation_payments").select("id, amount, method, receipt_number, created_at, cashier_user_id, vacation_student_id")
         .gte("created_at", dayStart).lte("created_at", dayEnd),
       supabase.from("inventory_sales").select("id, total_amount, method, receipt_number, created_at, cashier_user_id, items")
         .gte("created_at", dayStart).lte("created_at", dayEnd),
+      // Always read movements straight from the database so deleted records
+      // never linger in a report from stale client state.
+      supabase.from("cash_movements").select("*")
+        .or(`business_date.eq.${s.business_date},session_id.eq.${s.id}`),
     ]);
+
 
     // Records with no cashier stamped are counted in the day's report (unattributed takings)
     const mine = (uid: string | null | undefined) => !s.cashier_user_id || !uid || uid === s.cashier_user_id;
