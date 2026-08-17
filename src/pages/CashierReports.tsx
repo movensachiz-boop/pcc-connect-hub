@@ -221,11 +221,14 @@ export default function CashierReports() {
 
   const deleteMovement = async (m: Movement) => {
     if (!confirm(`Delete this ${isOutflow(m.movement_type) ? "money out" : "money in"} record of US$${Number(m.amount).toFixed(2)}? This cannot be undone.`)) return;
-    const { error } = await supabase.from("cash_movements").delete().eq("id", m.id);
+    const { data, error } = await supabase.from("cash_movements").delete().eq("id", m.id).select("id");
     if (error) return toast({ title: "Could not delete", description: error.message, variant: "destructive" });
-    toast({ title: "Deleted", description: "Record removed from the day's totals." });
+    if (!data || !data.length) return toast({ title: "Not deleted", description: "You do not have permission to remove this record.", variant: "destructive" });
+    setMovements(prev => prev.filter(x => x.id !== m.id));
+    toast({ title: "Deleted", description: "Record removed from the day's totals and reports." });
     load();
   };
+
 
 
 
@@ -257,14 +260,20 @@ export default function CashierReports() {
     const dayStart = catDayStartIso(s.business_date);
     const dayEnd = catDayEndIso(s.business_date);
 
-    const [auditRes, vacRes, invRes] = await Promise.all([
+    const [auditRes, vacRes, invRes, movRes] = await Promise.all([
       supabase.from("payment_audit_log").select("payment_id, student_profile_id, amount, method, receipt_number, created_at, actor_user_id, action")
         .eq("action", "created").gte("created_at", dayStart).lte("created_at", dayEnd),
       supabase.from("vacation_payments").select("id, amount, method, receipt_number, created_at, cashier_user_id, vacation_student_id")
         .gte("created_at", dayStart).lte("created_at", dayEnd),
       supabase.from("inventory_sales").select("id, total_amount, method, receipt_number, created_at, cashier_user_id, items")
         .gte("created_at", dayStart).lte("created_at", dayEnd),
+      // Always read movements straight from the database so deleted records
+      // never linger in a report from stale client state.
+      supabase.from("cash_movements").select("*")
+        .eq("business_date", s.business_date),
     ]);
+
+
 
     // Records with no cashier stamped are counted in the day's report (unattributed takings)
     const mine = (uid: string | null | undefined) => !s.cashier_user_id || !uid || uid === s.cashier_user_id;
@@ -312,7 +321,9 @@ export default function CashierReports() {
       })),
     ].sort((a, b) => a.time.localeCompare(b.time));
 
-    const sessMoves = movements.filter(m => (m.session_id === s.id) || (!m.session_id && m.business_date === s.business_date && m.cashier_name === s.cashier_name));
+    const liveMoves = ((movRes.data as any[]) || []) as Movement[];
+    const sessMoves = liveMoves.filter(m => (m.session_id === s.id) || (!m.session_id && m.business_date === s.business_date && m.cashier_name === s.cashier_name));
+
     const cashIns = sessMoves.filter(m => !isOutflow(m.movement_type));
     cashIns.forEach(m => receipts.push({
       time: timeOf(m.occurred_at), reference: m.reference || "—",
