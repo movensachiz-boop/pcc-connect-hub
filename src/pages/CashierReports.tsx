@@ -256,7 +256,7 @@ export default function CashierReports() {
 
 
   // Collects all receipts + outflows attributable to one session
-  const collectSessionData = async (s: Session) => {
+  const collectSessionData = async (s: Session, allCashiers = false) => {
     const dayStart = catDayStartIso(s.business_date);
     const dayEnd = catDayEndIso(s.business_date);
 
@@ -279,7 +279,7 @@ export default function CashierReports() {
 
 
     // Records with no cashier stamped are counted in the day's report (unattributed takings)
-    const mine = (uid: string | null | undefined) => !s.cashier_user_id || !uid || uid === s.cashier_user_id;
+    const mine = (uid: string | null | undefined) => allCashiers || !s.cashier_user_id || !uid || uid === s.cashier_user_id;
     const actorOf: Record<string, string | null> = {};
     ((auditRes.data as any[]) || []).forEach(a => { if (a.payment_id) actorOf[a.payment_id] = a.actor_user_id ?? null; });
     const pays = ((payRes.data as any[]) || [])
@@ -330,7 +330,9 @@ export default function CashierReports() {
     ].sort((a, b) => a.time.localeCompare(b.time));
 
     const liveMoves = ((movRes.data as any[]) || []) as Movement[];
-    const sessMoves = liveMoves.filter(m => (m.session_id === s.id) || (!m.session_id && m.business_date === s.business_date && m.cashier_name === s.cashier_name));
+    const sessMoves = allCashiers
+      ? liveMoves
+      : liveMoves.filter(m => (m.session_id === s.id) || (!m.session_id && m.business_date === s.business_date && m.cashier_name === s.cashier_name));
 
     const cashIns = sessMoves.filter(m => !isOutflow(m.movement_type));
     cashIns.forEach(m => receipts.push({
@@ -460,12 +462,25 @@ export default function CashierReports() {
     const receipts: CashTxn[] = [];
     const outflows: CashOutflow[] = [];
     let float = 0, counted = 0, anyCounted = false;
-    for (const s of daySessions) {
-      const data = await collectSessionData(s);
-      data.receipts.forEach(r => receipts.push({ ...r, description: `[${s.cashier_name}] ${r.description}` }));
-      data.outflows.forEach(o => outflows.push({ ...o, reason: `[${s.cashier_name}] ${o.reason}` }));
-      float += Number(s.opening_float || 0);
-      if (s.closing_counted != null) { counted += Number(s.closing_counted); anyCounted = true; }
+    const allCash = cashierFilter === "all";
+    if (allCash) {
+      // One pass over the whole trading day so every cashier's entries appear,
+      // including takings recorded by cashiers who never opened a session.
+      const data = await collectSessionData(daySessions[0], true);
+      data.receipts.forEach(r => receipts.push(r));
+      data.outflows.forEach(o => outflows.push(o));
+      for (const s of daySessions) {
+        float += Number(s.opening_float || 0);
+        if (s.closing_counted != null) { counted += Number(s.closing_counted); anyCounted = true; }
+      }
+    } else {
+      for (const s of daySessions) {
+        const data = await collectSessionData(s);
+        data.receipts.forEach(r => receipts.push({ ...r, description: `[${s.cashier_name}] ${r.description}` }));
+        data.outflows.forEach(o => outflows.push({ ...o, reason: `[${s.cashier_name}] ${o.reason}` }));
+        float += Number(s.opening_float || 0);
+        if (s.closing_counted != null) { counted += Number(s.closing_counted); anyCounted = true; }
+      }
     }
     // A cashier can have more than one session on the same day. Each session
     // query sees that cashier's full day, so remove repeated transactions from
