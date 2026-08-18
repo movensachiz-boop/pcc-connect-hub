@@ -383,29 +383,47 @@ const AdminVacationSchool = () => {
 
           <TabsContent value="verify">
             <Card className="shadow-card">
-              <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
-                <div>
-                  <CardTitle className="text-lg">Verify Today's Payments</CardTitle>
-                  <CardDescription>
-                    {verifyDate === todayStr() ? "Today" : verifyDate} — {todaysPayments.length} payment(s),
-                    {" "}{verifiedCount} verified, total ${todaysTotal.toFixed(2)} (verified ${verifiedTotal.toFixed(2)})
-                  </CardDescription>
+              <CardHeader className="space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-lg">Verify Payments</CardTitle>
+                    <CardDescription>
+                      {verifyDate === todayStr() ? "Today" : verifyDate} — {todaysPayments.length} payment(s),
+                      {" "}{verifiedCount} verified, total ${todaysTotal.toFixed(2)} (verified ${verifiedTotal.toFixed(2)})
+                      {" "}· {todaysPayments.length - verifiedCount} left
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input type="date" value={verifyDate} onChange={e => setVerifyDate(e.target.value)} className="w-[160px]" />
+                    <Button variant="outline" size="sm" onClick={() => setVerifyDate(todayStr())}>Today</Button>
+                    <Button variant="outline" size="sm" onClick={() => verifyAll(true)} disabled={todaysPayments.length === 0}>
+                      Verify All
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => verifyAll(false)} disabled={verifiedCount === 0}>
+                      Clear All
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input type="date" value={verifyDate} onChange={e => setVerifyDate(e.target.value)} className="w-[160px]" />
-                  <Button variant="outline" size="sm" onClick={() => verifyAll(true)} disabled={todaysPayments.length === 0}>
-                    Verify All
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => verifyAll(false)} disabled={verifiedCount === 0}>
-                    Clear All
-                  </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Input
+                    placeholder="Search learner, receipt, amount…"
+                    value={verifySearch}
+                    onChange={e => setVerifySearch(e.target.value)}
+                    className="w-full sm:w-[280px]"
+                  />
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Checkbox checked={hideVerified} onCheckedChange={c => setHideVerified(!!c)} />
+                    Hide verified (show only what's left)
+                  </label>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
                 {loading ? (
                   <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div>
-                ) : todaysPayments.length === 0 ? (
-                  <p className="text-center py-10 text-muted-foreground">No payments recorded for this date</p>
+                ) : visibleVerifyPayments.length === 0 ? (
+                  <p className="text-center py-10 text-muted-foreground">
+                    {todaysPayments.length === 0 ? "No payments recorded for this date" : "Nothing left to verify for this filter"}
+                  </p>
                 ) : (
                   <Table>
                     <TableHeader>
@@ -420,7 +438,7 @@ const AdminVacationSchool = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {todaysPayments.map(p => {
+                      {visibleVerifyPayments.map(p => {
                         const s = studentById[p.vacation_student_id];
                         return (
                           <TableRow key={p.id} className={p.verified ? "bg-success/5" : undefined}>
