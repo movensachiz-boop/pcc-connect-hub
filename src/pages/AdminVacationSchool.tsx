@@ -68,6 +68,8 @@ const AdminVacationSchool = () => {
   const [streamFilter, setStreamFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [verifyDate, setVerifyDate] = useState<string>(todayStr());
+  const [verifySearch, setVerifySearch] = useState("");
+  const [hideVerified, setHideVerified] = useState(true);
 
   // registration form
   const [regOpen, setRegOpen] = useState(false);
