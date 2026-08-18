@@ -228,6 +228,19 @@ const AdminVacationSchool = () => {
   const todaysTotal = todaysPayments.reduce((s, p) => s + Number(p.amount), 0);
   const verifiedTotal = todaysPayments.filter(p => p.verified).reduce((s, p) => s + Number(p.amount), 0);
 
+  const visibleVerifyPayments = useMemo(() => {
+    const q = verifySearch.trim().toLowerCase();
+    return todaysPayments.filter(p => {
+      if (hideVerified && p.verified) return false;
+      if (!q) return true;
+      const s = studentById[p.vacation_student_id];
+      const name = s ? `${s.first_name} ${s.last_name} ${s.stream}` : "";
+      return [name, p.receipt_number, p.method, String(p.amount)]
+        .filter(Boolean)
+        .some(v => String(v).toLowerCase().includes(q));
+    });
+  }, [todaysPayments, verifySearch, hideVerified, studentById]);
+
   const applyVerified = async (ids: string[], value: boolean) => {
     if (ids.length === 0) return;
     const { data: { user } } = await supabase.auth.getUser();
