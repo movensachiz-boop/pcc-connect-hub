@@ -300,6 +300,19 @@ const AdminVacationSchool = () => {
   const owingFor = (s?: VStudent) =>
     s ? Math.max(0, expectedFor(s.stream) - (paidByStudent[s.id] || 0)) : 0;
 
+  // Duplicate detection: learners with more than one payment receipt
+  const paymentCountByStudent = useMemo(() => {
+    const m: Record<string, number> = {};
+    payments.forEach(p => { m[p.vacation_student_id] = (m[p.vacation_student_id] || 0) + 1; });
+    return m;
+  }, [payments]);
+  const duplicateCount = useMemo(
+    () => Object.values(paymentCountByStudent).filter(c => c > 1).length,
+    [paymentCountByStudent]
+  );
+  const overpaidFor = (s?: VStudent) =>
+    s ? Math.max(0, (paidByStudent[s.id] || 0) - expectedFor(s.stream)) : 0;
+
   const expectedTotal = filteredStudents.reduce((sum, s) => sum + expectedFor(s.stream), 0);
   
   const outstandingTotal = filteredStudents.reduce((sum, s) => sum + owingFor(s), 0);
@@ -349,6 +362,9 @@ const AdminVacationSchool = () => {
             <CardHeader className="pb-2">
               <CardDescription>Payments Recorded</CardDescription>
               <CardTitle className="text-2xl">{filteredPayments.length}</CardTitle>
+              {duplicateCount > 0 && (
+                <p className="text-xs text-destructive font-medium">{duplicateCount} learner(s) with multiple receipts</p>
+              )}
             </CardHeader>
           </Card>
           <Card className="shadow-card">
@@ -493,15 +509,24 @@ const AdminVacationSchool = () => {
                     <TableBody>
                       {filteredPayments.map(p => {
                         const s = studentById[p.vacation_student_id];
+                        const dupCount = paymentCountByStudent[p.vacation_student_id] || 1;
+                        const over = overpaidFor(s);
                         return (
-                          <TableRow key={p.id}>
+                          <TableRow key={p.id} className={dupCount > 1 ? "bg-destructive/10" : undefined}>
                             <TableCell className="font-medium">{p.receipt_number || "—"}</TableCell>
                             <TableCell>
                               {s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}
+                              {dupCount > 1 && (
+                                <Badge variant="destructive" className="ml-2">{dupCount} receipts</Badge>
+                              )}
+                              {over > 0 && (
+                                <Badge variant="destructive" className="ml-2">Overpaid ${over.toFixed(2)}</Badge>
+                              )}
                               {s && owingFor(s) > 0 && (
                                 <Badge variant="destructive" className="ml-2">Owes ${owingFor(s).toFixed(2)}</Badge>
                               )}
                             </TableCell>
+
 
                             <TableCell><Badge variant="secondary">{s?.stream || "—"}</Badge></TableCell>
                             <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
