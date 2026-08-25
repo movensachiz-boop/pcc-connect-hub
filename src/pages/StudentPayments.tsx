@@ -253,7 +253,27 @@ const StudentPayments = () => {
     <DashboardLayout role="student">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground">My Payments</h2>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-2xl font-bold text-foreground">My Payments</h2>
+            {terms.length > 0 && (
+              <Select value={selectedTermId ?? undefined} onValueChange={setSelectedTermId}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__all__">All terms</SelectItem>
+                  {terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_current ? " (Current)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {terms.length > 0 && selectedTermId !== "__all__" && !terms.find((t) => t.id === selectedTermId)?.is_current && (
+              <Badge className="bg-warning text-warning-foreground">Viewing past term</Badge>
+            )}
+          </div>
           <Button onClick={() => setPayDialogOpen(true)} className="gap-2">
             <DollarSign size={16} /> Make Payment
           </Button>
