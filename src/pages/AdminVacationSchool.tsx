@@ -506,15 +506,24 @@ const AdminVacationSchool = () => {
                     <TableBody>
                       {filteredPayments.map(p => {
                         const s = studentById[p.vacation_student_id];
+                        const dupCount = paymentCountByStudent[p.vacation_student_id] || 1;
+                        const over = overpaidFor(s);
                         return (
-                          <TableRow key={p.id}>
+                          <TableRow key={p.id} className={dupCount > 1 ? "bg-destructive/10" : undefined}>
                             <TableCell className="font-medium">{p.receipt_number || "—"}</TableCell>
                             <TableCell>
                               {s ? titleCaseName(`${s.first_name} ${s.last_name}`) : "—"}
+                              {dupCount > 1 && (
+                                <Badge variant="destructive" className="ml-2">{dupCount} receipts</Badge>
+                              )}
+                              {over > 0 && (
+                                <Badge variant="destructive" className="ml-2">Overpaid ${over.toFixed(2)}</Badge>
+                              )}
                               {s && owingFor(s) > 0 && (
                                 <Badge variant="destructive" className="ml-2">Owes ${owingFor(s).toFixed(2)}</Badge>
                               )}
                             </TableCell>
+
 
                             <TableCell><Badge variant="secondary">{s?.stream || "—"}</Badge></TableCell>
                             <TableCell>${Number(p.amount).toFixed(2)}</TableCell>
