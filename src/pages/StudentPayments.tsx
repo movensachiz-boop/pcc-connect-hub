@@ -32,6 +32,7 @@ interface Payment {
   description: string | null;
   created_at: string;
   verification_hash: string | null;
+  term_id?: string | null;
 }
 
 interface Profile {
