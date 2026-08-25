@@ -81,7 +81,7 @@ const rank = (raw: string, students: StudentProfile[]) => {
     .slice(0, 8);
 };
 
-const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank Deposit", onSaved }: Props) => {
+const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank Deposit", termId = null, onSaved }: Props) => {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [scanning, setScanning] = useState(false);
@@ -166,6 +166,7 @@ const BulkPaymentDialog = ({ open, onOpenChange, students, defaultMethod = "Bank
         method,
         status: "paid",
         description: r.details ? `Bulk: ${r.details}` : "Bulk bank statement entry",
+        ...(termId ? { term_id: termId } : {}),
       }));
       const { error } = await supabase.from("payments").insert(inserts);
       if (error) throw error;
