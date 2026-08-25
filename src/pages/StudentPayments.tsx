@@ -110,11 +110,13 @@ const StudentPayments = () => {
     if (profileData) setProfile(profileData);
 
     if (profileData) {
-      const { data: paymentData } = await supabase
+      let query = supabase
         .from("payments")
         .select("*")
         .eq("student_profile_id", profileData.id)
         .order("created_at", { ascending: false });
+      if (selectedTermId && selectedTermId !== "__all__") query = query.eq("term_id", selectedTermId);
+      const { data: paymentData } = await query;
       if (paymentData) setPayments(paymentData);
     }
     setLoading(false);
