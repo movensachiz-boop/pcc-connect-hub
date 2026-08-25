@@ -39,6 +39,7 @@ interface PaymentRow {
   phone: string | null;
   deposit_slip_url: string | null;
   verification_hash: string | null;
+  term_id?: string | null;
   studentName?: string;
   regNo?: string;
   studentClass?: string;
@@ -152,6 +153,7 @@ const AdminPayments = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [terms, setTerms] = useState<{ id: string; name: string; is_current: boolean }[]>([]);
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+  const TERM_STORAGE_KEY = "pcc.payments.selectedTermId";
   const [paymentSearch, setPaymentSearch] = useState("");
 
   const filteredPayments = payments.filter((p) => {
@@ -171,8 +173,11 @@ const AdminPayments = () => {
         .order("start_date", { ascending: false });
       if (data && data.length) {
         setTerms(data as any);
+        const stored = localStorage.getItem(TERM_STORAGE_KEY);
+        const validStored =
+          stored === "__all__" || (data as any[]).some((t) => t.id === stored) ? stored : null;
         const active = (data as any[]).find((t) => t.is_current) || data[0];
-        setSelectedTermId(active.id);
+        setSelectedTermId(validStored || active.id);
       } else {
         setSelectedTermId("__all__");
       }
@@ -183,8 +188,13 @@ const AdminPayments = () => {
 
   useEffect(() => {
     if (selectedTermId === null) return;
+    localStorage.setItem(TERM_STORAGE_KEY, selectedTermId);
     fetchPayments();
   }, [selectedTermId]);
+
+  const termNameById = (id?: string | null) => terms.find((t) => t.id === id)?.name;
+  const selectedTermName = () =>
+    selectedTermId && selectedTermId !== "__all__" ? termNameById(selectedTermId) : undefined;
 
   const fetchStudents = async () => {
     const { data } = await supabase.from("profiles").select("id, first_name, last_name, registration_number, guardian_phone, form, stream").order("first_name");
@@ -296,6 +306,7 @@ const AdminPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
     toast({ title: "Receipt Downloaded" });
   };
@@ -311,6 +322,7 @@ const AdminPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
     toast({ title: "Thermal Receipt Downloaded" });
   };
@@ -326,6 +338,7 @@ const AdminPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
   };
 
@@ -340,6 +353,7 @@ const AdminPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     }, "print");
   };
 
@@ -552,6 +566,7 @@ const AdminPayments = () => {
           method: manualMethod || "Bank Deposit",
           description: "Deposit slip payment",
           verificationHash: saved?.verification_hash || undefined,
+          termName: selectedTermName(),
         }, "print");
       } catch {
         // printing failed silently
