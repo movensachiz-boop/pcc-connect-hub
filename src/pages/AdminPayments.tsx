@@ -1232,6 +1232,7 @@ const AdminPayments = () => {
         open={bulkOpen}
         onOpenChange={setBulkOpen}
         students={students}
+        termId={selectedTermId && selectedTermId !== "__all__" ? selectedTermId : null}
         onSaved={fetchPayments}
       />
 
