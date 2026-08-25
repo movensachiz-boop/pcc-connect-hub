@@ -497,6 +497,7 @@ const AdminPayments = () => {
       bank_name: scannedData?.bank_name || null,
       swift_code: scannedData?.swift_code || null,
       transaction_id_format: scannedData?.transaction_id_format || null,
+      ...(selectedTermId && selectedTermId !== "__all__" ? { term_id: selectedTermId } : {}),
     }, `Payment $${manualAmount}`);
     const paymentData = res.data as { receipt_number?: string } | undefined;
     const error = res.error;
