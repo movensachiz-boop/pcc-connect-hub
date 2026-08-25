@@ -60,10 +60,42 @@ const StudentPayments = () => {
   const [submitting, setSubmitting] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [lastPayment, setLastPayment] = useState<Payment | null>(null);
+  const [terms, setTerms] = useState<Term[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+  const TERM_STORAGE_KEY = "pcc.student.payments.selectedTermId";
 
   useEffect(() => {
+    loadTerms();
     loadData();
   }, []);
+
+  const loadTerms = async () => {
+    const { data } = await supabase
+      .from("academic_terms")
+      .select("id, name, is_current")
+      .order("start_date", { ascending: false });
+    if (data && data.length) {
+      const list = data as Term[];
+      setTerms(list);
+      const stored = localStorage.getItem(TERM_STORAGE_KEY);
+      const validStored =
+        stored === "__all__" || list.some((t) => t.id === stored) ? stored : null;
+      const active = list.find((t) => t.is_current) || list[0];
+      setSelectedTermId(validStored || active.id);
+    } else {
+      setSelectedTermId("__all__");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTermId === null) return;
+    localStorage.setItem(TERM_STORAGE_KEY, selectedTermId);
+    loadData();
+  }, [selectedTermId]);
+
+  const termNameById = (id?: string | null) => terms.find((t) => t.id === id)?.name;
+  const selectedTermName = () =>
+    selectedTermId && selectedTermId !== "__all__" ? termNameById(selectedTermId) : undefined;
 
   const loadData = async () => {
     setLoading(true);
