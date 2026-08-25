@@ -16,6 +16,7 @@ import { catTime, catToday, catDate, nowIso, nowDate } from "@/lib/catTime";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
+import { generateVacationReport } from "@/lib/generateVacationReport";
 import { titleCaseName } from "@/lib/normalize";
 
 const STREAMS = [
