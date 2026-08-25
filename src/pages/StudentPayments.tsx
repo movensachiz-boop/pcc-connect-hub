@@ -197,6 +197,7 @@ const StudentPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
     toast({ title: "Receipt Downloaded" });
   };
@@ -212,6 +213,7 @@ const StudentPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
     toast({ title: "Thermal Receipt Downloaded" });
   };
@@ -227,6 +229,7 @@ const StudentPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
   };
 
