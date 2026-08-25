@@ -300,6 +300,19 @@ const AdminVacationSchool = () => {
   const owingFor = (s?: VStudent) =>
     s ? Math.max(0, expectedFor(s.stream) - (paidByStudent[s.id] || 0)) : 0;
 
+  // Duplicate detection: learners with more than one payment receipt
+  const paymentCountByStudent = useMemo(() => {
+    const m: Record<string, number> = {};
+    payments.forEach(p => { m[p.vacation_student_id] = (m[p.vacation_student_id] || 0) + 1; });
+    return m;
+  }, [payments]);
+  const duplicateCount = useMemo(
+    () => Object.values(paymentCountByStudent).filter(c => c > 1).length,
+    [paymentCountByStudent]
+  );
+  const overpaidFor = (s?: VStudent) =>
+    s ? Math.max(0, (paidByStudent[s.id] || 0) - expectedFor(s.stream)) : 0;
+
   const expectedTotal = filteredStudents.reduce((sum, s) => sum + expectedFor(s.stream), 0);
   
   const outstandingTotal = filteredStudents.reduce((sum, s) => sum + owingFor(s), 0);
