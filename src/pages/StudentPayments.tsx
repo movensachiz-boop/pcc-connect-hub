@@ -145,16 +145,19 @@ const StudentPayments = () => {
       paymentMethod === "ecocash" ? "EcoCash" :
       paymentMethod === "visa" ? "Visa Card" : "Bank Transfer";
 
+    const insertPayload: any = {
+      student_profile_id: profile.id,
+      amount: numAmount,
+      method: methodLabel,
+      status: paymentMethod === "bank" ? "pending" : "confirmed",
+      phone: paymentMethod === "ecocash" ? phone : null,
+      description: "School Fees Payment",
+    };
+    if (selectedTermId && selectedTermId !== "__all__") insertPayload.term_id = selectedTermId;
+
     const { data, error } = await supabase
       .from("payments")
-      .insert({
-        student_profile_id: profile.id,
-        amount: numAmount,
-        method: methodLabel,
-        status: paymentMethod === "bank" ? "pending" : "confirmed",
-        phone: paymentMethod === "ecocash" ? phone : null,
-        description: "School Fees Payment",
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
