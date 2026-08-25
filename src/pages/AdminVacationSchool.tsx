@@ -362,6 +362,9 @@ const AdminVacationSchool = () => {
             <CardHeader className="pb-2">
               <CardDescription>Payments Recorded</CardDescription>
               <CardTitle className="text-2xl">{filteredPayments.length}</CardTitle>
+              {duplicateCount > 0 && (
+                <p className="text-xs text-destructive font-medium">{duplicateCount} learner(s) with multiple receipts</p>
+              )}
             </CardHeader>
           </Card>
           <Card className="shadow-card">
