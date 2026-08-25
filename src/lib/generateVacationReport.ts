@@ -286,7 +286,7 @@ export const generateVacationReport = (
     { name: "Unpaid", value: unpaidStudents.length, color: RED },
   ]);
 
-  // ---------- Page 2: Paid list ----------
+  // ---------- Page 2: Fully paid list ----------
   const rowFor = (s: VacReportStudent) => {
     const paid = paidByStudent[s.id] || 0;
     const exp = expectedFor(s.stream);
@@ -307,13 +307,13 @@ export const generateVacationReport = (
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text(`Learners Who Have Paid (${paidStudents.length + partialStudents.length})`, 14, 10.5);
+  doc.text(`Learners Who Have Paid in Full (${paidStudents.length})`, 14, 10.5);
   doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "normal");
   autoTable(doc, {
     startY: 22,
     head,
-    body: [...paidStudents, ...partialStudents]
+    body: paidStudents
       .sort((a, b) => fullName(a).localeCompare(fullName(b)))
       .map(rowFor),
     theme: "grid",
@@ -323,7 +323,30 @@ export const generateVacationReport = (
     margin: { left: 14, right: 14 },
   });
 
-  // ---------- Page 3: Unpaid list ----------
+  // ---------- Page 3: Part paid list ----------
+  doc.addPage();
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 0, 210, 16, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text(`Learners Who Paid in Part (${partialStudents.length})`, 14, 10.5);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
+  autoTable(doc, {
+    startY: 22,
+    head,
+    body: partialStudents
+      .sort((a, b) => fullName(a).localeCompare(fullName(b)))
+      .map(rowFor),
+    theme: "grid",
+    styles: { fontSize: 8, cellPadding: 1.6 },
+    headStyles: { fillColor: GOLD, textColor: 255, fontSize: 8 },
+    alternateRowStyles: { fillColor: [255, 250, 240] },
+    margin: { left: 14, right: 14 },
+  });
+
+  // ---------- Page 4: Unpaid list ----------
   doc.addPage();
   doc.setFillColor(...RED);
   doc.rect(0, 0, 210, 16, "F");
