@@ -343,6 +343,16 @@ const AdminVacationSchool = () => {
               onChange={e => setSearch(e.target.value)}
               className="w-[220px]"
             />
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                generateVacationReport(filteredStudents, filteredPayments);
+                toast({ title: "Report generated", description: "Vacation school payment analysis PDF downloaded." });
+              }}
+            >
+              <Download size={16} /> Payment Report
+            </Button>
             <Button variant="outline" className="gap-2" onClick={() => { resetStudentForm(); setRegOpen(true); }}>
               <UserPlus size={16} /> Register Learner
             </Button>
