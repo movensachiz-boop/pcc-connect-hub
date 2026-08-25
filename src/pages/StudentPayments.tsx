@@ -10,10 +10,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Loader2, CreditCard, Smartphone, Building2, DollarSign, CheckCircle2, Printer } from "lucide-react";
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+interface Term {
+  id: string;
+  name: string;
+  is_current: boolean;
+}
 
 interface Payment {
   id: string;
@@ -25,6 +32,7 @@ interface Payment {
   description: string | null;
   created_at: string;
   verification_hash: string | null;
+  term_id?: string | null;
 }
 
 interface Profile {
@@ -53,10 +61,42 @@ const StudentPayments = () => {
   const [submitting, setSubmitting] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [lastPayment, setLastPayment] = useState<Payment | null>(null);
+  const [terms, setTerms] = useState<Term[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+  const TERM_STORAGE_KEY = "pcc.student.payments.selectedTermId";
 
   useEffect(() => {
+    loadTerms();
     loadData();
   }, []);
+
+  const loadTerms = async () => {
+    const { data } = await supabase
+      .from("academic_terms")
+      .select("id, name, is_current")
+      .order("start_date", { ascending: false });
+    if (data && data.length) {
+      const list = data as Term[];
+      setTerms(list);
+      const stored = localStorage.getItem(TERM_STORAGE_KEY);
+      const validStored =
+        stored === "__all__" || list.some((t) => t.id === stored) ? stored : null;
+      const active = list.find((t) => t.is_current) || list[0];
+      setSelectedTermId(validStored || active.id);
+    } else {
+      setSelectedTermId("__all__");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTermId === null) return;
+    localStorage.setItem(TERM_STORAGE_KEY, selectedTermId);
+    loadData();
+  }, [selectedTermId]);
+
+  const termNameById = (id?: string | null) => terms.find((t) => t.id === id)?.name;
+  const selectedTermName = () =>
+    selectedTermId && selectedTermId !== "__all__" ? termNameById(selectedTermId) : undefined;
 
   const loadData = async () => {
     setLoading(true);
@@ -71,11 +111,13 @@ const StudentPayments = () => {
     if (profileData) setProfile(profileData);
 
     if (profileData) {
-      const { data: paymentData } = await supabase
+      let query = supabase
         .from("payments")
         .select("*")
         .eq("student_profile_id", profileData.id)
         .order("created_at", { ascending: false });
+      if (selectedTermId && selectedTermId !== "__all__") query = query.eq("term_id", selectedTermId);
+      const { data: paymentData } = await query;
       if (paymentData) setPayments(paymentData);
     }
     setLoading(false);
@@ -104,16 +146,19 @@ const StudentPayments = () => {
       paymentMethod === "ecocash" ? "EcoCash" :
       paymentMethod === "visa" ? "Visa Card" : "Bank Transfer";
 
+    const insertPayload: any = {
+      student_profile_id: profile.id,
+      amount: numAmount,
+      method: methodLabel,
+      status: paymentMethod === "bank" ? "pending" : "confirmed",
+      phone: paymentMethod === "ecocash" ? phone : null,
+      description: "School Fees Payment",
+    };
+    if (selectedTermId && selectedTermId !== "__all__") insertPayload.term_id = selectedTermId;
+
     const { data, error } = await supabase
       .from("payments")
-      .insert({
-        student_profile_id: profile.id,
-        amount: numAmount,
-        method: methodLabel,
-        status: paymentMethod === "bank" ? "pending" : "confirmed",
-        phone: paymentMethod === "ecocash" ? phone : null,
-        description: "School Fees Payment",
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -153,6 +198,7 @@ const StudentPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
     toast({ title: "Receipt Downloaded" });
   };
@@ -168,6 +214,7 @@ const StudentPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
     toast({ title: "Thermal Receipt Downloaded" });
   };
@@ -183,6 +230,7 @@ const StudentPayments = () => {
       method: p.method,
       description: p.description || undefined,
       verificationHash: p.verification_hash || undefined,
+      termName: termNameById(p.term_id) || selectedTermName(),
     });
   };
 
@@ -205,7 +253,27 @@ const StudentPayments = () => {
     <DashboardLayout role="student">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-foreground">My Payments</h2>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-2xl font-bold text-foreground">My Payments</h2>
+            {terms.length > 0 && (
+              <Select value={selectedTermId ?? undefined} onValueChange={setSelectedTermId}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__all__">All terms</SelectItem>
+                  {terms.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_current ? " (Current)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {terms.length > 0 && selectedTermId !== "__all__" && !terms.find((t) => t.id === selectedTermId)?.is_current && (
+              <Badge className="bg-warning text-warning-foreground">Viewing past term</Badge>
+            )}
+          </div>
           <Button onClick={() => setPayDialogOpen(true)} className="gap-2">
             <DollarSign size={16} /> Make Payment
           </Button>
@@ -304,6 +372,11 @@ const StudentPayments = () => {
             <div>
               <Label>Amount (USD)</Label>
               <Input type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} min="1" />
+              {selectedTermId && selectedTermId !== "__all__" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  This payment will be recorded for <span className="font-medium text-foreground">{selectedTermName()}</span>.
+                </p>
+              )}
             </div>
 
             <Tabs value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -386,6 +459,9 @@ const StudentPayments = () => {
             </p>
             {lastPayment?.receipt_number && (
               <p className="text-sm font-medium">Receipt: {lastPayment.receipt_number}</p>
+            )}
+            {lastPayment?.term_id && termNameById(lastPayment.term_id) && (
+              <p className="text-sm font-medium text-primary">Term: {termNameById(lastPayment.term_id)}</p>
             )}
             <Button onClick={() => setSuccessDialogOpen(false)} className="mt-2">Done</Button>
           </div>
