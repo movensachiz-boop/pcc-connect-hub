@@ -372,6 +372,11 @@ const StudentPayments = () => {
             <div>
               <Label>Amount (USD)</Label>
               <Input type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} min="1" />
+              {selectedTermId && selectedTermId !== "__all__" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  This payment will be recorded for <span className="font-medium text-foreground">{selectedTermName()}</span>.
+                </p>
+              )}
             </div>
 
             <Tabs value={paymentMethod} onValueChange={setPaymentMethod}>
