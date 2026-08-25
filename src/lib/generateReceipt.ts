@@ -14,6 +14,7 @@ interface ReceiptData {
   description?: string;
   verificationHash?: string;
   schoolName?: string;
+  termName?: string;
 }
 
 const SCHOOL = (data: { schoolName?: string }) =>
@@ -106,6 +107,20 @@ export const generateReceipt = async (data: ReceiptData) => {
   doc.text("Fees Receipt", pw / 2, y, { align: "center" });
   y += 8;
 
+  // ── Term highlight banner ──
+  if (data.termName) {
+    doc.setFillColor(255, 215, 0);
+    doc.setDrawColor(0, 51, 102);
+    doc.setLineWidth(0.4);
+    const bw = 70;
+    doc.roundedRect(pw / 2 - bw / 2, y - 1, bw, 8, 2, 2, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(0, 51, 102);
+    doc.text(data.termName.toUpperCase(), pw / 2, y + 4.5, { align: "center" });
+    y += 11;
+  }
+
   // ── Security document ID ──
   const docId = `DOC-${data.receiptNo}-${Date.now().toString(36).toUpperCase()}`;
   doc.setFont("helvetica", "normal");
@@ -124,7 +139,7 @@ export const generateReceipt = async (data: ReceiptData) => {
       [`Receipt No.: ${data.receiptNo}`, `Student Name: ${data.studentName}`],
       [`Receipt Date: ${data.date}`, `Reg. Number: ${data.regNo}`],
       [`Payment Method: ${data.method}`, `Class: ${data.studentClass || "—"}`],
-      [`Status: PAID`, ``],
+      [`Status: PAID`, data.termName ? `Term: ${data.termName}` : ``],
     ],
     headStyles: {
       fillColor: [255, 255, 255],
@@ -369,6 +384,16 @@ const renderThermalReceipt = async (doc: jsPDF, data: ReceiptData, logo: HTMLIma
   dashed(y);
   y += 4;
   centered("FEES RECEIPT", 10, "bold", 4.8);
+  if (data.termName) {
+    doc.setFillColor(0, 0, 0);
+    doc.rect(margin, y - 0.5, contentWidth, 5.6, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text(data.termName.toUpperCase(), cx, y + 3.4, { align: "center" });
+    doc.setTextColor(0);
+    y += 7.5;
+  }
   dashed(y);
   y += 4;
 
@@ -378,6 +403,7 @@ const renderThermalReceipt = async (doc: jsPDF, data: ReceiptData, logo: HTMLIma
   row("Reg No:", data.regNo);
   row("Class:", data.studentClass || "—");
   row("Method:", data.method);
+  if (data.termName) row("Term:", data.termName);
   row("Status:", "PAID");
   row("Desc:", data.description || "Tuition Fee");
 
