@@ -460,6 +460,9 @@ const StudentPayments = () => {
             {lastPayment?.receipt_number && (
               <p className="text-sm font-medium">Receipt: {lastPayment.receipt_number}</p>
             )}
+            {lastPayment?.term_id && termNameById(lastPayment.term_id) && (
+              <p className="text-sm font-medium text-primary">Term: {termNameById(lastPayment.term_id)}</p>
+            )}
             <Button onClick={() => setSuccessDialogOpen(false)} className="mt-2">Done</Button>
           </div>
         </DialogContent>
