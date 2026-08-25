@@ -39,6 +39,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   students: StudentProfile[];
   defaultMethod?: string;
+  termId?: string | null;
   onSaved: () => void;
 }
 
