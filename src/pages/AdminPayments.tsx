@@ -17,6 +17,8 @@ import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, M
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { generatePaidLabels, generatePaidStudentsList, PaidStudent } from "@/lib/generatePaidLabels";
 import { generateFeesByClassPDF } from "@/lib/generateFeesByClass";
+import { generateFeesReport } from "@/lib/generateFeesReport";
+
 import { useToast } from "@/hooks/use-toast";
 import { catDate, catDateTime, nowDate } from "@/lib/catTime";
 import { supabase } from "@/integrations/supabase/client";
