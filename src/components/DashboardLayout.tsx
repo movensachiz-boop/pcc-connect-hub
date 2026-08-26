@@ -41,6 +41,7 @@ const adminLinks = [
   { label: "Audit Trail", icon: ShieldCheck, path: "/admin/audit" },
   { label: "Announcements", icon: Bell, path: "/admin/announcements" },
   { label: "Fees & Requirements", icon: Receipt, path: "/admin/fees" },
+  { label: "Enrolment Documents", icon: FileText, path: "/admin/enrolment-docs" },
   { label: "Procurement", icon: ShoppingCart, path: "/admin/procurement" },
   { label: "Goods Received", icon: Package, path: "/admin/procurement?tab=grn" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
