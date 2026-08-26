@@ -37,6 +37,7 @@ import TeacherMarks from "./pages/TeacherMarks";
 import NotFound from "./pages/NotFound";
 import VerifyReceipt from "./pages/VerifyReceipt";
 import AdminFees from "./pages/AdminFees";
+import AdminEnrolmentDocs from "./pages/AdminEnrolmentDocs";
 import StudentRequirements from "./pages/StudentRequirements";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerResults from "./pages/OwnerResults";
@@ -93,6 +94,7 @@ const App = () => (
             <Route path="/admin/timetable/master" element={<AdminMasterTimetable />} />
             <Route path="/admin/roster" element={<StaffGuard deny={DENY_TM}><AdminClassRoster /></StaffGuard>} />
             <Route path="/admin/fees" element={<StaffGuard deny={DENY_TM}><AdminFees /></StaffGuard>} />
+            <Route path="/admin/enrolment-docs" element={<StaffGuard deny={DENY_TM}><AdminEnrolmentDocs /></StaffGuard>} />
             <Route path="/admin/inventory" element={<StaffGuard deny={DENY_TM}><AdminInventory /></StaffGuard>} />
             <Route path="/admin/procurement" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminProcurement /></StaffGuard>} />
             <Route path="/admin/audit" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminAuditTrail /></StaffGuard>} />
