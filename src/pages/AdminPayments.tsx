@@ -17,6 +17,8 @@ import { Download, Camera, Upload, Loader2, CheckCircle, Search, Eye, Printer, M
 import { generateReceipt, generateThermalReceipt, printReceipt } from "@/lib/generateReceipt";
 import { generatePaidLabels, generatePaidStudentsList, PaidStudent } from "@/lib/generatePaidLabels";
 import { generateFeesByClassPDF } from "@/lib/generateFeesByClass";
+import { generateFeesReport } from "@/lib/generateFeesReport";
+
 import { useToast } from "@/hooks/use-toast";
 import { catDate, catDateTime, nowDate } from "@/lib/catTime";
 import { supabase } from "@/integrations/supabase/client";
@@ -770,6 +772,30 @@ const AdminPayments = () => {
             }} className="gap-2">
               <FileText size={16} /> Fees by Class PDF
             </Button>
+            <Button variant="outline" onClick={() => {
+              const rows = students.map((s) => {
+                const summary = feeSummary.get(s.id);
+                return {
+                  id: s.id,
+                  name: titleCaseName(`${s.first_name} ${s.last_name}`),
+                  regNo: s.registration_number || "N/A",
+                  className: formatClass(s) || "Unassigned",
+                  expected: summary?.total_fees || 0,
+                  paid: summary?.total_paid || 0,
+                  guardianPhone: (s as any).guardian_phone || null,
+                };
+              });
+              if (!rows.length) { toast({ title: "No students found", variant: "destructive" }); return; }
+              generateFeesReport(
+                rows,
+                payments.map((p) => ({ amount: Number(p.amount || 0), created_at: p.created_at })),
+                selectedTermName()
+              );
+              toast({ title: "Report generated", description: "Fees collection analysis PDF downloaded." });
+            }} className="gap-2">
+              <FileText size={16} /> Collection Report PDF
+            </Button>
+
             <Button onClick={() => setSlipDialogOpen(true)} className="gap-2">
               <Camera size={16} /> Scan Deposit Slip
             </Button>
