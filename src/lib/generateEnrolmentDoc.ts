@@ -45,14 +45,14 @@ export const buildEnrolmentDoc = async (data: EnrolmentDocData): Promise<jsPDF> 
       img.onerror = () => reject();
       img.src = logoModule.default;
     });
-    doc.addImage(img, "PNG", pw / 2 - 13, y, 26, 26);
-    y += 30;
+    doc.addImage(img, "PNG", pw / 2 - 11, y, 22, 22);
+    y += 25;
   } catch {
     y += 6;
   }
 
   // Navy banner
-  const bannerH = 26;
+  const bannerH = 24;
   doc.setFillColor(...NAVY);
   doc.rect(0, y, pw, bannerH, "F");
   doc.setTextColor(255, 255, 255);
@@ -65,7 +65,7 @@ export const buildEnrolmentDoc = async (data: EnrolmentDocData): Promise<jsPDF> 
   doc.setFontSize(11);
   doc.setTextColor(255, 214, 0);
   doc.text(`ENROLMENT REQUIREMENTS — ${data.year}`, pw / 2, y + 23, { align: "center" });
-  y += bannerH + 10;
+  y += bannerH + 8;
 
   // Sub title
   doc.setTextColor(...NAVY);
@@ -107,7 +107,7 @@ export const buildEnrolmentDoc = async (data: EnrolmentDocData): Promise<jsPDF> 
     },
   });
   // @ts-ignore
-  y = doc.lastAutoTable.finalY + 10;
+  y = doc.lastAutoTable.finalY + 8;
 
   // Uniform heading
   doc.setFont("helvetica", "bold");
@@ -128,7 +128,7 @@ export const buildEnrolmentDoc = async (data: EnrolmentDocData): Promise<jsPDF> 
     ],
     theme: "grid",
     headStyles: { fillColor: HEAD_BG, textColor: 255, fontStyle: "bold", fontSize: 9.5 },
-    bodyStyles: { fontSize: 9, textColor: [40, 40, 40], cellPadding: 2 },
+    bodyStyles: { fontSize: 8.6, textColor: [40, 40, 40], cellPadding: 1.5 },
     alternateRowStyles: { fillColor: ROW_ALT },
     styles: { lineColor: [200, 208, 220], lineWidth: 0.2 },
     columnStyles: {
