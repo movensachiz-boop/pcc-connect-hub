@@ -238,7 +238,12 @@ const DeveloperSla = () => {
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="agreements">Agreements</TabsTrigger>
             <TabsTrigger value="editor" disabled={!editing}>Editor</TabsTrigger>
+            <TabsTrigger value="sales">Sales & Billing</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="sales">
+            <DataplexSales />
+          </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
