@@ -7,7 +7,7 @@ import stampAsset from "@/assets/dataplex-stamp.png.asset.json";
  * Loads the company stamp and processes it so it prints like a real rubber
  * stamp: white background knocked out, ink slightly uneven/faded, edges broken.
  */
-const loadStampDataUrl = async (): Promise<string | null> => {
+export const loadStampDataUrl = async (): Promise<string | null> => {
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image();

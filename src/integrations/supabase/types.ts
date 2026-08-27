@@ -310,6 +310,98 @@ export type Database = {
         }
         Relationships: []
       }
+      dataplex_documents: {
+        Row: {
+          address: string | null
+          agreement_id: string | null
+          amount_paid: number
+          client_name: string
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          discount: number
+          doc_number: string
+          doc_type: string
+          due_date: string | null
+          email: string | null
+          id: string
+          issue_date: string
+          items: Json
+          notes: string | null
+          payment_method: string | null
+          phone: string | null
+          provider: Json
+          status: string
+          tax_percent: number
+          total: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          address?: string | null
+          agreement_id?: string | null
+          amount_paid?: number
+          client_name?: string
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount?: number
+          doc_number?: string
+          doc_type: string
+          due_date?: string | null
+          email?: string | null
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          payment_method?: string | null
+          phone?: string | null
+          provider?: Json
+          status?: string
+          tax_percent?: number
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          address?: string | null
+          agreement_id?: string | null
+          amount_paid?: number
+          client_name?: string
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount?: number
+          doc_number?: string
+          doc_type?: string
+          due_date?: string | null
+          email?: string | null
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          payment_method?: string | null
+          phone?: string | null
+          provider?: Json
+          status?: string
+          tax_percent?: number
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dataplex_documents_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sla_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_sessions: {
         Row: {
           created_at: string

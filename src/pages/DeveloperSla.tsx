@@ -15,6 +15,7 @@ import { Copy, Edit, FileDown, Plus, Trash2, History, Archive, FileText } from "
 import { DEFAULT_PRICING, DEFAULT_PROVIDER, DEFAULT_SECTIONS, SECTION_ORDER } from "@/lib/slaDefaults";
 import { generateSLA } from "@/lib/generateSLA";
 import { logSlaActivity } from "@/lib/slaAudit";
+import DataplexSales from "@/components/DataplexSales";
 
 interface Agreement {
   id: string;
@@ -238,7 +239,12 @@ const DeveloperSla = () => {
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="agreements">Agreements</TabsTrigger>
             <TabsTrigger value="editor" disabled={!editing}>Editor</TabsTrigger>
+            <TabsTrigger value="sales">Sales & Billing</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="sales">
+            <DataplexSales />
+          </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
