@@ -131,7 +131,7 @@ export const generateSLA = (data: SlaAgreementData) => {
   doc.setFont("helvetica", "bold");
   doc.text("Covered Installations:", margin, y); y += 5;
   doc.setFont("helvetica", "normal");
-  (pricing.installations || []).forEach((it: string) => {
+  (pricing.installations || []).filter((it: string) => it && it.trim()).forEach((it: string) => {
     ensureSpace(5);
     doc.text(`• ${it}`, margin + 4, y); y += 5;
   });

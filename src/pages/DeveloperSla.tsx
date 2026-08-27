@@ -354,7 +354,10 @@ const EditorPane = ({
 }) => {
   const set = (patch: Partial<Agreement>) => onChange({ ...value, ...patch });
   const provider = { ...DEFAULT_PROVIDER, ...(value.provider || {}) };
+  const pricing = { ...DEFAULT_PRICING, ...(value.pricing || {}) };
   const sections = { ...DEFAULT_SECTIONS, ...(value.sections || {}) };
+  const installations: string[] = pricing.installations || [];
+  const setInstallations = (list: string[]) => set({ pricing: { ...pricing, installations: list } });
 
   return (
     <div className="grid lg:grid-cols-2 gap-4">
@@ -390,6 +393,39 @@ const EditorPane = ({
             <div className="grid grid-cols-2 gap-2">
               <Field label="Monthly Fee"><Input type="number" step="0.01" value={value.monthly_fee} onChange={e => set({ monthly_fee: Number(e.target.value) })} /></Field>
               <Field label="Currency"><Input value={value.currency} onChange={e => set({ currency: e.target.value })} /></Field>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Covered Installations</Label>
+                <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={() => setInstallations([...installations, ""])}>
+                  <Plus size={14} /> Add
+                </Button>
+              </div>
+              {installations.length === 0 && (
+                <p className="text-xs text-muted-foreground">No installations listed. Click Add to include one.</p>
+              )}
+              {installations.map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input
+                    value={item}
+                    placeholder="e.g. Main Campus School Management System"
+                    onChange={e => {
+                      const next = [...installations];
+                      next[i] = e.target.value;
+                      setInstallations(next);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="shrink-0 text-destructive"
+                    onClick={() => setInstallations(installations.filter((_, j) => j !== i))}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              ))}
             </div>
             <p className="text-xs text-muted-foreground italic">
               Additional modules and custom developments are quoted and billed separately.
