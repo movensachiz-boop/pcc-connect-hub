@@ -78,6 +78,9 @@ export const generateSalesDoc = async (data: SalesDocData) => {
   doc.setFontSize(9);
   doc.setTextColor(120);
   doc.text("Relax we make it easy", margin, 25.5);
+  doc.setFillColor(...gold);
+  doc.rect(margin, 28.5, 28, 1.2, "F");
+
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(19);
