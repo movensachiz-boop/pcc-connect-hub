@@ -305,8 +305,18 @@ const DocEditor = ({ value, onChange }: { value: SalesDoc; onChange: (d: SalesDo
           </Select>
         </Field>
         {value.doc_type !== "quotation" && (
-          <Field label="Payment Method"><Input value={value.payment_method || ""} onChange={e => set({ payment_method: e.target.value })} placeholder="EcoCash / Bank / Cash" /></Field>
+          <Field label="Payment Method">
+            <Select value={value.payment_method || ""} onValueChange={v => set({ payment_method: v })}>
+              <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
+              <SelectContent>
+                {["EcoCash", "Cash", "Bank Transfer", "Swipe", "InnBucks", "Other"].map(m => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
         )}
+
       </div>
 
       <div className="space-y-2">
