@@ -1,6 +1,74 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { DEFAULT_PRICING, DEFAULT_PROVIDER, DEFAULT_SECTIONS, SECTION_ORDER } from "./slaDefaults";
+import stampAsset from "@/assets/dataplex-stamp.png.asset.json";
+
+/**
+ * Loads the company stamp and processes it so it prints like a real rubber
+ * stamp: white background knocked out, ink slightly uneven/faded, edges broken.
+ */
+const loadStampDataUrl = async (): Promise<string | null> => {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.crossOrigin = "anonymous";
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = stampAsset.url;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imgData.data;
+    const w = canvas.width;
+
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      const lum = (r + g + b) / 3;
+
+      // Knock out the white paper background
+      if (lum > 215) {
+        d[i + 3] = 0;
+        continue;
+      }
+
+      // Soft edge falloff for anti-aliased pixels
+      let alpha = lum > 170 ? Math.round(255 * (1 - (lum - 170) / 45)) : 255;
+
+      const px = (i / 4) % w;
+      const py = Math.floor(i / 4 / w);
+
+      // Uneven ink coverage: low-frequency wave + high-frequency speckle
+      const wave =
+        Math.sin(px * 0.013) * Math.cos(py * 0.017) +
+        Math.sin((px + py) * 0.031) * 0.6;
+      const speckle = Math.random();
+
+      alpha *= 0.72 + wave * 0.12;
+      if (speckle > 0.90) alpha *= 0.25; // dry-ink pinholes
+      if (speckle < 0.03) alpha *= 1.15; // ink pooling
+
+      d[i + 3] = Math.max(0, Math.min(255, alpha));
+
+      // Slightly bleed / desaturate the ink so it reads as pigment, not vector
+      d[i] = Math.min(255, r + 18);
+      d[i + 1] = Math.min(255, g + 10);
+      d[i + 2] = Math.min(255, b + 24);
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+};
+
 
 export interface SlaAgreementData {
   agreement_number: string;
