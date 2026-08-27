@@ -354,7 +354,10 @@ const EditorPane = ({
 }) => {
   const set = (patch: Partial<Agreement>) => onChange({ ...value, ...patch });
   const provider = { ...DEFAULT_PROVIDER, ...(value.provider || {}) };
+  const pricing = { ...DEFAULT_PRICING, ...(value.pricing || {}) };
   const sections = { ...DEFAULT_SECTIONS, ...(value.sections || {}) };
+  const installations: string[] = pricing.installations || [];
+  const setInstallations = (list: string[]) => set({ pricing: { ...pricing, installations: list } });
 
   return (
     <div className="grid lg:grid-cols-2 gap-4">
