@@ -15,6 +15,7 @@ import { Copy, Edit, FileDown, Plus, Trash2, History, Archive, FileText } from "
 import { DEFAULT_PRICING, DEFAULT_PROVIDER, DEFAULT_SECTIONS, SECTION_ORDER } from "@/lib/slaDefaults";
 import { generateSLA } from "@/lib/generateSLA";
 import { logSlaActivity } from "@/lib/slaAudit";
+import DataplexSales from "@/components/DataplexSales";
 
 interface Agreement {
   id: string;
