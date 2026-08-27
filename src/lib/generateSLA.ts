@@ -96,7 +96,7 @@ const RESPONSE_TABLE = [
   ["Low", "Minor bug or cosmetic issue", "1 Business Day", "Within 5 Business Days"],
 ];
 
-export const generateSLA = (data: SlaAgreementData) => {
+export const generateSLA = async (data: SlaAgreementData) => {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
@@ -291,6 +291,21 @@ export const generateSLA = (data: SlaAgreementData) => {
   drawBlock(margin, "Service Provider", provider.name);
   drawBlock(margin + colW + 10, "Client", data.contact_person || data.client_name);
   y = blockY + 32;
+
+  // Company rubber stamp over the provider signature block
+  const stamp = await loadStampDataUrl();
+  if (stamp) {
+    const sw = 52;
+    const sh = 52 * (1240 / 1256);
+    const sx = margin + 6;
+    const sy = blockY - 4;
+    doc.saveGraphicsState();
+    // @ts-ignore
+    doc.setGState(new (doc as any).GState({ opacity: 0.82 }));
+    doc.addImage(stamp, "PNG", sx, sy, sw, sh, `stamp-${data.agreement_number}`, "NONE", -13);
+    doc.restoreGraphicsState();
+  }
+
 
   // Watermark + page numbers on every page
   const total = doc.getNumberOfPages();
