@@ -267,7 +267,7 @@ export const generateSLA = async (data: SlaAgreementData) => {
   writeSection(SECTION_ORDER[12].title, sections.liability);
 
   // Acceptance + signatures
-  ensureSpace(60);
+  ensureSpace(95);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);

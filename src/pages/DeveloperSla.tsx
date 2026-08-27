@@ -191,7 +191,7 @@ const DeveloperSla = () => {
   };
 
   const exportPdf = async (a: Agreement) => {
-    generateSLA({
+    await generateSLA({
       agreement_number: a.agreement_number,
       status: a.status,
       client_name: a.client_name,
