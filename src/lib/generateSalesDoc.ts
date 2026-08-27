@@ -266,20 +266,6 @@ export const generateSalesDoc = async (data: SalesDocData) => {
   }
 
 
-  if (data.notes) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.5);
-    doc.setTextColor(...primary);
-    doc.text("Notes", margin, y);
-    y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(40);
-    doc.splitTextToSize(data.notes, pw - margin * 2 - 82).forEach((ln: string) => {
-      doc.text(ln, margin, y);
-      y += 4.6;
-    });
-    y += 4;
-  }
 
   // Signature + stamp
   const sigY = Math.min(Math.max(y + 6, ph - 62), ph - 50);
