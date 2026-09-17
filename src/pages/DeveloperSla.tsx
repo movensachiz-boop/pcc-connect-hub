@@ -11,11 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Edit, FileDown, Plus, Trash2, History, Archive, FileText } from "lucide-react";
+import { Copy, Edit, FileDown, Plus, Trash2, History, Archive, FileText, Landmark } from "lucide-react";
 import { DEFAULT_PRICING, DEFAULT_PROVIDER, DEFAULT_SECTIONS, SECTION_ORDER } from "@/lib/slaDefaults";
 import { generateSLA } from "@/lib/generateSLA";
 import { logSlaActivity } from "@/lib/slaAudit";
 import DataplexSales from "@/components/DataplexSales";
+import BankIntegrationProposal from "@/components/BankIntegrationProposal";
 
 interface Agreement {
   id: string;
@@ -192,13 +193,6 @@ const DeveloperSla = () => {
   };
 
   const exportPdf = async (a: Agreement) => {
-    const { count: studentCount, error: countError } = await supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true });
-    if (countError) {
-      toast.error("Could not load the live student total");
-      return;
-    }
     await generateSLA({
       agreement_number: a.agreement_number,
       status: a.status,
@@ -216,7 +210,6 @@ const DeveloperSla = () => {
       provider: a.provider || DEFAULT_PROVIDER,
       pricing: a.pricing || DEFAULT_PRICING,
       sections: { ...DEFAULT_SECTIONS, ...(a.sections || {}) },
-      student_count: studentCount || 0,
     });
     await logSlaActivity("pdf_export", a.id);
   };
@@ -247,11 +240,16 @@ const DeveloperSla = () => {
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="agreements">Agreements</TabsTrigger>
             <TabsTrigger value="editor" disabled={!editing}>Editor</TabsTrigger>
+            <TabsTrigger value="bank" className="gap-2"><Landmark className="h-4 w-4" /> Bank Integration</TabsTrigger>
             <TabsTrigger value="sales">Sales & Billing</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales">
             <DataplexSales />
+          </TabsContent>
+
+          <TabsContent value="bank">
+            <BankIntegrationProposal />
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-4">
