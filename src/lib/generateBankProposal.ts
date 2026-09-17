@@ -155,6 +155,10 @@ export const generateBankProposal = async (data: BankProposalData) => {
       styles: { lineColor: [200, 200, 200], lineWidth: 0.25 },
     });
     y = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...blue);
+    doc.text("PAID", pw - rx - 24, y - 3, { align: "center" });
     doc.setFillColor(245, 248, 252);
     doc.setDrawColor(...blue);
     doc.roundedRect(rx + 9, y, rw - 18, 38, 2, 2, "FD");
@@ -172,10 +176,6 @@ export const generateBankProposal = async (data: BankProposalData) => {
       const qr = await QRCode.toDataURL(`https://progresscentresys.com/verify?r=${encodeURIComponent(receiptNo)}`, { width: 180, margin: 1, errorCorrectionLevel: "M" });
       doc.addImage(qr, "PNG", rx + rw - 40, y + 6, 26, 26);
     } catch { /* The specimen remains usable without the QR image. */ }
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(...blue);
-    doc.text("PAID", pw - rx - 24, ry + 207, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(100);
