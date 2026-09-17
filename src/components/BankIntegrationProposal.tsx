@@ -24,13 +24,15 @@ const BankIntegrationProposal = () => {
   const [studentCount, setStudentCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const loadStudentCount = async () => {
+  const loadStudentCount = async (): Promise<number | null> => {
     const { count, error } = await supabase.from("profiles").select("id", { count: "exact", head: true });
     if (error) {
       toast.error("Could not load the live student total");
-      return;
+      return null;
     }
-    setStudentCount(count || 0);
+    const liveCount = count || 0;
+    setStudentCount(liveCount);
+    return liveCount;
   };
 
   useEffect(() => {
@@ -56,8 +58,9 @@ const BankIntegrationProposal = () => {
     }
     setLoading(true);
     try {
-      await loadStudentCount();
-      await generateBankProposal({ ...details, studentCount });
+      const liveCount = await loadStudentCount();
+      if (liveCount === null) return;
+      await generateBankProposal({ ...details, studentCount: liveCount });
       toast.success("Bank integration proposal downloaded");
     } catch {
       toast.error("Could not generate the bank proposal");
