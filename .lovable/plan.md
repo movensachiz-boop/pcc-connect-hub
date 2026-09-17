@@ -1,98 +1,27 @@
+# Bank Integration Proposal
 
-# SLA Management Module (Developer Portal Only)
+## Goal
+Create a separate, bank-ready PDF proposal for putting the school payment system live. It will not be presented as an SLA.
 
-A private contract-management area, locked to a new `developer` role. No school admin, owner, teacher, parent, student, cashier, or timetable manager can see or reach it.
+## Changes
+- Add a dedicated **Bank Integration** section in the Developer Portal with its own download button.
+- Generate a professionally branded proposal addressed to the bank, using the live registered-student count.
+- Explain the complete finance flow: student accounts, term allocation, bank payment matching, cashier controls, reconciliation, audit history, reports, backups, and receipt verification.
+- Explain how permanent six-character student registration numbers are issued and used as payment references.
+- Include full-size realistic examples of both the school-fees receipt and inventory receipt, including QR verification.
+- Add a clear **Requirements from the Bank** section covering:
+  - API documentation and sandbox access
+  - secure credentials and production access
+  - account and merchant identifiers
+  - payment-status and transaction-query services
+  - webhook/callback configuration and security
+  - unique payment-reference support
+  - settlement and reconciliation files/APIs
+  - reversals, refunds, duplicate handling, and dispute procedures
+  - supported payment channels and currencies
+  - security, compliance, data-protection, testing, certification, support, and go-live approval
+- Add an implementation and go-live checklist showing responsibilities for the bank, school, and Dataplex Softwares.
+- Remove the bank proposal content and receipt appendices from the SLA PDF so the two documents remain separate.
 
-## 1. Access control
-
-- Add `developer` to the `app_role` enum.
-- Grant `developer` to the master account only (your developer login). Nobody else.
-- All SLA tables get RLS policies that require `has_role(auth.uid(), 'developer')` — server-side, not just UI.
-- Hide the Developer Portal link in the sidebar for every non-developer role.
-- Route `/developer/*` wrapped in a `DeveloperGuard` that redirects non-developers away.
-
-## 2. Database (new tables)
-
-- `sla_agreements` — client info, dates, fees, status (draft/active/expired/awaiting_renewal/archived), current version, full JSON content of all 14 sections, service-provider block, agreement number (`SLA-0001`…).
-- `sla_versions` — immutable snapshots each time an agreement is edited (version number, content JSON, edited_by, edited_at).
-- `sla_templates` — reusable templates (name, content JSON, created_by).
-- `sla_audit_log` — every create / edit / view / duplicate / archive / delete / PDF export event with actor + timestamp + diff summary.
-- All tables: RLS `developer-only`, GRANTs to `authenticated` + `service_role`, `updated_at` trigger, sequence for agreement numbers.
-
-## 3. Developer Portal UI
-
-New section in sidebar (developer role only):
-
-```
-Developer Portal
-└── Service Level Agreements
-    ├── Dashboard
-    ├── Agreements
-    └── Templates
-```
-
-### Dashboard (`/developer/sla`)
-Stat cards: Total, Active, Expired, Awaiting Renewal (expiry within 30 days), Monthly Revenue (sum of monthly fees on active SLAs). Recent activity from audit log.
-
-### Agreements list (`/developer/sla/agreements`)
-Table with search + filters (status, client, date range). Row actions: View, Edit, Duplicate, Archive, Delete, Export PDF, History.
-
-### Agreement editor (`/developer/sla/agreements/:id`)
-Tabbed form:
-- **Client** — name, contact person, school, address, email, phone, start, expiry, renewal date.
-- **Pricing** — monthly fee (default $60), covered installations list, exclusions block, separate-billing notice.
-- **Service Provider** — defaults: Takudzwa Singo / Sole Vendor / address / phone / email (editable).
-- **Sections** — 14 sections rendered as rich-text blocks (using a lightweight contentEditable / textarea-based editor; pre-filled with the wording from the user's brief). Each section editable; reset-to-default button.
-- **Live preview** pane on the right showing the rendered legal document.
-- Auto-save (10s debounce) → writes new `sla_versions` row whenever content changes.
-
-### Templates (`/developer/sla/templates`)
-Save current agreement as template, clone template into new agreement, manage versions.
-
-### History dialog
-Lists every version with diff timestamps and "Restore this version" + "Download this version's PDF".
-
-## 4. PDF generation
-
-`src/lib/generateSLA.ts` using jsPDF:
-- Cover header with optional school logo, agreement number (`SLA-0001`), generation date.
-- All 14 sections with clean typography, numbered headings, automatic pagination, page numbers ("Page X of Y") in footer.
-- Incident-response and pricing tables rendered with autoTable.
-- Signature blocks for Service Provider and Client.
-- Diagonal watermark "Generated by Developer Portal" in light gray.
-- Every export logs a row in `sla_audit_log` (action `pdf_export`).
-
-## 5. Audit & security
-
-- Every read/write goes through audit log via a `logSlaActivity()` helper.
-- RLS denies all non-developer access (no anon, no authenticated-non-developer).
-- `robots.txt` already covers indexing; routes are behind auth anyway.
-- No public share URLs.
-
-## 6. Future expansion (scaffolded, not implemented)
-
-`sla_agreements.document_type` enum: `sla`, `licence`, `nda`, `dpa`, `maintenance`, `consultancy`, `software_licence`. Only `sla` shipped now; the editor + PDF generator switch on this field so new types plug in cleanly later. Digital signatures, email delivery, and renewal reminders are left as TODO hooks (columns reserved: `signed_at`, `signed_by_client`, `reminder_sent_at`).
-
-## Technical summary
-
-- **Migration**: add `developer` to `app_role` enum; create 4 tables + sequence + triggers + RLS + GRANTs.
-- **Files**:
-  - `src/components/DeveloperGuard.tsx`
-  - `src/pages/DeveloperSlaDashboard.tsx`
-  - `src/pages/DeveloperSlaAgreements.tsx`
-  - `src/pages/DeveloperSlaEditor.tsx`
-  - `src/pages/DeveloperSlaTemplates.tsx`
-  - `src/lib/generateSLA.ts`
-  - `src/lib/slaDefaults.ts` (default section text + provider defaults)
-  - `src/lib/slaAudit.ts`
-  - Sidebar update in `DashboardLayout.tsx` (developer-only section)
-  - Routes added to `App.tsx`
-- **No changes** to student, teacher, owner, cashier, or school-admin surfaces.
-
-## Question before I build
-
-Which login should I grant the `developer` role to? Options:
-1. Tell me the email/registration number of your developer account and I'll assign it.
-2. Create a brand-new `developer@pcc.local` account and give you the password.
-
-Pick one and I'll proceed.
+## Verification
+- Generate the proposal PDF and inspect every page for clipping, overlap, correct page order, branding, QR codes, and readable receipt examples.
