@@ -413,9 +413,6 @@ export const generateSLA = async (data: SlaAgreementData) => {
   writeSection(SECTION_ORDER[13].title, sections.termination);
   writeSection(SECTION_ORDER[14].title, sections.liability);
 
-  await drawReceiptPreview("fees");
-  await drawReceiptPreview("inventory");
-
   // Acceptance + signatures
   ensureSpace(95);
   doc.setFont("helvetica", "bold");
@@ -455,6 +452,9 @@ export const generateSLA = async (data: SlaAgreementData) => {
     doc.addImage(stamp, "PNG", sx, sy, sw, sh, `stamp-${data.agreement_number}`, "NONE", -13);
     doc.restoreGraphicsState();
   }
+
+  await drawReceiptPreview("fees");
+  await drawReceiptPreview("inventory");
 
 
   // Watermark + page numbers on every page
