@@ -1,7 +1,9 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 import { DEFAULT_PRICING, DEFAULT_PROVIDER, DEFAULT_SECTIONS, SECTION_ORDER } from "./slaDefaults";
 import stampAsset from "@/assets/dataplex-stamp.png.asset.json";
+import schoolLogo from "@/assets/pcc-logo.png";
 
 /**
  * Loads the company stamp and processes it so it prints like a real rubber
@@ -191,7 +193,7 @@ export const generateSLA = async (data: SlaAgreementData) => {
     y += 3;
   };
 
-  const drawReceiptPreview = (kind: "fees" | "inventory") => {
+  const drawReceiptPreview = async (kind: "fees" | "inventory") => {
     doc.addPage();
     y = margin;
     const title = kind === "fees" ? "APPENDIX A — FEES RECEIPT EXAMPLE" : "APPENDIX B — INVENTORY RECEIPT EXAMPLE";
@@ -218,32 +220,42 @@ export const generateSLA = async (data: SlaAgreementData) => {
     doc.setLineWidth(0.25);
     doc.rect(rx + 2, ry + 2, rw - 4, 222);
 
+    try {
+      const logo = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = schoolLogo;
+      });
+      doc.addImage(logo, "PNG", pw / 2 - 8, ry + 5, 16, 16);
+    } catch { /* Continue with text branding if the logo cannot load. */ }
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
     doc.setTextColor(...primary);
-    doc.text("PROGRESS CHRISTIAN CENTRE", pw / 2, ry + 13, { align: "center" });
+    doc.text("PROGRESS CHRISTIAN CENTRE", pw / 2, ry + 27, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     doc.setTextColor(80);
-    doc.text("11729 Mkoba 14, Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, ry + 18, { align: "center" });
+    doc.text("11729 Mkoba 14, Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, ry + 32, { align: "center" });
     doc.setFillColor(41, 128, 185);
-    doc.rect(rx + 2, ry + 23, rw - 4, 9, "F");
+    doc.rect(rx + 2, ry + 37, rw - 4, 9, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
     doc.setTextColor(30);
-    doc.text(receiptTitle, pw / 2, ry + 43, { align: "center" });
+    doc.text(receiptTitle, pw / 2, ry + 57, { align: "center" });
 
     if (kind === "fees") {
       doc.setFillColor(255, 215, 0);
       doc.setDrawColor(...primary);
-      doc.roundedRect(pw / 2 - 31, ry + 47, 62, 8, 1.5, 1.5, "FD");
+      doc.roundedRect(pw / 2 - 31, ry + 61, 62, 8, 1.5, 1.5, "FD");
       doc.setFontSize(9);
       doc.setTextColor(...primary);
-      doc.text("TERM 2 2026", pw / 2, ry + 52.5, { align: "center" });
+      doc.text("TERM 2 2026", pw / 2, ry + 66.5, { align: "center" });
     }
 
     autoTable(doc, {
-      startY: ry + 61,
+      startY: ry + 75,
       margin: { left: rx + 9, right: rx + 9 },
       head: [["Receipt Details", "Student Information"]],
       body: [
@@ -291,12 +303,14 @@ export const generateSLA = async (data: SlaAgreementData) => {
     doc.text(`Receipt No: ${receiptNo}`, rx + 14, y + 14);
     doc.text("QR verification links the printed receipt to the cloud record.", rx + 14, y + 20);
     doc.text("Any duplicate or altered receipt can be checked against the original entry.", rx + 14, y + 26);
-    doc.setDrawColor(40);
-    doc.rect(rx + rw - 40, y + 6, 26, 26);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.setTextColor(40);
-    doc.text("QR CODE", rx + rw - 27, y + 20, { align: "center" });
+    try {
+      const qrData = await QRCode.toDataURL(`https://progresscentresys.com/verify?r=${encodeURIComponent(receiptNo)}`, {
+        width: 180,
+        margin: 1,
+        errorCorrectionLevel: "M",
+      });
+      doc.addImage(qrData, "PNG", rx + rw - 40, y + 6, 26, 26);
+    } catch { /* Receipt remains readable if QR generation fails. */ }
     y += 47;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
@@ -399,8 +413,8 @@ export const generateSLA = async (data: SlaAgreementData) => {
   writeSection(SECTION_ORDER[13].title, sections.termination);
   writeSection(SECTION_ORDER[14].title, sections.liability);
 
-  drawReceiptPreview("fees");
-  drawReceiptPreview("inventory");
+  await drawReceiptPreview("fees");
+  await drawReceiptPreview("inventory");
 
   // Acceptance + signatures
   ensureSpace(95);
