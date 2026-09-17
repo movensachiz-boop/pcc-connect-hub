@@ -192,6 +192,13 @@ const DeveloperSla = () => {
   };
 
   const exportPdf = async (a: Agreement) => {
+    const { count: studentCount, error: countError } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true });
+    if (countError) {
+      toast.error("Could not load the live student total");
+      return;
+    }
     await generateSLA({
       agreement_number: a.agreement_number,
       status: a.status,
@@ -209,6 +216,7 @@ const DeveloperSla = () => {
       provider: a.provider || DEFAULT_PROVIDER,
       pricing: a.pricing || DEFAULT_PRICING,
       sections: { ...DEFAULT_SECTIONS, ...(a.sections || {}) },
+      student_count: studentCount || 0,
     });
     await logSlaActivity("pdf_export", a.id);
   };

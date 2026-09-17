@@ -50,6 +50,10 @@ export const DEFAULT_SECTIONS: Record<string, string> = {
     "The Client agrees to provide access to the software when support is required, protect user accounts and passwords, report software issues promptly, ensure authorised users operate the system responsibly, and pay service fees on time.",
   data_ownership:
     "All student, staff, financial, and administrative data entered into the system remains the sole property of the Client. Takudzwa Singo shall not disclose or use such data except as necessary to provide support services or where required by law.",
+  banking_integration:
+    "The finance module maintains a student account for every registered learner and allocates each payment to the selected academic term without changing the learner's registration record. Cash, bank transfer, EcoCash and swipe payments can be recorded; each entry captures the amount, payment method, date, cashier, receipt number and student account. Bank-payment documents can be checked against the bank name, SWIFT code, transaction-reference format and document fingerprint to help identify duplicates. Finance staff can review paid, part-paid and unpaid learners by class and term, produce collection reports, close each business day and retain cloud-backed payment history. A direct live connection to a bank remains subject to the bank supplying approved credentials and access to its integration service.",
+  registration_numbers:
+    "Each learner is issued a unique six-character registration number when the student record is created. The number remains attached to that learner across classes and academic terms and is used to match payments, receipts, inventory purchases and account history. It must not be reused for another learner. The receipt displays both the learner's full name and registration number so that finance staff and guardians can identify the correct account.",
   fees:
     "The client agrees to pay a monthly software support and maintenance fee of USD $60.00 covering the listed installations. New modules, custom development, major feature requests and third-party integrations are billed separately. Payments shall be made on or before the agreed due date each month.",
   confidentiality:
@@ -72,9 +76,11 @@ export const SECTION_ORDER: { key: string; title: string }[] = [
   { key: "provider_resp", title: "7. Responsibilities of the Service Provider" },
   { key: "school_resp", title: "8. Responsibilities of the School" },
   { key: "data_ownership", title: "9. Data Ownership" },
-  { key: "fees", title: "10. Fees" },
-  { key: "confidentiality", title: "11. Confidentiality" },
-  { key: "termination", title: "12. Termination" },
-  { key: "liability", title: "13. Limitation of Liability" },
-  { key: "acceptance", title: "14. Acceptance" },
+  { key: "banking_integration", title: "10. Banking Integration and Finance Operation" },
+  { key: "registration_numbers", title: "11. Student Registration Numbers" },
+  { key: "fees", title: "12. Fees" },
+  { key: "confidentiality", title: "13. Confidentiality" },
+  { key: "termination", title: "14. Termination" },
+  { key: "liability", title: "15. Limitation of Liability" },
+  { key: "acceptance", title: "16. Acceptance" },
 ];

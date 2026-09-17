@@ -1,7 +1,9 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 import { DEFAULT_PRICING, DEFAULT_PROVIDER, DEFAULT_SECTIONS, SECTION_ORDER } from "./slaDefaults";
 import stampAsset from "@/assets/dataplex-stamp.png.asset.json";
+import schoolLogo from "@/assets/pcc-logo.png";
 
 /**
  * Loads the company stamp and processes it so it prints like a real rubber
@@ -87,6 +89,7 @@ export interface SlaAgreementData {
   provider: Partial<typeof DEFAULT_PROVIDER> & Record<string, any>;
   pricing: Partial<typeof DEFAULT_PRICING> & Record<string, any>;
   sections: Record<string, string>;
+  student_count?: number;
 }
 
 const RESPONSE_TABLE = [
@@ -190,6 +193,136 @@ export const generateSLA = async (data: SlaAgreementData) => {
     y += 3;
   };
 
+  const drawReceiptPreview = async (kind: "fees" | "inventory") => {
+    doc.addPage();
+    y = margin;
+    const title = kind === "fees" ? "APPENDIX A — FEES RECEIPT EXAMPLE" : "APPENDIX B — INVENTORY RECEIPT EXAMPLE";
+    const receiptTitle = kind === "fees" ? "Fees Receipt" : "Inventory Sale Receipt";
+    const receiptNo = kind === "fees" ? "PCC-2026-001245" : "INV-2026-000318";
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...primary);
+    doc.text(title, margin, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(60);
+    doc.text("The example below shows the actual information hierarchy and printed appearance produced by the system.", margin, y);
+    y += 9;
+
+    const rx = 24;
+    const rw = pw - 48;
+    const ry = y;
+    doc.setDrawColor(41, 128, 185);
+    doc.setLineWidth(0.8);
+    doc.rect(rx, ry, rw, 226);
+    doc.setLineWidth(0.25);
+    doc.rect(rx + 2, ry + 2, rw - 4, 222);
+
+    try {
+      const logo = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = schoolLogo;
+      });
+      doc.addImage(logo, "PNG", pw / 2 - 8, ry + 5, 16, 16);
+    } catch { /* Continue with text branding if the logo cannot load. */ }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.setTextColor(...primary);
+    doc.text("PROGRESS CHRISTIAN CENTRE", pw / 2, ry + 27, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(80);
+    doc.text("11729 Mkoba 14, Gweru, Zimbabwe  |  +263 77 400 0143", pw / 2, ry + 32, { align: "center" });
+    doc.setFillColor(41, 128, 185);
+    doc.rect(rx + 2, ry + 37, rw - 4, 9, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(30);
+    doc.text(receiptTitle, pw / 2, ry + 57, { align: "center" });
+
+    if (kind === "fees") {
+      doc.setFillColor(255, 215, 0);
+      doc.setDrawColor(...primary);
+      doc.roundedRect(pw / 2 - 31, ry + 61, 62, 8, 1.5, 1.5, "FD");
+      doc.setFontSize(9);
+      doc.setTextColor(...primary);
+      doc.text("TERM 2 2026", pw / 2, ry + 66.5, { align: "center" });
+    }
+
+    autoTable(doc, {
+      startY: ry + 75,
+      margin: { left: rx + 9, right: rx + 9 },
+      head: [["Receipt Details", "Student Information"]],
+      body: [
+        [`Receipt No.: ${receiptNo}`, "Student Name: SAMPLE STUDENT"],
+        ["Receipt Date: 17 September 2026", "Reg. Number: PC1047"],
+        [kind === "fees" ? "Payment Method: EcoCash" : "Payment Method: Swipe", "Class: Form 5 Commercials"],
+        ["Status: PAID", kind === "fees" ? "Term: Term 2 2026" : "Purchase: School Inventory"],
+      ],
+      headStyles: { fillColor: [255, 255, 255], textColor: [41, 128, 185], fontStyle: "italic", fontSize: 8.5 },
+      bodyStyles: { fontSize: 8, cellPadding: 3 },
+      theme: "grid",
+      styles: { lineColor: [200, 200, 200], lineWidth: 0.25 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    const rows = kind === "fees"
+      ? [["Tuition Fee — Term 2 2026", "1", "USD $270.00", "USD $270.00"]]
+      : [["School Jersey", "1", "USD $25.00", "USD $25.00"], ["Exercise Books", "10", "USD $1.00", "USD $10.00"]];
+    const totalAmount = kind === "fees" ? "USD $270.00" : "USD $35.00";
+    autoTable(doc, {
+      startY: y,
+      margin: { left: rx + 9, right: rx + 9 },
+      head: [["Description", "Qty", "Unit Price", "Subtotal"]],
+      body: rows,
+      foot: [[{ content: "TOTAL AMOUNT PAID", colSpan: 3, styles: { halign: "right", fontStyle: "bold" } }, totalAmount]],
+      headStyles: { fillColor: primary, textColor: 255, fontSize: 8 },
+      bodyStyles: { fontSize: 8, cellPadding: 3 },
+      footStyles: { fillColor: [240, 245, 250], textColor: primary, fontStyle: "bold" },
+      columnStyles: { 1: { halign: "center", cellWidth: 14 }, 2: { halign: "right", cellWidth: 30 }, 3: { halign: "right", cellWidth: 32 } },
+      theme: "grid",
+      styles: { lineColor: [200, 200, 200], lineWidth: 0.25 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    doc.setFillColor(245, 248, 252);
+    doc.setDrawColor(41, 128, 185);
+    doc.roundedRect(rx + 9, y, rw - 18, 38, 2, 2, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...primary);
+    doc.text("SECURITY VERIFICATION", rx + 14, y + 7);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(60);
+    doc.text(`Receipt No: ${receiptNo}`, rx + 14, y + 14);
+    doc.text("QR verification links the printed receipt to the cloud record.", rx + 14, y + 20);
+    doc.text("Any duplicate or altered receipt can be checked against the original entry.", rx + 14, y + 26);
+    try {
+      const qrData = await QRCode.toDataURL(`https://progresscentresys.com/verify?r=${encodeURIComponent(receiptNo)}`, {
+        width: 180,
+        margin: 1,
+        errorCorrectionLevel: "M",
+      });
+      doc.addImage(qrData, "PNG", rx + rw - 40, y + 6, 26, 26);
+    } catch { /* Receipt remains readable if QR generation fails. */ }
+    y += 47;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(41, 128, 185);
+    doc.text("PAID", pw - rx - 24, y, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100);
+    doc.text("Computer-generated receipt • cashier and transaction details retained in the system", pw / 2, ry + 217, { align: "center" });
+    y = ry + 226;
+  };
+
   // Section 1-2
   writeSection(SECTION_ORDER[0].title, sections.purpose);
   writeSection(SECTION_ORDER[1].title, sections.scope);
@@ -232,12 +365,26 @@ export const generateSLA = async (data: SlaAgreementData) => {
   writeSection(SECTION_ORDER[7].title, sections.school_resp);
   writeSection(SECTION_ORDER[8].title, sections.data_ownership);
 
+  writeSection(SECTION_ORDER[9].title, sections.banking_integration);
+  ensureSpace(18);
+  doc.setFillColor(240, 245, 250);
+  doc.setDrawColor(...primary);
+  doc.roundedRect(margin, y, pw - margin * 2, 14, 2, 2, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...primary);
+  doc.text("LIVE REGISTERED STUDENTS", margin + 5, y + 6);
+  doc.setFontSize(14);
+  doc.text(String(data.student_count ?? 0), pw - margin - 5, y + 9, { align: "right" });
+  y += 20;
+  writeSection(SECTION_ORDER[10].title, sections.registration_numbers);
+
   // Fees with table
   ensureSpace(20);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);
-  doc.text(SECTION_ORDER[9].title, margin, y); y += 4;
+  doc.text(SECTION_ORDER[11].title, margin, y); y += 4;
   autoTable(doc, {
     startY: y,
     head: [["Item", "Amount"]],
@@ -262,16 +409,16 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.setFont("helvetica", "normal");
   y += 8;
 
-  writeSection(SECTION_ORDER[10].title, sections.confidentiality);
-  writeSection(SECTION_ORDER[11].title, sections.termination);
-  writeSection(SECTION_ORDER[12].title, sections.liability);
+  writeSection(SECTION_ORDER[12].title, sections.confidentiality);
+  writeSection(SECTION_ORDER[13].title, sections.termination);
+  writeSection(SECTION_ORDER[14].title, sections.liability);
 
   // Acceptance + signatures
   ensureSpace(95);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);
-  doc.text(SECTION_ORDER[13].title, margin, y); y += 6;
+  doc.text(SECTION_ORDER[15].title, margin, y); y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(30);
@@ -305,6 +452,9 @@ export const generateSLA = async (data: SlaAgreementData) => {
     doc.addImage(stamp, "PNG", sx, sy, sw, sh, `stamp-${data.agreement_number}`, "NONE", -13);
     doc.restoreGraphicsState();
   }
+
+  await drawReceiptPreview("fees");
+  await drawReceiptPreview("inventory");
 
 
   // Watermark + page numbers on every page
