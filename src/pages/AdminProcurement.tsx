@@ -262,6 +262,9 @@ export default function AdminProcurement() {
           <TabsContent value="prepaid" className="mt-4">
             <PrepaidAccountsTab />
           </TabsContent>
+          <TabsContent value="kitchen" className="mt-4">
+            <KitchenStockTab />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
