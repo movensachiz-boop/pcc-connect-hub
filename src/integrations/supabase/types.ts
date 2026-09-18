@@ -722,6 +722,45 @@ export type Database = {
           },
         ]
       }
+      kitchen_stock_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_name: string
+          notes: string | null
+          quantity: number
+          received_on: string
+          source: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name: string
+          notes?: string | null
+          quantity?: number
+          received_on?: string
+          source?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_name?: string
+          notes?: string | null
+          quantity?: number
+          received_on?: string
+          source?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_audit_log: {
         Row: {
           action: string
