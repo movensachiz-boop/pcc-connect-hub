@@ -329,7 +329,8 @@ const BankApiTab = () => {
           <Field label="Bank Contact"><Input value={details.bankContact} onChange={e => setField("bankContact", e.target.value)} /></Field>
           <Field label="School Name"><Input value={details.schoolName} onChange={e => setField("schoolName", e.target.value)} /></Field>
           <Field label="Branch"><Input value={details.branch} onChange={e => setField("branch", e.target.value)} /></Field>
-          <Field label="Collection Account Number"><Input value={details.collectionAccount} onChange={e => setField("collectionAccount", e.target.value)} /></Field>
+          <Field label="Fees Collection Account Number"><Input value={details.collectionAccount} onChange={e => setField("collectionAccount", e.target.value)} /></Field>
+          <Field label="Uniforms & Trips Account Number"><Input value={details.inventoryAccount || ""} onChange={e => setField("inventoryAccount", e.target.value)} /></Field>
           <Field label="Prepared By"><Input value={details.preparedBy} onChange={e => setField("preparedBy", e.target.value)} /></Field>
           <Field label="Contact Email"><Input value={details.contactEmail} onChange={e => setField("contactEmail", e.target.value)} /></Field>
           <Field label="Contact Phone"><Input value={details.contactPhone} onChange={e => setField("contactPhone", e.target.value)} /></Field>
