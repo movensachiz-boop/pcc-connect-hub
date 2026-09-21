@@ -271,6 +271,7 @@ const AdminDashboard = () => {
               <StatCard title="Inventory Sales" value={`$${inventoryRevenue.toLocaleString()}`} subtitle="Shop revenue" icon={ShoppingBag} variant="accent" />
               <StatCard title="Outstanding" value={`$${outstanding.toLocaleString()}`} subtitle={totalStudents > 0 ? `${Math.round((outstanding / (feesCollected + outstanding || 1)) * 100)}% of total` : "—"} icon={AlertTriangle} variant="warning" />
               <StatCard title="Collection Rate" value={`${collectionRate}%`} subtitle="Based on fee requirements" icon={TrendingUp} variant="accent" />
+              <StatCard title="Bank Payments" value={`$${bankTotal.toLocaleString()}`} subtitle={`${bankCount} received from NBS`} icon={Landmark} variant="primary" />
             </div>
           )}
 
