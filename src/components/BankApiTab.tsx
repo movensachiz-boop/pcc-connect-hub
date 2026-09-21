@@ -19,6 +19,7 @@ const defaults = {
   schoolName: "Progress Centre College",
   branch: "Gweru",
   collectionAccount: "3251011999451",
+  inventoryAccount: "3251011999452",
   preparedBy: "Takudzwa Singo — Dataplex Softwares",
   contactEmail: "dataplexsoftwares@gmail.com",
   contactPhone: "+263 77 400 0143",
