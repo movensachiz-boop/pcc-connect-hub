@@ -84,6 +84,7 @@ const BankApiTab = () => {
   const [details, setDetails] = useState(defaults);
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [logs, setLogs] = useState<ApiLog[]>([]);
+  const [collections, setCollections] = useState<BankCollection[]>([]);
   const [label, setLabel] = useState("NBS Production");
   const [newKey, setNewKey] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState(0);
