@@ -7,9 +7,19 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, AlertTriangle, TrendingUp, ShoppingBag } from "lucide-react";
+import { Users, DollarSign, AlertTriangle, TrendingUp, ShoppingBag, Landmark } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface BankAlert {
+  id: string;
+  who: string;
+  amount: number;
+  what: string;
+  receipt: string | null;
+  at: string;
+}
 
 const PIE_COLORS = ["hsl(210,100%,20%)", "hsl(51,100%,50%)", "hsl(142,72%,40%)", "hsl(0,0%,60%)"];
 
@@ -34,6 +44,9 @@ const AdminDashboard = () => {
   const [feesCollected, setFeesCollected] = useState(0);
   const [outstanding, setOutstanding] = useState(0);
   const [inventoryRevenue, setInventoryRevenue] = useState(0);
+  const [bankTotal, setBankTotal] = useState(0);
+  const [bankCount, setBankCount] = useState(0);
+  const [bankAlerts, setBankAlerts] = useState<BankAlert[]>([]);
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
@@ -60,6 +73,47 @@ const AdminDashboard = () => {
     if (selectedTermId) loadDashboard(selectedTermId);
   }, [selectedTermId]);
 
+  // Live alerts when the bank posts a payment into the system
+  useEffect(() => {
+    const announce = async (profileId: string | null, amount: number, what: string, receipt?: string | null) => {
+      let who = "A learner";
+      if (profileId) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("first_name, last_name, registration_number")
+          .eq("id", profileId)
+          .maybeSingle();
+        if (data) who = `${data.first_name} ${data.last_name} (${data.registration_number})`;
+      }
+      setBankAlerts(prev => [
+        { id: `${Date.now()}-${Math.random()}`, who, amount, what, receipt: receipt || null, at: new Date().toISOString() },
+        ...prev,
+      ].slice(0, 8));
+      toast.success(`Bank payment received — $${amount.toFixed(2)}`, {
+        description: `${who} · ${what}${receipt ? ` · Receipt ${receipt}` : ""}`,
+        duration: 10000,
+      });
+      loadDashboard(selectedTermId);
+    };
+
+    const channel = supabase
+      .channel("bank-payment-alerts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "payments" }, (payload: any) => {
+        const row = payload.new;
+        if (row?.bank_name !== "National Building Society") return;
+        announce(row.student_profile_id, Number(row.amount) || 0, /levy/i.test(row.description || "") ? "Levy" : "Tuition", row.receipt_number);
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "inventory_sales" }, (payload: any) => {
+        const row = payload.new;
+        if (!String(row?.notes || "").startsWith("NBS ")) return;
+        announce(row.student_profile_id, Number(row.total_amount) || 0, /trip/i.test(row.notes) ? "Trip" : "Uniforms", row.receipt_number);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTermId]);
+
+
 
   const loadDashboard = async (termId: string | null) => {
 
@@ -85,10 +139,22 @@ const AdminDashboard = () => {
       // Inventory sales (separate from fees)
       const { data: invSales } = await supabase
         .from("inventory_sales")
-        .select("total_amount, status")
+        .select("total_amount, status, notes")
         .in("status", ["paid", "completed", "confirmed"]);
       const invTotal = (invSales || []).reduce((s, r) => s + Number(r.total_amount || 0), 0);
       setInventoryRevenue(invTotal);
+
+      // Money received straight from the bank (fees + uniforms/trips)
+      const { data: bankFees } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("bank_name", "National Building Society");
+      const bankFeesTotal = (bankFees || []).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const bankInvTotal = (invSales || [])
+        .filter((r: any) => (r.notes || "").startsWith("NBS "))
+        .reduce((s, r) => s + Number(r.total_amount || 0), 0);
+      setBankTotal(bankFeesTotal + bankInvTotal);
+      setBankCount((bankFees || []).length + (invSales || []).filter((r: any) => (r.notes || "").startsWith("NBS ")).length);
 
       // Bar data per form
       const { data: profiles } = await supabase
@@ -199,13 +265,35 @@ const AdminDashboard = () => {
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <StatCard title="Total Students" value={totalStudents.toLocaleString()} subtitle="Registered" icon={Users} variant="primary" />
               <StatCard title="Fees Collected" value={`$${feesCollected.toLocaleString()}`} subtitle="School fees only" icon={DollarSign} variant="success" />
               <StatCard title="Inventory Sales" value={`$${inventoryRevenue.toLocaleString()}`} subtitle="Shop revenue" icon={ShoppingBag} variant="accent" />
               <StatCard title="Outstanding" value={`$${outstanding.toLocaleString()}`} subtitle={totalStudents > 0 ? `${Math.round((outstanding / (feesCollected + outstanding || 1)) * 100)}% of total` : "—"} icon={AlertTriangle} variant="warning" />
               <StatCard title="Collection Rate" value={`${collectionRate}%`} subtitle="Based on fee requirements" icon={TrendingUp} variant="accent" />
+              <StatCard title="Bank Payments" value={`$${bankTotal.toLocaleString()}`} subtitle={`${bankCount} received from NBS`} icon={Landmark} variant="primary" />
             </div>
+          )}
+
+          {bankAlerts.length > 0 && (
+            <Card className="shadow-card border-primary/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Landmark className="h-4 w-4 text-primary" /> New bank payments
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {bankAlerts.map((a) => (
+                  <div key={a.id} className="flex flex-wrap items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm">
+                    <Badge>{a.what}</Badge>
+                    <span className="font-medium">{a.who}</span>
+                    <span className="font-semibold">${a.amount.toFixed(2)}</span>
+                    {a.receipt && <span className="text-muted-foreground text-xs">Receipt {a.receipt}</span>}
+                    <span className="ml-auto text-xs text-muted-foreground">{new Date(a.at).toLocaleTimeString("en-GB")}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
