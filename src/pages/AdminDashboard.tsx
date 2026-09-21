@@ -85,10 +85,22 @@ const AdminDashboard = () => {
       // Inventory sales (separate from fees)
       const { data: invSales } = await supabase
         .from("inventory_sales")
-        .select("total_amount, status")
+        .select("total_amount, status, notes")
         .in("status", ["paid", "completed", "confirmed"]);
       const invTotal = (invSales || []).reduce((s, r) => s + Number(r.total_amount || 0), 0);
       setInventoryRevenue(invTotal);
+
+      // Money received straight from the bank (fees + uniforms/trips)
+      const { data: bankFees } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("bank_name", "National Building Society");
+      const bankFeesTotal = (bankFees || []).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const bankInvTotal = (invSales || [])
+        .filter((r: any) => (r.notes || "").startsWith("NBS "))
+        .reduce((s, r) => s + Number(r.total_amount || 0), 0);
+      setBankTotal(bankFeesTotal + bankInvTotal);
+      setBankCount((bankFees || []).length + (invSales || []).filter((r: any) => (r.notes || "").startsWith("NBS ")).length);
 
       // Bar data per form
       const { data: profiles } = await supabase
