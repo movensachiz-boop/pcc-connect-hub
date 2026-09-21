@@ -285,23 +285,45 @@ Deno.serve(async (req) => {
         return json({ error: "not_found", message: `No student with registration number ${reg}` }, 404);
       }
 
-      const label = FEE_CATEGORIES.find(c => c.code === category)?.name || category;
-      const { data: inserted, error: insertError } = await supabase
-        .from("payments")
-        .insert({
-          student_profile_id: profile.id,
-          amount,
-          currency,
-          method: channel || "Bank Transfer",
-          status: "paid",
-          paynow_reference: bankRef,
-          bank_name: "National Building Society",
-          description: payer ? `${label} — NBS (${payer})` : `${label} — NBS`,
-        })
-        .select("receipt_number, created_at")
-        .single();
+      const label = categoryDef.name;
+      let inserted: { receipt_number: string | null; created_at: string };
 
-      if (insertError) throw insertError;
+      if (isInventory) {
+        // Uniforms and trips are not school fees — they post to the inventory ledger
+        // so the learner's fee balance is untouched.
+        const { data, error } = await supabase
+          .from("inventory_sales")
+          .insert({
+            student_profile_id: profile.id,
+            total_amount: amount,
+            currency,
+            method: channel || "Bank Transfer",
+            status: "paid",
+            items: [{ name: label, category: label, quantity: 1, price: amount, total: amount }],
+            notes: `NBS ${category} — bank reference ${bankRef}${payer ? ` (${payer})` : ""}`,
+          })
+          .select("receipt_number, created_at")
+          .single();
+        if (error) throw error;
+        inserted = data;
+      } else {
+        const { data, error } = await supabase
+          .from("payments")
+          .insert({
+            student_profile_id: profile.id,
+            amount,
+            currency,
+            method: channel || "Bank Transfer",
+            status: "paid",
+            paynow_reference: bankRef,
+            bank_name: "National Building Society",
+            description: payer ? `${label} — NBS (${payer})` : `${label} — NBS`,
+          })
+          .select("receipt_number, created_at")
+          .single();
+        if (error) throw error;
+        inserted = data;
+      }
 
       await log(201, { registration_number: reg, bank_reference: bankRef, amount });
       return json({
