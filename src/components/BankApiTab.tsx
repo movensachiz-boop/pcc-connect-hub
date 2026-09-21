@@ -326,6 +326,10 @@ const BankApiTab = () => {
           <code className="block break-all rounded-md bg-muted p-3 text-xs">{newKey}</code>
           <DialogFooter>
             <Button variant="outline" onClick={() => newKey && copy(newKey)} className="gap-2"><Copy className="h-4 w-4" /> Copy</Button>
+            <Button
+              variant="outline"
+              onClick={() => { setTestKey(newKey || ""); setNewKey(null); runTest(newKey || undefined); }}
+            >Test this key</Button>
             <Button onClick={() => setNewKey(null)}>Done</Button>
           </DialogFooter>
         </DialogContent>
