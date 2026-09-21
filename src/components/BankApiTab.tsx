@@ -62,6 +62,19 @@ const describeLog = (log: ApiLog) => {
   return `${what} — failed${log.error ? ` (${log.error.replace(/_/g, " ")})` : ""}`;
 };
 
+type BankCollection = {
+  id: string;
+  category: "Tuition" | "Levy" | "Uniforms" | "Trip";
+  amount: number;
+  currency: string;
+  receipt: string | null;
+  reference: string | null;
+  student: string;
+  registration: string;
+  className: string;
+  created_at: string;
+};
+
 const sha256 = async (value: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
