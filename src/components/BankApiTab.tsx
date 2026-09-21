@@ -44,6 +44,23 @@ type ApiLog = {
   created_at: string;
 };
 
+const describeLog = (log: ApiLog) => {
+  const ep = (log.endpoint || "/").replace(/\/$/, "") || "/";
+  const what =
+    ep === "/" ? "Opened the connection address"
+    : ep === "/health" ? "Checked the service is online"
+    : ep === "/students" ? (log.method === "GET" ? "Requested the learner register" : "Sent learner data")
+    : ep === "/fee-categories" ? "Requested the fee categories"
+    : ep === "/payments" ? "Posted a payment"
+    : ep.endsWith("/payments") ? "Requested a learner's payment history"
+    : ep.startsWith("/students/") ? "Looked up a learner"
+    : `Request to ${ep}`;
+  if (log.status_code < 300) return what;
+  if (log.error === "missing_credentials") return `${what} — no access key was sent`;
+  if (log.error === "invalid_key") return `${what} — access key not recognised`;
+  return `${what} — failed${log.error ? ` (${log.error.replace(/_/g, " ")})` : ""}`;
+};
+
 const sha256 = async (value: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
