@@ -265,7 +265,7 @@ const AdminDashboard = () => {
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <StatCard title="Total Students" value={totalStudents.toLocaleString()} subtitle="Registered" icon={Users} variant="primary" />
               <StatCard title="Fees Collected" value={`$${feesCollected.toLocaleString()}`} subtitle="School fees only" icon={DollarSign} variant="success" />
               <StatCard title="Inventory Sales" value={`$${inventoryRevenue.toLocaleString()}`} subtitle="Shop revenue" icon={ShoppingBag} variant="accent" />
