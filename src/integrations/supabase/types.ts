@@ -170,6 +170,92 @@ export type Database = {
           },
         ]
       }
+      bank_api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          revoked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bank_api_logs: {
+        Row: {
+          amount: number | null
+          api_key_id: string | null
+          bank_reference: string | null
+          created_at: string
+          endpoint: string
+          error: string | null
+          id: string
+          method: string
+          registration_number: string | null
+          status_code: number
+        }
+        Insert: {
+          amount?: number | null
+          api_key_id?: string | null
+          bank_reference?: string | null
+          created_at?: string
+          endpoint: string
+          error?: string | null
+          id?: string
+          method: string
+          registration_number?: string | null
+          status_code: number
+        }
+        Update: {
+          amount?: number | null
+          api_key_id?: string | null
+          bank_reference?: string | null
+          created_at?: string
+          endpoint?: string
+          error?: string | null
+          id?: string
+          method?: string
+          registration_number?: string | null
+          status_code?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_api_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "bank_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_document_patterns: {
         Row: {
           bank_name: string
