@@ -44,6 +44,23 @@ type ApiLog = {
   created_at: string;
 };
 
+const describeLog = (log: ApiLog) => {
+  const ep = (log.endpoint || "/").replace(/\/$/, "") || "/";
+  const what =
+    ep === "/" ? "Opened the connection address"
+    : ep === "/health" ? "Checked the service is online"
+    : ep === "/students" ? (log.method === "GET" ? "Requested the learner register" : "Sent learner data")
+    : ep === "/fee-categories" ? "Requested the fee categories"
+    : ep === "/payments" ? "Posted a payment"
+    : ep.endsWith("/payments") ? "Requested a learner's payment history"
+    : ep.startsWith("/students/") ? "Looked up a learner"
+    : `Request to ${ep}`;
+  if (log.status_code < 300) return what;
+  if (log.error === "missing_credentials") return `${what} — no access key was sent`;
+  if (log.error === "invalid_key") return `${what} — access key not recognised`;
+  return `${what} — failed${log.error ? ` (${log.error.replace(/_/g, " ")})` : ""}`;
+};
+
 const sha256 = async (value: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -290,11 +307,12 @@ const BankApiTab = () => {
             <div className="space-y-1.5">
               {logs.map(log => (
                 <div key={log.id} className="flex flex-wrap items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-xs">
-                  <Badge variant={log.status_code < 300 ? "default" : "destructive"}>{log.status_code}</Badge>
-                  <span className="font-mono">{log.method} {log.endpoint}</span>
+                  <Badge variant={log.status_code < 300 ? "default" : "destructive"}>
+                    {log.status_code < 300 ? "OK" : "Blocked"}
+                  </Badge>
+                  <span>{describeLog(log)}</span>
                   {log.registration_number && <span className="text-muted-foreground">{log.registration_number}</span>}
                   {log.bank_reference && <span className="text-muted-foreground">ref {log.bank_reference}</span>}
-                  {log.error && <span className="text-destructive">{log.error}</span>}
                   <span className="ml-auto text-muted-foreground">{new Date(log.created_at).toLocaleString("en-GB")}</span>
                 </div>
               ))}
