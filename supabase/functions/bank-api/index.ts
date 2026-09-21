@@ -241,12 +241,27 @@ Deno.serve(async (req) => {
         return json({ error: "validation_failed", details: errors }, 400);
       }
 
+      const categoryDef = FEE_CATEGORIES.find(c => c.code === category)!;
+      const isInventory = categoryDef.ledger === "inventory";
+
       // Idempotency — a repeated bank reference returns the original receipt.
-      const { data: existing } = await supabase
+      const { data: existingFee } = await supabase
         .from("payments")
         .select("receipt_number, amount, currency, status, created_at")
         .eq("paynow_reference", bankRef)
         .maybeSingle();
+      const { data: existingInv } = existingFee ? { data: null } : await supabase
+        .from("inventory_sales")
+        .select("receipt_number, total_amount, currency, status, created_at")
+        .ilike("notes", `%${bankRef}%`)
+        .maybeSingle();
+      const existing = existingFee || (existingInv && {
+        receipt_number: existingInv.receipt_number,
+        amount: existingInv.total_amount,
+        currency: existingInv.currency,
+        status: existingInv.status,
+        created_at: existingInv.created_at,
+      });
 
       if (existing) {
         await log(200, { registration_number: reg, bank_reference: bankRef, amount });
