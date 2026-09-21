@@ -232,7 +232,9 @@ Deno.serve(async (req) => {
       if (!reg) errors.push("registration_number is required");
       if (!Number.isFinite(amount) || amount <= 0) errors.push("amount must be a positive number");
       if (!bankRef) errors.push("bank_reference is required and must be unique per transaction");
-      if (!FEE_CATEGORIES.some(c => c.code === category)) errors.push("fee_category must be TUITION or LEVY");
+      if (!FEE_CATEGORIES.some(c => c.code === category)) {
+        errors.push(`fee_category must be one of ${FEE_CATEGORIES.map(c => c.code).join(", ")}`);
+      }
       if (currency !== "USD") errors.push("currency must be USD");
       if (errors.length) {
         await log(400, { registration_number: reg, bank_reference: bankRef, amount, error: errors.join("; ") });
