@@ -80,14 +80,58 @@ const BankApiTab = () => {
   const [testResult, setTestResult] = useState<{ ok: boolean; lines: string[] } | null>(null);
 
   const load = async () => {
-    const [{ data: keyRows }, { data: logRows }, { count }] = await Promise.all([
+    const [{ data: keyRows }, { data: logRows }, { count }, { data: feeRows }, { data: invRows }] = await Promise.all([
       supabase.from("bank_api_keys").select("id, label, key_prefix, is_active, last_used_at, created_at").order("created_at", { ascending: false }),
       supabase.from("bank_api_logs").select("id, endpoint, method, status_code, registration_number, bank_reference, error, created_at").order("created_at", { ascending: false }).limit(25),
       supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase
+        .from("payments")
+        .select("id, amount, currency, receipt_number, description, paynow_reference, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .eq("bank_name", "National Building Society")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase
+        .from("inventory_sales")
+        .select("id, total_amount, currency, receipt_number, notes, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .ilike("notes", "NBS %")
+        .order("created_at", { ascending: false })
+        .limit(200),
     ]);
     setKeys((keyRows as ApiKey[]) || []);
     setLogs((logRows as ApiLog[]) || []);
     setStudentCount(count || 0);
+
+    const named = (p: any) =>
+      p ? `${p.first_name || ""} ${p.last_name || ""}`.trim() || "Unknown learner" : "Unknown learner";
+    const classOf = (p: any) => (p ? [p.form, p.stream].filter(Boolean).join(" ") : "");
+
+    const fees: BankCollection[] = ((feeRows as any[]) || []).map(r => ({
+      id: r.id,
+      category: /levy/i.test(r.description || "") ? "Levy" : "Tuition",
+      amount: Number(r.amount) || 0,
+      currency: r.currency || "USD",
+      receipt: r.receipt_number,
+      reference: r.paynow_reference,
+      student: named(r.profiles),
+      registration: r.profiles?.registration_number || "",
+      className: classOf(r.profiles),
+      created_at: r.created_at,
+    }));
+
+    const inv: BankCollection[] = ((invRows as any[]) || []).map(r => ({
+      id: r.id,
+      category: /trip/i.test(r.notes || "") ? "Trip" : "Uniforms",
+      amount: Number(r.total_amount) || 0,
+      currency: r.currency || "USD",
+      receipt: r.receipt_number,
+      reference: (r.notes || "").match(/bank reference\s+([^\s(]+)/i)?.[1] || null,
+      student: named(r.profiles),
+      registration: r.profiles?.registration_number || "",
+      className: classOf(r.profiles),
+      created_at: r.created_at,
+    }));
+
+    setCollections([...fees, ...inv].sort((a, b) => b.created_at.localeCompare(a.created_at)));
   };
 
   useEffect(() => {
