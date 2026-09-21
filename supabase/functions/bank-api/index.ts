@@ -60,6 +60,18 @@ Deno.serve(async (req) => {
       return json({ status: "ok", service: "PCC Fees Collection API", version: "1.0", time: new Date().toISOString() });
     }
 
+    // Friendly root response so opening the base URL in a browser confirms the service is live
+    if ((endpoint === "/" || endpoint === "") && req.method === "GET") {
+      return json({
+        status: "online",
+        service: "PCC Fees Collection API",
+        version: "1.0",
+        message: "This is a machine-to-machine payment interface, not a web page. The bank connects here using its API key.",
+        endpoints: ["GET /health", "GET /students", "GET /students/{registration_number}", "GET /students/{registration_number}/payments", "POST /payments", "GET /fee-categories"],
+        authentication: "Authorization: Bearer <api-key>",
+      });
+    }
+
     // ---- Authentication: Bearer token (API key) ----
     const header = req.headers.get("authorization") || "";
     const presented = header.toLowerCase().startsWith("bearer ")
