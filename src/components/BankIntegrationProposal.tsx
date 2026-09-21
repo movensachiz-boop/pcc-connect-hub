@@ -13,7 +13,7 @@ const STORAGE_KEY = "dataplex-bank-proposal-details";
 const defaults = {
   bankName: "",
   bankContact: "",
-  schoolName: "Progress Christian Centre",
+  schoolName: "Progress Centre College",
   schoolAddress: "11729 Mkoba 14, Gweru, Zimbabwe",
   schoolPhone: "+263 77 400 0143",
   preparedBy: "Takudzwa Singo — Dataplex Softwares",

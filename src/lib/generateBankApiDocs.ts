@@ -5,6 +5,7 @@ export interface BankApiDocsData {
   bankName: string;
   bankContact?: string;
   schoolName: string;
+  branch?: string;
   collectionAccount: string;
   baseUrl: string;
   studentCount: number;
@@ -266,6 +267,7 @@ export const generateBankApiDocs = (data: BankApiDocsData) => {
     [
       ["Account name", data.schoolName],
       ["Account number", data.collectionAccount],
+      ["Branch", data.branch || "-"],
       ["Bank", data.bankName],
       ["Currency", "USD"],
       ["Payment reference", "Learner registration number (six characters)"],
