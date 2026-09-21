@@ -275,6 +275,27 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {bankAlerts.length > 0 && (
+            <Card className="shadow-card border-primary/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Landmark className="h-4 w-4 text-primary" /> New bank payments
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {bankAlerts.map((a) => (
+                  <div key={a.id} className="flex flex-wrap items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm">
+                    <Badge>{a.what}</Badge>
+                    <span className="font-medium">{a.who}</span>
+                    <span className="font-semibold">${a.amount.toFixed(2)}</span>
+                    {a.receipt && <span className="text-muted-foreground text-xs">Receipt {a.receipt}</span>}
+                    <span className="ml-auto text-xs text-muted-foreground">{new Date(a.at).toLocaleTimeString("en-GB")}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 shadow-card">
               <CardHeader className="pb-2">
