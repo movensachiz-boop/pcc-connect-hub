@@ -71,9 +71,16 @@ const BankApiTab = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
+    let next = defaults;
     if (saved) {
-      try { setDetails({ ...defaults, ...JSON.parse(saved) }); } catch { /* keep defaults */ }
+      try { next = { ...defaults, ...JSON.parse(saved) }; } catch { /* keep defaults */ }
     }
+    // Migrate the old account name to the confirmed bank details.
+    if (next.schoolName === "Progress Christian Centre") {
+      next = { ...next, schoolName: defaults.schoolName, branch: next.branch || defaults.branch };
+    }
+    setDetails(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     load();
   }, []);
 
