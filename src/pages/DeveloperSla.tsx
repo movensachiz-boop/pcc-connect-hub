@@ -11,12 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Edit, FileDown, Plus, Trash2, History, Archive, FileText, Landmark } from "lucide-react";
+import { Copy, Edit, FileDown, Plus, Trash2, History, Archive, FileText, Landmark, Plug } from "lucide-react";
 import { DEFAULT_PRICING, DEFAULT_PROVIDER, DEFAULT_SECTIONS, SECTION_ORDER } from "@/lib/slaDefaults";
 import { generateSLA } from "@/lib/generateSLA";
 import { logSlaActivity } from "@/lib/slaAudit";
 import DataplexSales from "@/components/DataplexSales";
 import BankIntegrationProposal from "@/components/BankIntegrationProposal";
+import BankApiTab from "@/components/BankApiTab";
+
 
 interface Agreement {
   id: string;
@@ -241,6 +243,7 @@ const DeveloperSla = () => {
             <TabsTrigger value="agreements">Agreements</TabsTrigger>
             <TabsTrigger value="editor" disabled={!editing}>Editor</TabsTrigger>
             <TabsTrigger value="bank" className="gap-2"><Landmark className="h-4 w-4" /> Bank Integration</TabsTrigger>
+            <TabsTrigger value="bankapi" className="gap-2"><Plug className="h-4 w-4" /> Bank API</TabsTrigger>
             <TabsTrigger value="sales">Sales & Billing</TabsTrigger>
           </TabsList>
 
@@ -251,6 +254,11 @@ const DeveloperSla = () => {
           <TabsContent value="bank">
             <BankIntegrationProposal />
           </TabsContent>
+
+          <TabsContent value="bankapi">
+            <BankApiTab />
+          </TabsContent>
+
 
           <TabsContent value="dashboard" className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
