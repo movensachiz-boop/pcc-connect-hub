@@ -220,6 +220,30 @@ const BankApiTab = () => {
       </Card>
 
       <Card>
+        <CardHeader className="pb-3"><CardTitle className="text-base">Test the connection</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={testKey}
+              placeholder="Paste an access key here to test learner lookup (optional)"
+              onChange={e => setTestKey(e.target.value)}
+            />
+            <Button onClick={() => runTest()} disabled={testing} className="gap-2 shrink-0">
+              <RefreshCw className={`h-4 w-4 ${testing ? "animate-spin" : ""}`} /> Run Test
+            </Button>
+          </div>
+          {testResult && (
+            <div className={`space-y-1 rounded-md border border-border p-3 text-sm ${testResult.ok ? "text-foreground" : "text-destructive"}`}>
+              {testResult.lines.map((line, i) => <p key={i}>{line}</p>)}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Run Test without a key just checks the address is live. With a key it also confirms the bank can pull the learner register.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-base"><KeyRound className="h-4 w-4" /> Access keys</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row">
