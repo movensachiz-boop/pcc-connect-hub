@@ -139,6 +139,53 @@ const BankApiTab = () => {
     toast.success("Copied");
   };
 
+  const runTest = async (keyOverride?: string) => {
+    const key = keyOverride ?? testKey.trim();
+    setTesting(true);
+    setTestResult(null);
+    const lines: string[] = [];
+    let ok = true;
+    try {
+      // 1. Availability check (no key needed)
+      const health = await fetch(`${BASE_URL}/health`);
+      if (health.ok) {
+        lines.push("✓ Connection address is live and answering");
+      } else {
+        lines.push(`✗ Connection address problem (status ${health.status})`);
+        ok = false;
+      }
+
+      // 2. Authenticated check (only with a key)
+      if (key) {
+        const res = await fetch(`${BASE_URL}/students?limit=1`, {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const students = Array.isArray(data?.students) ? data.students : Array.isArray(data) ? data : [];
+          lines.push(`✓ Access key accepted`);
+          lines.push(students.length > 0
+            ? `✓ Learner lookup works — first learner: ${students[0]?.full_name || students[0]?.name || students[0]?.registration_number || "found"}`
+            : "✓ Key accepted, but no learners are registered yet");
+        } else if (res.status === 401) {
+          lines.push("✗ Access key was rejected — check it was copied in full");
+          ok = false;
+        } else {
+          lines.push(`✗ Learner lookup failed (status ${res.status})`);
+          ok = false;
+        }
+      } else {
+        lines.push("• Paste an access key above to also test learner lookup");
+      }
+    } catch {
+      lines.push("✗ Could not reach the connection address — check your internet");
+      ok = false;
+    }
+    setTestResult({ ok, lines });
+    setTesting(false);
+    load();
+  };
+
   return (
     <div className="space-y-5">
       <section className="flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-end md:justify-between">
