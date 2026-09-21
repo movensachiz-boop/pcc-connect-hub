@@ -8,6 +8,13 @@
       "when": 1789728248173,
       "tag": "0000_create_kitchen_stock_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789982196591,
+      "tag": "0001_create_bank_api_tables",
+      "breakpoints": true
     }
   ]
 }
