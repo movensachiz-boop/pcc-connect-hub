@@ -16,7 +16,8 @@ const BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bank-api`;
 const defaults = {
   bankName: "National Building Society",
   bankContact: "Luckson Moyo — POS Merchant Service Officer",
-  schoolName: "Progress Christian Centre",
+  schoolName: "Progress Centre College",
+  branch: "Gweru",
   collectionAccount: "3251011999451",
   preparedBy: "Takudzwa Singo — Dataplex Softwares",
   contactEmail: "dataplexsoftwares@gmail.com",
@@ -70,9 +71,16 @@ const BankApiTab = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
+    let next = defaults;
     if (saved) {
-      try { setDetails({ ...defaults, ...JSON.parse(saved) }); } catch { /* keep defaults */ }
+      try { next = { ...defaults, ...JSON.parse(saved) }; } catch { /* keep defaults */ }
     }
+    // Migrate the old account name to the confirmed bank details.
+    if (next.schoolName === "Progress Christian Centre") {
+      next = { ...next, schoolName: defaults.schoolName, branch: next.branch || defaults.branch };
+    }
+    setDetails(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     load();
   }, []);
 
@@ -227,6 +235,7 @@ const BankApiTab = () => {
           <Field label="Bank Name"><Input value={details.bankName} onChange={e => setField("bankName", e.target.value)} /></Field>
           <Field label="Bank Contact"><Input value={details.bankContact} onChange={e => setField("bankContact", e.target.value)} /></Field>
           <Field label="School Name"><Input value={details.schoolName} onChange={e => setField("schoolName", e.target.value)} /></Field>
+          <Field label="Branch"><Input value={details.branch} onChange={e => setField("branch", e.target.value)} /></Field>
           <Field label="Collection Account Number"><Input value={details.collectionAccount} onChange={e => setField("collectionAccount", e.target.value)} /></Field>
           <Field label="Prepared By"><Input value={details.preparedBy} onChange={e => setField("preparedBy", e.target.value)} /></Field>
           <Field label="Contact Email"><Input value={details.contactEmail} onChange={e => setField("contactEmail", e.target.value)} /></Field>
