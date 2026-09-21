@@ -62,6 +62,47 @@ const AdminDashboard = () => {
     if (selectedTermId) loadDashboard(selectedTermId);
   }, [selectedTermId]);
 
+  // Live alerts when the bank posts a payment into the system
+  useEffect(() => {
+    const announce = async (profileId: string | null, amount: number, what: string, receipt?: string | null) => {
+      let who = "A learner";
+      if (profileId) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("first_name, last_name, registration_number")
+          .eq("id", profileId)
+          .maybeSingle();
+        if (data) who = `${data.first_name} ${data.last_name} (${data.registration_number})`;
+      }
+      setBankAlerts(prev => [
+        { id: `${Date.now()}-${Math.random()}`, who, amount, what, receipt: receipt || null, at: new Date().toISOString() },
+        ...prev,
+      ].slice(0, 8));
+      toast.success(`Bank payment received — $${amount.toFixed(2)}`, {
+        description: `${who} · ${what}${receipt ? ` · Receipt ${receipt}` : ""}`,
+        duration: 10000,
+      });
+      loadDashboard(selectedTermId);
+    };
+
+    const channel = supabase
+      .channel("bank-payment-alerts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "payments" }, (payload: any) => {
+        const row = payload.new;
+        if (row?.bank_name !== "National Building Society") return;
+        announce(row.student_profile_id, Number(row.amount) || 0, /levy/i.test(row.description || "") ? "Levy" : "Tuition", row.receipt_number);
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "inventory_sales" }, (payload: any) => {
+        const row = payload.new;
+        if (!String(row?.notes || "").startsWith("NBS ")) return;
+        announce(row.student_profile_id, Number(row.total_amount) || 0, /trip/i.test(row.notes) ? "Trip" : "Uniforms", row.receipt_number);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedTermId]);
+
+
 
   const loadDashboard = async (termId: string | null) => {
 
