@@ -34,6 +34,8 @@ const AdminDashboard = () => {
   const [feesCollected, setFeesCollected] = useState(0);
   const [outstanding, setOutstanding] = useState(0);
   const [inventoryRevenue, setInventoryRevenue] = useState(0);
+  const [bankTotal, setBankTotal] = useState(0);
+  const [bankCount, setBankCount] = useState(0);
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
