@@ -12,9 +12,14 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const FEES_ACCOUNT = "3251011999451";
+const INVENTORY_ACCOUNT = "3251011999452";
+
 const FEE_CATEGORIES = [
-  { code: "TUITION", name: "Tuition / School Fees", description: "Main termly school fees for all forms" },
-  { code: "LEVY", name: "Levy", description: "Class levies, including the Gold stream levy" },
+  { code: "TUITION", name: "Tuition / School Fees", description: "Main termly school fees for all forms", account: FEES_ACCOUNT, ledger: "fees" },
+  { code: "LEVY", name: "Levy", description: "Class levies, including the Gold stream levy", account: FEES_ACCOUNT, ledger: "fees" },
+  { code: "UNIFORMS", name: "Uniforms", description: "Uniforms and other inventory items", account: INVENTORY_ACCOUNT, ledger: "inventory" },
+  { code: "TRIP", name: "Trip", description: "Educational trips and excursions", account: INVENTORY_ACCOUNT, ledger: "inventory" },
 ];
 
 const sha256 = async (value: string) => {
@@ -227,19 +232,36 @@ Deno.serve(async (req) => {
       if (!reg) errors.push("registration_number is required");
       if (!Number.isFinite(amount) || amount <= 0) errors.push("amount must be a positive number");
       if (!bankRef) errors.push("bank_reference is required and must be unique per transaction");
-      if (!FEE_CATEGORIES.some(c => c.code === category)) errors.push("fee_category must be TUITION or LEVY");
+      if (!FEE_CATEGORIES.some(c => c.code === category)) {
+        errors.push(`fee_category must be one of ${FEE_CATEGORIES.map(c => c.code).join(", ")}`);
+      }
       if (currency !== "USD") errors.push("currency must be USD");
       if (errors.length) {
         await log(400, { registration_number: reg, bank_reference: bankRef, amount, error: errors.join("; ") });
         return json({ error: "validation_failed", details: errors }, 400);
       }
 
+      const categoryDef = FEE_CATEGORIES.find(c => c.code === category)!;
+      const isInventory = categoryDef.ledger === "inventory";
+
       // Idempotency — a repeated bank reference returns the original receipt.
-      const { data: existing } = await supabase
+      const { data: existingFee } = await supabase
         .from("payments")
         .select("receipt_number, amount, currency, status, created_at")
         .eq("paynow_reference", bankRef)
         .maybeSingle();
+      const { data: existingInv } = existingFee ? { data: null } : await supabase
+        .from("inventory_sales")
+        .select("receipt_number, total_amount, currency, status, created_at")
+        .ilike("notes", `%${bankRef}%`)
+        .maybeSingle();
+      const existing = existingFee || (existingInv && {
+        receipt_number: existingInv.receipt_number,
+        amount: existingInv.total_amount,
+        currency: existingInv.currency,
+        status: existingInv.status,
+        created_at: existingInv.created_at,
+      });
 
       if (existing) {
         await log(200, { registration_number: reg, bank_reference: bankRef, amount });
@@ -263,23 +285,45 @@ Deno.serve(async (req) => {
         return json({ error: "not_found", message: `No student with registration number ${reg}` }, 404);
       }
 
-      const label = FEE_CATEGORIES.find(c => c.code === category)?.name || category;
-      const { data: inserted, error: insertError } = await supabase
-        .from("payments")
-        .insert({
-          student_profile_id: profile.id,
-          amount,
-          currency,
-          method: channel || "Bank Transfer",
-          status: "paid",
-          paynow_reference: bankRef,
-          bank_name: "National Building Society",
-          description: payer ? `${label} — NBS (${payer})` : `${label} — NBS`,
-        })
-        .select("receipt_number, created_at")
-        .single();
+      const label = categoryDef.name;
+      let inserted: { receipt_number: string | null; created_at: string };
 
-      if (insertError) throw insertError;
+      if (isInventory) {
+        // Uniforms and trips are not school fees — they post to the inventory ledger
+        // so the learner's fee balance is untouched.
+        const { data, error } = await supabase
+          .from("inventory_sales")
+          .insert({
+            student_profile_id: profile.id,
+            total_amount: amount,
+            currency,
+            method: channel || "Bank Transfer",
+            status: "paid",
+            items: [{ name: label, category: label, quantity: 1, price: amount, total: amount }],
+            notes: `NBS ${category} — bank reference ${bankRef}${payer ? ` (${payer})` : ""}`,
+          })
+          .select("receipt_number, created_at")
+          .single();
+        if (error) throw error;
+        inserted = data;
+      } else {
+        const { data, error } = await supabase
+          .from("payments")
+          .insert({
+            student_profile_id: profile.id,
+            amount,
+            currency,
+            method: channel || "Bank Transfer",
+            status: "paid",
+            paynow_reference: bankRef,
+            bank_name: "National Building Society",
+            description: payer ? `${label} — NBS (${payer})` : `${label} — NBS`,
+          })
+          .select("receipt_number, created_at")
+          .single();
+        if (error) throw error;
+        inserted = data;
+      }
 
       await log(201, { registration_number: reg, bank_reference: bankRef, amount });
       return json({
@@ -291,6 +335,8 @@ Deno.serve(async (req) => {
         amount,
         currency,
         fee_category: category,
+        ledger: categoryDef.ledger,
+        settlement_account: categoryDef.account,
         bank_reference: bankRef,
         posted_at: inserted.created_at,
         verification_url: `https://progresscentresys.com/verify?receipt=${inserted.receipt_number}`,

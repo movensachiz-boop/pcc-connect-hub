@@ -7,6 +7,7 @@ export interface BankApiDocsData {
   schoolName: string;
   branch?: string;
   collectionAccount: string;
+  inventoryAccount?: string;
   baseUrl: string;
   studentCount: number;
   preparedBy: string;
@@ -225,7 +226,7 @@ export const generateBankApiDocs = (data: BankApiDocsData) => {
       ["amount", "number", "Yes", "Positive, 2 decimals"],
       ["currency", "string", "Yes", "USD"],
       ["bank_reference", "string", "Yes", "Unique per transaction; used for idempotency"],
-      ["fee_category", "string", "Yes", "TUITION or LEVY"],
+      ["fee_category", "string", "Yes", "TUITION, LEVY, UNIFORMS or TRIP"],
       ["channel", "string", "No", "POS, Bank Transfer, Mobile Banking, Cash"],
       ["payer_name", "string", "No", "Name of the depositor"],
       ["transaction_date", "string", "No", "ISO 8601 timestamp"],
@@ -254,23 +255,27 @@ export const generateBankApiDocs = (data: BankApiDocsData) => {
   header("3. FEE CATEGORIES & ACCOUNT");
   title("3. Fee Categories and Collection Account");
   table(
-    ["Product code", "Fee category", "Description"],
+    ["Product code", "Category", "Settlement account", "Description"],
     [
-      ["TUITION", "Tuition / School Fees", "Termly school fees for Forms 1 to 6"],
-      ["LEVY", "Levy", "Class levies, including the Gold stream levy"],
+      ["TUITION", "Tuition / School Fees", data.collectionAccount, "Termly school fees for Forms 1 to 6"],
+      ["LEVY", "Levy", data.collectionAccount, "Class levies, including the Gold stream levy"],
+      ["UNIFORMS", "Uniforms", data.inventoryAccount || "-", "Uniforms and other inventory items"],
+      ["TRIP", "Trip", data.inventoryAccount || "-", "Educational trips and excursions"],
     ],
   );
-  para("Both categories settle into a single school collection account. The fee category is carried on the transaction so the school system can classify the receipt.");
-  sub("School collection account");
+  para(
+    "The fee category determines both the settlement account and how the school system records the transaction. TUITION and LEVY are posted to the learner's fee account and reduce the outstanding fee balance. UNIFORMS and TRIP are posted to the inventory and trips ledger: the learner receives an inventory receipt and the fee balance is not affected.",
+  );
+  sub("Collection accounts");
   table(
-    ["Detail", "Value"],
+    ["Detail", "Fees account", "Uniforms & trips account"],
     [
-      ["Account name", data.schoolName],
-      ["Account number", data.collectionAccount],
-      ["Branch", data.branch || "-"],
-      ["Bank", data.bankName],
-      ["Currency", "USD"],
-      ["Payment reference", "Learner registration number (six characters)"],
+      ["Account name", data.schoolName, data.schoolName],
+      ["Account number", data.collectionAccount, data.inventoryAccount || "-"],
+      ["Branch", data.branch || "-", data.branch || "-"],
+      ["Bank", data.bankName, data.bankName],
+      ["Currency", "USD", "USD"],
+      ["Payment reference", "Learner registration number", "Learner registration number"],
     ],
   );
 
