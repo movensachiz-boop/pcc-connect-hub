@@ -62,6 +62,19 @@ const describeLog = (log: ApiLog) => {
   return `${what} — failed${log.error ? ` (${log.error.replace(/_/g, " ")})` : ""}`;
 };
 
+type BankCollection = {
+  id: string;
+  category: "Tuition" | "Levy" | "Uniforms" | "Trip";
+  amount: number;
+  currency: string;
+  receipt: string | null;
+  reference: string | null;
+  student: string;
+  registration: string;
+  className: string;
+  created_at: string;
+};
+
 const sha256 = async (value: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -71,6 +84,7 @@ const BankApiTab = () => {
   const [details, setDetails] = useState(defaults);
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [logs, setLogs] = useState<ApiLog[]>([]);
+  const [collections, setCollections] = useState<BankCollection[]>([]);
   const [label, setLabel] = useState("NBS Production");
   const [newKey, setNewKey] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState(0);
@@ -80,14 +94,58 @@ const BankApiTab = () => {
   const [testResult, setTestResult] = useState<{ ok: boolean; lines: string[] } | null>(null);
 
   const load = async () => {
-    const [{ data: keyRows }, { data: logRows }, { count }] = await Promise.all([
+    const [{ data: keyRows }, { data: logRows }, { count }, { data: feeRows }, { data: invRows }] = await Promise.all([
       supabase.from("bank_api_keys").select("id, label, key_prefix, is_active, last_used_at, created_at").order("created_at", { ascending: false }),
       supabase.from("bank_api_logs").select("id, endpoint, method, status_code, registration_number, bank_reference, error, created_at").order("created_at", { ascending: false }).limit(25),
       supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase
+        .from("payments")
+        .select("id, amount, currency, receipt_number, description, paynow_reference, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .eq("bank_name", "National Building Society")
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase
+        .from("inventory_sales")
+        .select("id, total_amount, currency, receipt_number, notes, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .ilike("notes", "NBS %")
+        .order("created_at", { ascending: false })
+        .limit(200),
     ]);
     setKeys((keyRows as ApiKey[]) || []);
     setLogs((logRows as ApiLog[]) || []);
     setStudentCount(count || 0);
+
+    const named = (p: any) =>
+      p ? `${p.first_name || ""} ${p.last_name || ""}`.trim() || "Unknown learner" : "Unknown learner";
+    const classOf = (p: any) => (p ? [p.form, p.stream].filter(Boolean).join(" ") : "");
+
+    const fees: BankCollection[] = ((feeRows as any[]) || []).map(r => ({
+      id: r.id,
+      category: /levy/i.test(r.description || "") ? "Levy" : "Tuition",
+      amount: Number(r.amount) || 0,
+      currency: r.currency || "USD",
+      receipt: r.receipt_number,
+      reference: r.paynow_reference,
+      student: named(r.profiles),
+      registration: r.profiles?.registration_number || "",
+      className: classOf(r.profiles),
+      created_at: r.created_at,
+    }));
+
+    const inv: BankCollection[] = ((invRows as any[]) || []).map(r => ({
+      id: r.id,
+      category: /trip/i.test(r.notes || "") ? "Trip" : "Uniforms",
+      amount: Number(r.total_amount) || 0,
+      currency: r.currency || "USD",
+      receipt: r.receipt_number,
+      reference: (r.notes || "").match(/bank reference\s+([^\s(]+)/i)?.[1] || null,
+      student: named(r.profiles),
+      registration: r.profiles?.registration_number || "",
+      className: classOf(r.profiles),
+      created_at: r.created_at,
+    }));
+
+    setCollections([...fees, ...inv].sort((a, b) => b.created_at.localeCompare(a.created_at)));
   };
 
   useEffect(() => {
@@ -231,11 +289,89 @@ const BankApiTab = () => {
             <span>GET /students/&#123;reg&#125; — lookup and balance</span>
             <span>POST /payments — post a collection</span>
             <span>GET /students/&#123;reg&#125;/payments — history</span>
-            <span>GET /fee-categories — Tuition and Levy</span>
+            <span>GET /fee-categories — Tuition, Levy, Uniforms, Trip</span>
             <span>GET /health — availability check</span>
+          </div>
+          <div className="grid gap-2 text-xs sm:grid-cols-2">
+            <div className="rounded-md border border-border p-2">
+              <p className="font-semibold">Fees &amp; levies</p>
+              <p className="text-muted-foreground">Settles to {details.collectionAccount} — reduces the learner's fee balance</p>
+            </div>
+            <div className="rounded-md border border-border p-2">
+              <p className="font-semibold">Uniforms &amp; trips</p>
+              <p className="text-muted-foreground">Settles to {details.inventoryAccount} — recorded as a uniform/trip sale</p>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base">Money received through the bank</CardTitle>
+          <Button size="icon" variant="ghost" onClick={load} aria-label="Refresh collections"><RefreshCw className="h-4 w-4" /></Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {(["Tuition", "Levy", "Uniforms", "Trip"] as const).map(cat => {
+              const rows = collections.filter(c => c.category === cat);
+              const total = rows.reduce((s, c) => s + c.amount, 0);
+              return (
+                <div key={cat} className="rounded-md border border-border p-3">
+                  <p className="text-xs text-muted-foreground">{cat}</p>
+                  <p className="text-lg font-bold">${total.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">{rows.length} payment{rows.length === 1 ? "" : "s"}</p>
+                </div>
+              );
+            })}
+            <div className="rounded-md border border-primary bg-primary/5 p-3">
+              <p className="text-xs text-muted-foreground">Total received</p>
+              <p className="text-lg font-bold text-primary">
+                ${collections.reduce((s, c) => s + c.amount, 0).toFixed(2)}
+              </p>
+              <p className="text-xs text-muted-foreground">{collections.length} payment{collections.length === 1 ? "" : "s"}</p>
+            </div>
+          </div>
+
+          {collections.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nothing yet — every payment the bank sends will be listed here with the learner's name, what it was for and the receipt number.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="text-left text-muted-foreground">
+                  <tr className="border-b border-border">
+                    <th className="py-2 pr-3 font-medium">Date</th>
+                    <th className="py-2 pr-3 font-medium">Learner</th>
+                    <th className="py-2 pr-3 font-medium">Class</th>
+                    <th className="py-2 pr-3 font-medium">Paid for</th>
+                    <th className="py-2 pr-3 font-medium">Bank reference</th>
+                    <th className="py-2 pr-3 font-medium">Receipt</th>
+                    <th className="py-2 text-right font-medium">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {collections.map(c => (
+                    <tr key={c.id} className="border-b border-border/60">
+                      <td className="py-2 pr-3 whitespace-nowrap">{new Date(c.created_at).toLocaleString("en-GB")}</td>
+                      <td className="py-2 pr-3">
+                        <span className="font-medium">{c.student}</span>
+                        {c.registration && <span className="ml-1 text-muted-foreground">({c.registration})</span>}
+                      </td>
+                      <td className="py-2 pr-3">{c.className || "—"}</td>
+                      <td className="py-2 pr-3"><Badge variant="secondary">{c.category}</Badge></td>
+                      <td className="py-2 pr-3">{c.reference || "—"}</td>
+                      <td className="py-2 pr-3">{c.receipt || "—"}</td>
+                      <td className="py-2 text-right font-semibold">{c.currency === "USD" ? "$" : `${c.currency} `}{c.amount.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Test the connection</CardTitle></CardHeader>
