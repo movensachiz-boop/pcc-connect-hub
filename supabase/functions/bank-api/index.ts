@@ -12,9 +12,14 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const FEES_ACCOUNT = "3251011999451";
+const INVENTORY_ACCOUNT = "3251011999452";
+
 const FEE_CATEGORIES = [
-  { code: "TUITION", name: "Tuition / School Fees", description: "Main termly school fees for all forms" },
-  { code: "LEVY", name: "Levy", description: "Class levies, including the Gold stream levy" },
+  { code: "TUITION", name: "Tuition / School Fees", description: "Main termly school fees for all forms", account: FEES_ACCOUNT, ledger: "fees" },
+  { code: "LEVY", name: "Levy", description: "Class levies, including the Gold stream levy", account: FEES_ACCOUNT, ledger: "fees" },
+  { code: "UNIFORMS", name: "Uniforms", description: "Uniforms and other inventory items", account: INVENTORY_ACCOUNT, ledger: "inventory" },
+  { code: "TRIP", name: "Trip", description: "Educational trips and excursions", account: INVENTORY_ACCOUNT, ledger: "inventory" },
 ];
 
 const sha256 = async (value: string) => {
