@@ -7,6 +7,7 @@ export interface BankApiDocsData {
   schoolName: string;
   branch?: string;
   collectionAccount: string;
+  inventoryAccount?: string;
   baseUrl: string;
   studentCount: number;
   preparedBy: string;
