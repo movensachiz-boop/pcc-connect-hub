@@ -57,6 +57,9 @@ const BankApiTab = () => {
   const [newKey, setNewKey] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [testKey, setTestKey] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; lines: string[] } | null>(null);
 
   const load = async () => {
     const [{ data: keyRows }, { data: logRows }, { count }] = await Promise.all([
