@@ -290,11 +290,12 @@ const BankApiTab = () => {
             <div className="space-y-1.5">
               {logs.map(log => (
                 <div key={log.id} className="flex flex-wrap items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-xs">
-                  <Badge variant={log.status_code < 300 ? "default" : "destructive"}>{log.status_code}</Badge>
-                  <span className="font-mono">{log.method} {log.endpoint}</span>
+                  <Badge variant={log.status_code < 300 ? "default" : "destructive"}>
+                    {log.status_code < 300 ? "OK" : "Blocked"}
+                  </Badge>
+                  <span>{describeLog(log)}</span>
                   {log.registration_number && <span className="text-muted-foreground">{log.registration_number}</span>}
                   {log.bank_reference && <span className="text-muted-foreground">ref {log.bank_reference}</span>}
-                  {log.error && <span className="text-destructive">{log.error}</span>}
                   <span className="ml-auto text-muted-foreground">{new Date(log.created_at).toLocaleString("en-GB")}</span>
                 </div>
               ))}
