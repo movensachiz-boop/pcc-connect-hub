@@ -289,11 +289,89 @@ const BankApiTab = () => {
             <span>GET /students/&#123;reg&#125; — lookup and balance</span>
             <span>POST /payments — post a collection</span>
             <span>GET /students/&#123;reg&#125;/payments — history</span>
-            <span>GET /fee-categories — Tuition and Levy</span>
+            <span>GET /fee-categories — Tuition, Levy, Uniforms, Trip</span>
             <span>GET /health — availability check</span>
+          </div>
+          <div className="grid gap-2 text-xs sm:grid-cols-2">
+            <div className="rounded-md border border-border p-2">
+              <p className="font-semibold">Fees &amp; levies</p>
+              <p className="text-muted-foreground">Settles to {details.collectionAccount} — reduces the learner's fee balance</p>
+            </div>
+            <div className="rounded-md border border-border p-2">
+              <p className="font-semibold">Uniforms &amp; trips</p>
+              <p className="text-muted-foreground">Settles to {details.inventoryAccount} — recorded as a uniform/trip sale</p>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base">Money received through the bank</CardTitle>
+          <Button size="icon" variant="ghost" onClick={load} aria-label="Refresh collections"><RefreshCw className="h-4 w-4" /></Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {(["Tuition", "Levy", "Uniforms", "Trip"] as const).map(cat => {
+              const rows = collections.filter(c => c.category === cat);
+              const total = rows.reduce((s, c) => s + c.amount, 0);
+              return (
+                <div key={cat} className="rounded-md border border-border p-3">
+                  <p className="text-xs text-muted-foreground">{cat}</p>
+                  <p className="text-lg font-bold">${total.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">{rows.length} payment{rows.length === 1 ? "" : "s"}</p>
+                </div>
+              );
+            })}
+            <div className="rounded-md border border-primary bg-primary/5 p-3">
+              <p className="text-xs text-muted-foreground">Total received</p>
+              <p className="text-lg font-bold text-primary">
+                ${collections.reduce((s, c) => s + c.amount, 0).toFixed(2)}
+              </p>
+              <p className="text-xs text-muted-foreground">{collections.length} payment{collections.length === 1 ? "" : "s"}</p>
+            </div>
+          </div>
+
+          {collections.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nothing yet — every payment the bank sends will be listed here with the learner's name, what it was for and the receipt number.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="text-left text-muted-foreground">
+                  <tr className="border-b border-border">
+                    <th className="py-2 pr-3 font-medium">Date</th>
+                    <th className="py-2 pr-3 font-medium">Learner</th>
+                    <th className="py-2 pr-3 font-medium">Class</th>
+                    <th className="py-2 pr-3 font-medium">Paid for</th>
+                    <th className="py-2 pr-3 font-medium">Bank reference</th>
+                    <th className="py-2 pr-3 font-medium">Receipt</th>
+                    <th className="py-2 text-right font-medium">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {collections.map(c => (
+                    <tr key={c.id} className="border-b border-border/60">
+                      <td className="py-2 pr-3 whitespace-nowrap">{new Date(c.created_at).toLocaleString("en-GB")}</td>
+                      <td className="py-2 pr-3">
+                        <span className="font-medium">{c.student}</span>
+                        {c.registration && <span className="ml-1 text-muted-foreground">({c.registration})</span>}
+                      </td>
+                      <td className="py-2 pr-3">{c.className || "—"}</td>
+                      <td className="py-2 pr-3"><Badge variant="secondary">{c.category}</Badge></td>
+                      <td className="py-2 pr-3">{c.reference || "—"}</td>
+                      <td className="py-2 pr-3">{c.receipt || "—"}</td>
+                      <td className="py-2 text-right font-semibold">{c.currency === "USD" ? "$" : `${c.currency} `}{c.amount.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Test the connection</CardTitle></CardHeader>
