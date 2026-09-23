@@ -78,15 +78,32 @@ Deno.serve(async (req) => {
     }
 
     // ---- Authentication: Bearer token (API key) ----
-    const header = req.headers.get("authorization") || "";
-    const presented = header.toLowerCase().startsWith("bearer ")
+    // Accepted, in order: Authorization: Bearer <key>, Authorization: <key>,
+    // x-api-key / api-key / apikey headers, or ?api_key= / ?key= query string
+    // (the query string makes it possible to test straight from a browser).
+    const header = (req.headers.get("authorization") || "").trim();
+    const fromHeader = header.toLowerCase().startsWith("bearer ")
       ? header.slice(7).trim()
-      : (req.headers.get("x-api-key") || "").trim();
+      : header;
+    const presented = (
+      fromHeader ||
+      req.headers.get("x-api-key") ||
+      req.headers.get("api-key") ||
+      req.headers.get("apikey") ||
+      url.searchParams.get("api_key") ||
+      url.searchParams.get("key") ||
+      ""
+    ).trim();
 
     if (!presented) {
       await log(401, { error: "missing_credentials" });
-      return json({ error: "unauthorized", message: "Provide your API key as: Authorization: Bearer <key>" }, 401);
+      return json({
+        error: "unauthorized",
+        message: "No API key was received. Send it as 'Authorization: Bearer <key>', as the 'x-api-key' header, or for quick browser checks append ?api_key=<key> to the URL.",
+        hint: "Opening this address in a web browser without a key will always return this message.",
+      }, 401);
     }
+
 
     const { data: keyRow } = await supabase
       .from("bank_api_keys")
