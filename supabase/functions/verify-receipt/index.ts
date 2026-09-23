@@ -97,12 +97,14 @@ Deno.serve(async (req) => {
     }
 
     // Try inventory sale
-    const { data: sale } = await supabaseAdmin
+    const { data: sales } = await supabaseAdmin
       .from("inventory_sales")
       .select("receipt_number, total_amount, currency, method, status, created_at, student_profile_id, items")
-      .eq("receipt_number", cleanReceipt)
-      .in("status", ["paid", "confirmed", "completed"])
-      .maybeSingle();
+      .ilike("receipt_number", cleanReceipt)
+      .in("status", PAID)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const sale = sales?.[0] ?? null;
 
     if (sale) {
       const profile = await fetchProfile(sale.student_profile_id);
