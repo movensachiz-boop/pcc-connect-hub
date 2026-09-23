@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
       const reg = profile?.registration_number || "";
       return new Response(JSON.stringify({
         valid: isValid,
+        reason: isValid ? undefined : "tampered",
         type: "payment",
         receiptNumber: payment.receipt_number,
         amount: payment.amount,
