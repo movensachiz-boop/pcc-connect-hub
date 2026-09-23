@@ -131,7 +131,42 @@ Deno.serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ valid: false }), {
+    // Try vacation school payment
+    const { data: vacs } = await supabaseAdmin
+      .from("vacation_payments")
+      .select("receipt_number, amount, currency, method, status, created_at, description, vacation_student_id")
+      .ilike("receipt_number", cleanReceipt)
+      .in("status", PAID)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const vac = vacs?.[0] ?? null;
+
+    if (vac) {
+      const { data: vs } = await supabaseAdmin
+        .from("vacation_students")
+        .select("first_name, last_name, stream")
+        .eq("id", vac.vacation_student_id)
+        .maybeSingle();
+      const firstName = titleCase(vs?.first_name || "");
+      const lastName = titleCase(vs?.last_name || "");
+      return new Response(JSON.stringify({
+        valid: true,
+        type: "vacation",
+        receiptNumber: vac.receipt_number,
+        amount: vac.amount,
+        currency: vac.currency,
+        status: vac.status,
+        date: new Date(vac.created_at).toLocaleDateString("en-GB"),
+        studentName: `${mask(firstName)} ${mask(lastName)}`.trim() || "Student",
+        studentNameFull: `${firstName} ${lastName}`.trim() || "Student",
+        regNumber: "",
+        studentClass: vs?.stream || "Vacation School",
+        method: vac.method,
+        description: vac.description || "Vacation school payment",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    return new Response(JSON.stringify({ valid: false, reason: "not_found" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
