@@ -182,6 +182,12 @@ const VerifyReceipt = () => {
                       <Shield size={12} className="mr-1" /> Hash Verified
                     </Badge>
                   </div>
+                  {result.description && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Paid for</p>
+                      <p className="font-semibold">{result.description}</p>
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground pt-2 border-t">
                   This receipt has been cryptographically verified. The data integrity check confirms no tampering has occurred.
