@@ -50,13 +50,17 @@ Deno.serve(async (req) => {
       return [formClean, stream].filter(Boolean).join(" ") || "—";
     };
 
+    const PAID = ["paid", "confirmed", "completed", "Paid", "PAID", "Confirmed", "Completed"];
+
     // Try fees payment first
-    const { data: payment } = await supabaseAdmin
+    const { data: payments } = await supabaseAdmin
       .from("payments")
       .select("receipt_number, amount, currency, method, status, created_at, student_profile_id, verification_hash, description")
-      .eq("receipt_number", cleanReceipt)
-      .in("status", ["paid", "confirmed", "completed"])
-      .maybeSingle();
+      .ilike("receipt_number", cleanReceipt)
+      .in("status", PAID)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const payment = payments?.[0] ?? null;
 
     if (payment) {
       let isValid = true;
