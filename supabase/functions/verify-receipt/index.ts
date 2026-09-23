@@ -50,13 +50,17 @@ Deno.serve(async (req) => {
       return [formClean, stream].filter(Boolean).join(" ") || "—";
     };
 
+    const PAID = ["paid", "confirmed", "completed", "Paid", "PAID", "Confirmed", "Completed"];
+
     // Try fees payment first
-    const { data: payment } = await supabaseAdmin
+    const { data: payments } = await supabaseAdmin
       .from("payments")
       .select("receipt_number, amount, currency, method, status, created_at, student_profile_id, verification_hash, description")
-      .eq("receipt_number", cleanReceipt)
-      .in("status", ["paid", "confirmed", "completed"])
-      .maybeSingle();
+      .ilike("receipt_number", cleanReceipt)
+      .in("status", PAID)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const payment = payments?.[0] ?? null;
 
     if (payment) {
       let isValid = true;
@@ -77,6 +81,7 @@ Deno.serve(async (req) => {
       const reg = profile?.registration_number || "";
       return new Response(JSON.stringify({
         valid: isValid,
+        reason: isValid ? undefined : "tampered",
         type: "payment",
         receiptNumber: payment.receipt_number,
         amount: payment.amount,
@@ -93,12 +98,14 @@ Deno.serve(async (req) => {
     }
 
     // Try inventory sale
-    const { data: sale } = await supabaseAdmin
+    const { data: sales } = await supabaseAdmin
       .from("inventory_sales")
       .select("receipt_number, total_amount, currency, method, status, created_at, student_profile_id, items")
-      .eq("receipt_number", cleanReceipt)
-      .in("status", ["paid", "confirmed", "completed"])
-      .maybeSingle();
+      .ilike("receipt_number", cleanReceipt)
+      .in("status", PAID)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const sale = sales?.[0] ?? null;
 
     if (sale) {
       const profile = await fetchProfile(sale.student_profile_id);
@@ -125,7 +132,42 @@ Deno.serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ valid: false }), {
+    // Try vacation school payment
+    const { data: vacs } = await supabaseAdmin
+      .from("vacation_payments")
+      .select("receipt_number, amount, currency, method, status, created_at, description, vacation_student_id")
+      .ilike("receipt_number", cleanReceipt)
+      .in("status", PAID)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const vac = vacs?.[0] ?? null;
+
+    if (vac) {
+      const { data: vs } = await supabaseAdmin
+        .from("vacation_students")
+        .select("first_name, last_name, stream")
+        .eq("id", vac.vacation_student_id)
+        .maybeSingle();
+      const firstName = titleCase(vs?.first_name || "");
+      const lastName = titleCase(vs?.last_name || "");
+      return new Response(JSON.stringify({
+        valid: true,
+        type: "vacation",
+        receiptNumber: vac.receipt_number,
+        amount: vac.amount,
+        currency: vac.currency,
+        status: vac.status,
+        date: new Date(vac.created_at).toLocaleDateString("en-GB"),
+        studentName: `${mask(firstName)} ${mask(lastName)}`.trim() || "Student",
+        studentNameFull: `${firstName} ${lastName}`.trim() || "Student",
+        regNumber: "",
+        studentClass: vs?.stream || "Vacation School",
+        method: vac.method,
+        description: vac.description || "Vacation school payment",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    return new Response(JSON.stringify({ valid: false, reason: "not_found" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

@@ -10,6 +10,8 @@ import pccLogo from "@/assets/pcc-logo.png";
 
 interface VerifyResult {
   valid: boolean;
+  reason?: string;
+  type?: string;
   receiptNumber?: string;
   amount?: number;
   currency?: string;
@@ -19,6 +21,7 @@ interface VerifyResult {
   regNumber?: string;
   method?: string;
   status?: string;
+  description?: string;
 }
 
 const VerifyReceipt = () => {
@@ -30,7 +33,11 @@ const VerifyReceipt = () => {
 
   // Auto-fill and verify from QR code URL param
   useEffect(() => {
-    const r = searchParams.get("r");
+    const r =
+      searchParams.get("r") ||
+      searchParams.get("receipt") ||
+      searchParams.get("receiptNumber") ||
+      searchParams.get("receipt_number");
     if (r) {
       setReceiptNo(r);
       // Auto-trigger verification
@@ -175,6 +182,12 @@ const VerifyReceipt = () => {
                       <Shield size={12} className="mr-1" /> Hash Verified
                     </Badge>
                   </div>
+                  {result.description && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Paid for</p>
+                      <p className="font-semibold">{result.description}</p>
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground pt-2 border-t">
                   This receipt has been cryptographically verified. The data integrity check confirms no tampering has occurred.
@@ -184,7 +197,9 @@ const VerifyReceipt = () => {
             {!result.valid && (
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  No receipt with this number was found, or the receipt data has been tampered with. Please contact the school administration.
+                  {result.reason === "tampered"
+                    ? "This receipt number exists but its details do not match our records. It may have been altered. Please contact the school administration."
+                    : "No receipt with this number was found. Please check the number and try again, or contact the school administration."}
                 </p>
               </CardContent>
             )}

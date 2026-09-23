@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
         settlement_account: categoryDef.account,
         bank_reference: bankRef,
         posted_at: inserted.created_at,
-        verification_url: `https://progresscentresys.com/verify?receipt=${inserted.receipt_number}`,
+        verification_url: `https://progresscentresys.com/verify?r=${inserted.receipt_number}`,
       }, 201);
     }
 
