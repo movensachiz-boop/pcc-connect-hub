@@ -33,7 +33,11 @@ const VerifyReceipt = () => {
 
   // Auto-fill and verify from QR code URL param
   useEffect(() => {
-    const r = searchParams.get("r");
+    const r =
+      searchParams.get("r") ||
+      searchParams.get("receipt") ||
+      searchParams.get("receiptNumber") ||
+      searchParams.get("receipt_number");
     if (r) {
       setReceiptNo(r);
       // Auto-trigger verification
