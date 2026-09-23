@@ -197,7 +197,9 @@ const VerifyReceipt = () => {
             {!result.valid && (
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  No receipt with this number was found, or the receipt data has been tampered with. Please contact the school administration.
+                  {result.reason === "tampered"
+                    ? "This receipt number exists but its details do not match our records. It may have been altered. Please contact the school administration."
+                    : "No receipt with this number was found. Please check the number and try again, or contact the school administration."}
                 </p>
               </CardContent>
             )}
