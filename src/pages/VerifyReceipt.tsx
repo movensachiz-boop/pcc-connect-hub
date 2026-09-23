@@ -10,6 +10,8 @@ import pccLogo from "@/assets/pcc-logo.png";
 
 interface VerifyResult {
   valid: boolean;
+  reason?: string;
+  type?: string;
   receiptNumber?: string;
   amount?: number;
   currency?: string;
@@ -19,6 +21,7 @@ interface VerifyResult {
   regNumber?: string;
   method?: string;
   status?: string;
+  description?: string;
 }
 
 const VerifyReceipt = () => {
