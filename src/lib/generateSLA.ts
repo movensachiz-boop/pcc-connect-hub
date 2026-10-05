@@ -155,7 +155,10 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.setFont("helvetica", "normal");
   doc.text(data.client_name || data.school_name || "Client", margin, y); y += 5;
   if (data.address) { doc.text(`Address: ${data.address}`, margin, y); y += 5; }
-  if (data.contact_person) { doc.text(`Represented by: ${data.contact_person}`, margin, y); y += 5; }
+  const rep = (data.contact_person || "").trim();
+  const repValid = rep && !/whom it may concern/i.test(rep);
+  doc.text(`Represented by: ${repValid ? rep : "______________________________"}`, margin, y); y += 5;
+  doc.text(`Position: ______________________________`, margin, y); y += 5;
   if (data.phone) { doc.text(`Phone: ${data.phone}`, margin, y); y += 5; }
   if (data.email) { doc.text(`Email: ${data.email}`, margin, y); y += 5; }
   y += 2;
@@ -171,6 +174,7 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.text(data.expiry_date || "________________", margin + 32, y);
   y += 8;
 
+  const T = (key: string) => SECTION_ORDER.find(s => s.key === key)?.title || key;
   const writeSection = (title: string, body: string) => {
     ensureSpace(14);
     doc.setFont("helvetica", "bold");
@@ -191,8 +195,8 @@ export const generateSLA = async (data: SlaAgreementData) => {
   };
 
   // Section 1-2
-  writeSection(SECTION_ORDER[0].title, sections.purpose);
-  writeSection(SECTION_ORDER[1].title, sections.scope);
+  writeSection(T("purpose"), sections.purpose);
+  writeSection(T("scope"), sections.scope);
 
   // Installations bullets
   ensureSpace(10);
@@ -205,16 +209,16 @@ export const generateSLA = async (data: SlaAgreementData) => {
   });
   y += 3;
 
-  writeSection(SECTION_ORDER[2].title, sections.excluded);
-  writeSection(SECTION_ORDER[3].title, sections.availability);
-  writeSection(SECTION_ORDER[4].title, sections.support_hours);
+  writeSection(T("excluded"), sections.excluded);
+  writeSection(T("availability"), sections.availability);
+  writeSection(T("support_hours"), sections.support_hours);
 
   // Response times table
   ensureSpace(14);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);
-  doc.text(SECTION_ORDER[5].title, margin, y);
+  doc.text(T("response_times"), margin, y);
   y += 4;
   autoTable(doc, {
     startY: y,
@@ -228,16 +232,18 @@ export const generateSLA = async (data: SlaAgreementData) => {
   // @ts-ignore
   y = (doc as any).lastAutoTable.finalY + 6;
 
-  writeSection(SECTION_ORDER[6].title, sections.provider_resp);
-  writeSection(SECTION_ORDER[7].title, sections.school_resp);
-  writeSection(SECTION_ORDER[8].title, sections.data_ownership);
+  writeSection(T("provider_resp"), sections.provider_resp);
+  writeSection(T("school_resp"), sections.school_resp);
+  writeSection(T("data_ownership"), sections.data_ownership);
+  writeSection(T("software_ownership"), sections.software_ownership);
+  writeSection(T("backup_recovery"), sections.backup_recovery);
 
   // Fees with table
   ensureSpace(20);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);
-  doc.text(SECTION_ORDER[9].title, margin, y); y += 4;
+  doc.text(T("fees"), margin, y); y += 4;
   const termlyFee = Number(pricing.termly_fee ?? data.monthly_fee ?? 90);
   const annualFee = Number(pricing.annual_fee ?? termlyFee * (pricing.terms_per_year ?? 3));
   const integrationFee = Number(pricing.integration_fee ?? 600);
@@ -281,7 +287,7 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);
-  doc.text(SECTION_ORDER[10].title, margin, y);
+  doc.text(T("bank_integration"), margin, y);
   y += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -302,20 +308,22 @@ export const generateSLA = async (data: SlaAgreementData) => {
   });
   y += 3;
 
-  writeSection(SECTION_ORDER[11].title, sections.confidentiality);
-  writeSection(SECTION_ORDER[12].title, sections.termination);
-  writeSection(SECTION_ORDER[13].title, sections.liability);
+  writeSection(T("confidentiality"), sections.confidentiality);
+  writeSection(T("termination"), sections.termination);
+  writeSection(T("liability"), sections.liability);
+  writeSection(T("force_majeure"), sections.force_majeure);
+  writeSection(T("governing_law"), sections.governing_law);
 
   // Acceptance + signatures
-  ensureSpace(95);
+  ensureSpace(130);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);
-  doc.text(SECTION_ORDER[14].title, margin, y); y += 6;
+  doc.text(T("acceptance"), margin, y); y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(30);
-  doc.text(sections.acceptance, margin, y); y += 10;
+  doc.splitTextToSize(sections.acceptance, pw - margin * 2).forEach((ln: string) => { doc.text(ln, margin, y); y += 5; }); y += 5;
 
   // signature blocks
   const colW = (pw - margin * 2 - 10) / 2;
@@ -329,8 +337,20 @@ export const generateSLA = async (data: SlaAgreementData) => {
     doc.text(`Date: ____________________________`, x, blockY + 24);
   };
   drawBlock(margin, "Service Provider", provider.name);
-  drawBlock(margin + colW + 10, "Client", data.contact_person || data.client_name);
-  y = blockY + 32;
+  drawBlock(margin + colW + 10, "Client", repValid ? rep : "");
+  y = blockY + 36;
+  const wY = y;
+  const drawWitness = (x: number, title: string) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(title, x, wY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Name: ________________________`, x, wY + 8);
+    doc.text(`Signature: ________________________`, x, wY + 16);
+    doc.text(`Date: ____________________________`, x, wY + 24);
+  };
+  drawWitness(margin, "Witness for Service Provider");
+  drawWitness(margin + colW + 10, "Witness for Client");
+  y = wY + 32;
 
   // Company rubber stamp over the provider signature block
   const stamp = await loadStampDataUrl();
