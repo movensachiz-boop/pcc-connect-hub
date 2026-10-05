@@ -246,12 +246,12 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.text(T("fees"), margin, y); y += 4;
   const termlyFee = Number(pricing.termly_fee ?? data.monthly_fee ?? 90);
   const annualFee = Number(pricing.annual_fee ?? termlyFee * (pricing.terms_per_year ?? 3));
-  const integrationFee = Number(pricing.integration_fee ?? 600);
+  const integrationFee = Number(pricing.integration_fee ?? 800);
   autoTable(doc, {
     startY: y,
     head: [["Item", "Amount"]],
     body: [
-      [`One-Off Bank Integration (NBS)`, `${data.currency} $${integrationFee.toFixed(2)}`],
+      [`Installation & Bank Integration (NBS) — Paid`, `${data.currency} $${integrationFee.toFixed(2)}`],
       [`System Maintenance Fee (per term)`, `${data.currency} $${termlyFee.toFixed(2)}`],
       [`System Maintenance Fee (per year, ${pricing.terms_per_year ?? 3} terms)`, `${data.currency} $${annualFee.toFixed(2)}`],
     ],
