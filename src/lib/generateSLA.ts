@@ -238,11 +238,16 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.setFontSize(11);
   doc.setTextColor(...primary);
   doc.text(SECTION_ORDER[9].title, margin, y); y += 4;
+  const termlyFee = Number(pricing.termly_fee ?? data.monthly_fee ?? 90);
+  const annualFee = Number(pricing.annual_fee ?? termlyFee * (pricing.terms_per_year ?? 3));
+  const integrationFee = Number(pricing.integration_fee ?? 600);
   autoTable(doc, {
     startY: y,
     head: [["Item", "Amount"]],
     body: [
-      [`Monthly Support & Maintenance Fee`, `${data.currency} $${Number(data.monthly_fee).toFixed(2)}`],
+      [`One-Off Bank Integration (NBS)`, `${data.currency} $${integrationFee.toFixed(2)}`],
+      [`System Maintenance Fee (per term)`, `${data.currency} $${termlyFee.toFixed(2)}`],
+      [`System Maintenance Fee (per year, ${pricing.terms_per_year ?? 3} terms)`, `${data.currency} $${annualFee.toFixed(2)}`],
     ],
     theme: "grid",
     headStyles: { fillColor: primary, textColor: 255 },
@@ -256,22 +261,57 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.setTextColor(30);
   const feeLines = doc.splitTextToSize(sections.fees, pw - margin * 2);
   feeLines.forEach((ln: string) => { ensureSpace(5); doc.text(ln, margin, y); y += 5; });
+  y += 2;
+  ensureSpace(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("The maintenance fee covers:", margin, y); y += 5;
+  doc.setFont("helvetica", "normal");
+  (pricing.covers || []).filter((it: string) => it && it.trim()).forEach((it: string) => {
+    ensureSpace(5);
+    doc.text(`• ${it}`, margin + 4, y); y += 5;
+  });
   ensureSpace(6);
   doc.setFont("helvetica", "italic");
   doc.text(pricing.notice || "", margin, y);
   doc.setFont("helvetica", "normal");
   y += 8;
 
-  writeSection(SECTION_ORDER[10].title, sections.confidentiality);
-  writeSection(SECTION_ORDER[11].title, sections.termination);
-  writeSection(SECTION_ORDER[12].title, sections.liability);
+  // Bank integration (one-off) with itemised cost breakdown
+  ensureSpace(14);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...primary);
+  doc.text(SECTION_ORDER[10].title, margin, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(30);
+  const intLines = doc.splitTextToSize(sections.bank_integration || "", pw - margin * 2);
+  intLines.forEach((ln: string) => { ensureSpace(5); doc.text(ln, margin, y); y += 5; });
+  y += 2;
+  ensureSpace(10);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Breakdown of the ${data.currency} $${integrationFee.toFixed(2)} integration fee:`, margin, y); y += 5;
+  doc.setFont("helvetica", "normal");
+  (pricing.integration_costs || []).filter((it: string) => it && it.trim()).forEach((it: string) => {
+    const itemLines = doc.splitTextToSize(`• ${it}`, pw - margin * 2 - 4);
+    itemLines.forEach((ln: string) => {
+      ensureSpace(5);
+      doc.text(ln, margin + 4, y); y += 5;
+    });
+  });
+  y += 3;
+
+  writeSection(SECTION_ORDER[11].title, sections.confidentiality);
+  writeSection(SECTION_ORDER[12].title, sections.termination);
+  writeSection(SECTION_ORDER[13].title, sections.liability);
 
   // Acceptance + signatures
   ensureSpace(95);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...primary);
-  doc.text(SECTION_ORDER[13].title, margin, y); y += 6;
+  doc.text(SECTION_ORDER[14].title, margin, y); y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(30);
