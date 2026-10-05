@@ -107,7 +107,7 @@ const DeveloperSla = () => {
         provider: DEFAULT_PROVIDER,
         pricing: DEFAULT_PRICING,
         sections: DEFAULT_SECTIONS,
-        monthly_fee: 60,
+        monthly_fee: 90,
         currency: "USD",
         status: "draft",
         created_by: user?.id,
@@ -267,7 +267,7 @@ const DeveloperSla = () => {
                 ["Active", stats.active],
                 ["Expired", stats.expired],
                 ["Awaiting Renewal", stats.renewSoon],
-                ["Monthly Revenue", `$${stats.revenue.toFixed(2)}`],
+                ["Termly Revenue", `$${stats.revenue.toFixed(2)}`],
               ].map(([l, v]) => (
                 <Card key={l as string}>
                   <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">{l}</CardTitle></CardHeader>
@@ -296,7 +296,7 @@ const DeveloperSla = () => {
                       <th className="p-3">Number</th>
                       <th className="p-3">Client</th>
                       <th className="p-3">Status</th>
-                      <th className="p-3">Fee/mo</th>
+                      <th className="p-3">Fee/term</th>
                       <th className="p-3">Expiry</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
@@ -411,7 +411,7 @@ const EditorPane = ({
           <CardHeader><CardTitle>Pricing</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Monthly Fee"><Input type="number" step="0.01" value={value.monthly_fee} onChange={e => set({ monthly_fee: Number(e.target.value) })} /></Field>
+              <Field label="Termly Fee"><Input type="number" step="0.01" value={value.monthly_fee} onChange={e => set({ monthly_fee: Number(e.target.value) })} /></Field>
               <Field label="Currency"><Input value={value.currency} onChange={e => set({ currency: e.target.value })} /></Field>
             </div>
             <div className="space-y-2">

@@ -7,19 +7,33 @@ export const DEFAULT_PROVIDER = {
 };
 
 export const DEFAULT_PRICING = {
-  monthly_fee: 60.0,
+  termly_fee: 90.0,
+  terms_per_year: 3,
+  annual_fee: 270.0,
+  integration_fee: 600.0,
   currency: "USD",
   installations: [
     "Bonnyvale Campus School Management System",
     "Mkoba 14 Campus School Management System",
   ],
   covers: [
+    "Server hosting and infrastructure costs",
+    "Database hosting, maintenance and backups",
+    "Domain name and SSL security certificate renewal",
+    "Security updates and patches",
+    "System monitoring and performance optimisation",
     "Bug fixes",
     "Technical support",
-    "Software maintenance",
-    "Database maintenance",
-    "Security updates",
-    "Performance optimisation",
+  ],
+  integration_costs: [
+    "Requirements analysis and liaison with National Building Society (NBS)",
+    "Design and writing of the bank API documentation",
+    "Development of the secure API connection path (endpoints) between the bank and the school system",
+    "Authentication and access-key security for the bank connection",
+    "Payment matching and reconciliation logic using student registration numbers as payment references",
+    "Receipt generation and QR-code verification for bank payments",
+    "Testing and certification support with the bank's technical team",
+    "Deployment, go-live support and post-launch monitoring",
   ],
   excludes: [
     "New modules",
@@ -51,7 +65,9 @@ export const DEFAULT_SECTIONS: Record<string, string> = {
   data_ownership:
     "All student, staff, financial, and administrative data entered into the system remains the sole property of the Client. Takudzwa Singo shall not disclose or use such data except as necessary to provide support services or where required by law.",
   fees:
-    "The client agrees to pay a monthly software support and maintenance fee of USD $60.00 covering the listed installations. New modules, custom development, major feature requests and third-party integrations are billed separately. Payments shall be made on or before the agreed due date each month.",
+    "The Client agrees to pay a system maintenance fee of USD $90.00 per school term (USD $270.00 per year, three terms). This fee covers server hosting and infrastructure, database hosting, maintenance and backups, domain name and SSL security certificate renewal, security updates and patches, system monitoring and performance optimisation, bug fixes and technical support for the listed installations. New modules, custom development, major feature requests and third-party integrations are billed separately. Payments shall be made on or before the agreed due date each term.",
+  bank_integration:
+    "A one-off integration fee of USD $600.00 is charged for the bank-to-application integration with National Building Society (NBS). This fee covers the full scope of work delivered: requirements analysis and liaison with the bank, design and writing of the bank API documentation, development of the secure API connection path between the bank and the school system, authentication and access-key security, payment matching and reconciliation using student registration numbers as payment references, receipt generation with QR-code verification, testing and certification support with the bank's technical team, and deployment and go-live support.",
   confidentiality:
     "Both parties agree to keep confidential all information relating to students, staff, finances, passwords, databases, and any other sensitive information obtained during the course of this agreement.",
   termination:
@@ -73,8 +89,9 @@ export const SECTION_ORDER: { key: string; title: string }[] = [
   { key: "school_resp", title: "8. Responsibilities of the School" },
   { key: "data_ownership", title: "9. Data Ownership" },
   { key: "fees", title: "10. Fees" },
-  { key: "confidentiality", title: "11. Confidentiality" },
-  { key: "termination", title: "12. Termination" },
-  { key: "liability", title: "13. Limitation of Liability" },
-  { key: "acceptance", title: "14. Acceptance" },
+  { key: "bank_integration", title: "11. Bank Integration (One-Off)" },
+  { key: "confidentiality", title: "12. Confidentiality" },
+  { key: "termination", title: "13. Termination" },
+  { key: "liability", title: "14. Limitation of Liability" },
+  { key: "acceptance", title: "15. Acceptance" },
 ];
