@@ -416,7 +416,7 @@ const EditorPane = ({
               <Field label="Termly Fee"><Input type="number" step="0.01" value={value.monthly_fee} onChange={e => set({ monthly_fee: Number(e.target.value) })} /></Field>
               <Field label="Currency"><Input value={value.currency} onChange={e => set({ currency: e.target.value })} /></Field>
             </div>
-            <Field label="Installation & Bank Integration — Paid">
+            <Field label="Installation Fee — Paid">
               <Input
                 type="number"
                 step="0.01"
