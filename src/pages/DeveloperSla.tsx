@@ -298,15 +298,16 @@ const DeveloperSla = () => {
                       <th className="p-3">Status</th>
                       <th className="p-3">Fee/term</th>
                       <th className="p-3">Installation paid</th>
+                      <th className="p-3">Bank integration</th>
                       <th className="p-3">Expiry</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
-                      <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
+                      <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
                     ) : filtered.length === 0 ? (
-                      <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No agreements yet. Click "New Agreement".</td></tr>
+                      <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">No agreements yet. Click "New Agreement".</td></tr>
                     ) : filtered.map(a => (
                       <tr key={a.id} className="border-t">
                         <td className="p-3 font-mono">{a.agreement_number}</td>
@@ -314,6 +315,10 @@ const DeveloperSla = () => {
                         <td className="p-3"><Badge variant="outline">{a.status}</Badge></td>
                         <td className="p-3">{a.currency} ${Number(a.monthly_fee).toFixed(2)}</td>
                         <td className="p-3">{a.currency} ${Number(a.pricing?.integration_fee ?? DEFAULT_PRICING.integration_fee).toFixed(2)}</td>
+                        <td className="p-3">
+                          {a.currency} ${Number(a.pricing?.bank_integration_fee ?? DEFAULT_PRICING.bank_integration_fee).toFixed(2)}
+                          <div className="text-xs text-muted-foreground">{a.pricing?.bank_integration_status ?? DEFAULT_PRICING.bank_integration_status}</div>
+                        </td>
                         <td className="p-3">{a.expiry_date || "—"}</td>
                         <td className="p-3 text-right space-x-1">
                           <Button size="sm" variant="ghost" onClick={() => { setEditing(a); setTab("editor"); }}><Edit size={14} /></Button>
