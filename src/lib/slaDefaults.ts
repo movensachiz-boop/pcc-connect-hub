@@ -11,6 +11,8 @@ export const DEFAULT_PRICING = {
   terms_per_year: 3,
   annual_fee: 270.0,
   integration_fee: 800.0,
+  bank_integration_fee: 600.0,
+  bank_integration_status: "Outstanding",
   currency: "USD",
   installations: [
     "Bonnyvale Campus School Management System",
@@ -71,7 +73,7 @@ export const DEFAULT_SECTIONS: Record<string, string> = {
   fees:
     "The Client agrees to pay a system maintenance fee of USD $90.00 per school term (USD $270.00 per year, three terms). Payments shall be due within fourteen (14) days of the invoice date. The Service Provider reserves the right to suspend support services for accounts more than thirty (30) days overdue until all outstanding balances are settled.",
   bank_integration:
-    "A one-off installation and integration fee of USD $800.00 has been paid for the bank-to-application integration with National Building Society (NBS). This fee covers the full scope of work delivered, itemised below.",
+    "The system installation fee of USD $800.00 has been PAID in full. Separately, a one-off fee of USD $600.00 is charged for the bank-to-application integration with National Building Society (NBS), which allows parents to pay fees, levies, uniforms and trips at the bank and have those payments reflect automatically in the school system with receipts. This USD $600.00 has NOT YET BEEN PAID and is due within fourteen (14) days of signing this Agreement. The work it covers is itemised and costed below.",
   confidentiality:
     "Both parties agree to keep confidential all information relating to students, staff, finances, passwords, databases and any other sensitive information obtained during the course of this Agreement.",
   termination:

@@ -247,11 +247,13 @@ export const generateSLA = async (data: SlaAgreementData) => {
   const termlyFee = Number(pricing.termly_fee ?? data.monthly_fee ?? 90);
   const annualFee = Number(pricing.annual_fee ?? termlyFee * (pricing.terms_per_year ?? 3));
   const integrationFee = Number(pricing.integration_fee ?? 800);
+  const bankFee = Number(pricing.bank_integration_fee ?? 600);
   autoTable(doc, {
     startY: y,
     head: [["Item", "Amount"]],
     body: [
-      [`Installation & Bank Integration (NBS) — Paid`, `${data.currency} $${integrationFee.toFixed(2)}`],
+      [`System Installation Fee — PAID`, `${data.currency} $${integrationFee.toFixed(2)}`],
+      [`NBS Bank-to-App Integration — NOT YET PAID (outstanding)`, `${data.currency} $${bankFee.toFixed(2)}`],
       [`System Maintenance Fee (per term)`, `${data.currency} $${termlyFee.toFixed(2)}`],
       [`System Maintenance Fee (per year, ${pricing.terms_per_year ?? 3} terms)`, `${data.currency} $${annualFee.toFixed(2)}`],
     ],
@@ -259,6 +261,11 @@ export const generateSLA = async (data: SlaAgreementData) => {
     headStyles: { fillColor: primary, textColor: 255 },
     styles: { fontSize: 10, cellPadding: 3 },
     margin: { left: margin, right: margin },
+    didParseCell: (h: any) => {
+      if (h.section !== "body") return;
+      if (h.row.index === 0) { h.cell.styles.fillColor = [220, 245, 225]; h.cell.styles.textColor = [20, 110, 40]; h.cell.styles.fontStyle = "bold"; }
+      if (h.row.index === 1) { h.cell.styles.fillColor = [253, 226, 226]; h.cell.styles.textColor = [170, 20, 20]; h.cell.styles.fontStyle = "bold"; }
+    },
   });
   // @ts-ignore
   y = (doc as any).lastAutoTable.finalY + 4;
@@ -292,21 +299,48 @@ export const generateSLA = async (data: SlaAgreementData) => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(30);
-  const intLines = doc.splitTextToSize(sections.bank_integration || "", pw - margin * 2);
+  const intLines = doc.splitTextToSize(DEFAULT_SECTIONS.bank_integration, pw - margin * 2);
   intLines.forEach((ln: string) => { ensureSpace(5); doc.text(ln, margin, y); y += 5; });
   y += 2;
-  ensureSpace(10);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Breakdown of the ${data.currency} $${integrationFee.toFixed(2)} integration fee:`, margin, y); y += 5;
-  doc.setFont("helvetica", "normal");
-  (pricing.integration_costs || []).filter((it: string) => it && it.trim()).forEach((it: string) => {
-    const itemLines = doc.splitTextToSize(`• ${it}`, pw - margin * 2 - 4);
-    itemLines.forEach((ln: string) => {
-      ensureSpace(5);
-      doc.text(ln, margin + 4, y); y += 5;
-    });
+  const BANK_ITEMS: [string, number][] = [
+    ["Requirements analysis, meetings and liaison with NBS (Luckson Moyo, POS merchant services)", 50],
+    ["Design and writing of the bank API specification document supplied to NBS", 80],
+    ["Building the secure connection path (endpoints): health check, learner list & lookup, fee categories, payment posting, payment history", 150],
+    ["Access-key authentication, key issuing/revoking and protection against duplicate payments", 70],
+    ["Payment matching by registration number and routing to the correct accounts (fees/levy 3251011999451; uniforms/trips 3251011999452)", 100],
+    ["Automatic receipts, QR-code receipt verification and live dashboard notifications/totals", 50],
+    ["Joint testing with the NBS technical team and clearing of test data", 60],
+    ["Production go-live, production key setup and post-launch monitoring", 40],
+  ];
+  const bankTotal = BANK_ITEMS.reduce((a, [, v]) => a + v, 0);
+  ensureSpace(20);
+  autoTable(doc, {
+    startY: y,
+    head: [["Integration work item", "Cost"]],
+    body: [
+      ...BANK_ITEMS.map(([d, v]) => [d, `${data.currency} $${v.toFixed(2)}`]),
+      ["TOTAL BANK INTEGRATION FEE — NOT YET PAID", `${data.currency} $${bankTotal.toFixed(2)}`],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: primary, textColor: 255 },
+    styles: { fontSize: 9, cellPadding: 2 },
+    columnStyles: { 1: { cellWidth: 32, halign: "right" } },
+    margin: { left: margin, right: margin },
+    didParseCell: (h: any) => {
+      if (h.section === "body" && h.row.index === BANK_ITEMS.length) {
+        h.cell.styles.fillColor = [253, 226, 226]; h.cell.styles.textColor = [170, 20, 20]; h.cell.styles.fontStyle = "bold";
+      }
+    },
   });
-  y += 3;
+  // @ts-ignore
+  y = (doc as any).lastAutoTable.finalY + 4;
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  const why = doc.splitTextToSize(`Why ${data.currency} $${bankTotal.toFixed(2)}: this is separate from the installation fee. It pays for building and documenting a dedicated, secure link between NBS and the school system so that bank payments are recorded, receipted and shown on the dashboard automatically, with no manual capturing by the bursar.`, pw - margin * 2);
+  why.forEach((ln: string) => { ensureSpace(5); doc.text(ln, margin, y); y += 4.5; });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  y += 4;
 
   writeSection(T("confidentiality"), sections.confidentiality);
   writeSection(T("termination"), sections.termination);
