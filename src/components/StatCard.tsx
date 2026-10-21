@@ -8,6 +8,7 @@ interface StatCardProps {
   subtitle?: string;
   icon: LucideIcon;
   variant?: "primary" | "accent" | "success" | "warning" | "destructive";
+  onClick?: () => void;
 }
 
 const variantStyles = {
