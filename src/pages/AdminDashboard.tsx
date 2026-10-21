@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import DashboardBankTransactions from "@/components/DashboardBankTransactions";
 
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +48,7 @@ const AdminDashboard = () => {
   const [bankTotal, setBankTotal] = useState(0);
   const [bankCount, setBankCount] = useState(0);
   const [bankAlerts, setBankAlerts] = useState<BankAlert[]>([]);
+  const [showBankList, setShowBankList] = useState(false);
   const [barData, setBarData] = useState<{ name: string; collected: number; outstanding: number }[]>([]);
   const [pieData, setPieData] = useState<{ name: string; value: number }[]>([]);
   const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
@@ -271,12 +273,19 @@ const AdminDashboard = () => {
               <StatCard title="Inventory Sales" value={`$${inventoryRevenue.toLocaleString()}`} subtitle="Shop revenue" icon={ShoppingBag} variant="accent" />
               <StatCard title="Outstanding" value={`$${outstanding.toLocaleString()}`} subtitle={totalStudents > 0 ? `${Math.round((outstanding / (feesCollected + outstanding || 1)) * 100)}% of total` : "—"} icon={AlertTriangle} variant="warning" />
               <StatCard title="Collection Rate" value={`${collectionRate}%`} subtitle="Based on fee requirements" icon={TrendingUp} variant="accent" />
-              <StatCard title="Bank Payments" value={`$${bankTotal.toLocaleString()}`} subtitle={`${bankCount} received from NBS`} icon={Landmark} variant="primary" />
+              <StatCard title="Bank Payments" value={`$${bankTotal.toLocaleString()}`} subtitle={`${bankCount} received from NBS · tap to view list`} icon={Landmark} variant="primary" onClick={() => setShowBankList(v => !v)} />
             </div>
           )}
 
+          {showBankList && <DashboardBankTransactions />}
+
           {bankAlerts.length > 0 && (
-            <Card className="shadow-card border-primary/40">
+            <Card
+              className="shadow-card border-primary/40 cursor-pointer"
+              onClick={() => setShowBankList(true)}
+              role="button"
+              aria-label="Show full bank transaction list"
+            >
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Landmark className="h-4 w-4 text-primary" /> New bank payments
