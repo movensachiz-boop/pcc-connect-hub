@@ -236,6 +236,10 @@ const AdminDashboard = () => {
     ? Math.round((feesCollected / (feesCollected + outstanding)) * 100)
     : 0;
 
+  const scrollToBankList = () => {
+    document.getElementById("bank-transactions")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
       <DashboardLayout role="admin">
         <div className="space-y-6">
