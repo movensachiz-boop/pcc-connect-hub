@@ -272,18 +272,20 @@ const AdminDashboard = () => {
               <StatCard title="Inventory Sales" value={`$${inventoryRevenue.toLocaleString()}`} subtitle="Shop revenue" icon={ShoppingBag} variant="accent" />
               <StatCard title="Outstanding" value={`$${outstanding.toLocaleString()}`} subtitle={totalStudents > 0 ? `${Math.round((outstanding / (feesCollected + outstanding || 1)) * 100)}% of total` : "—"} icon={AlertTriangle} variant="warning" />
               <StatCard title="Collection Rate" value={`${collectionRate}%`} subtitle="Based on fee requirements" icon={TrendingUp} variant="accent" />
-              <StatCard title="Bank Payments" value={`$${bankTotal.toLocaleString()}`} subtitle={`${bankCount} received from NBS · tap to view list`} icon={Landmark} variant="primary" onClick={() => setShowBankList(v => !v)} />
+              <StatCard title="Bank Payments" value={`$${bankTotal.toLocaleString()}`} subtitle={`${bankCount} received from NBS · full list below`} icon={Landmark} variant="primary" onClick={scrollToBankList} />
             </div>
           )}
 
-          {showBankList && <DashboardBankTransactions />}
+          <div id="bank-transactions" className="scroll-mt-24">
+            <DashboardBankTransactions />
+          </div>
 
           {bankAlerts.length > 0 && (
             <Card
               className="shadow-card border-primary/40 cursor-pointer"
-              onClick={() => setShowBankList(true)}
+              onClick={scrollToBankList}
               role="button"
-              aria-label="Show full bank transaction list"
+              aria-label="Go to bank transaction list"
             >
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
