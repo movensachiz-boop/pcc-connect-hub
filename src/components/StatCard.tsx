@@ -34,11 +34,17 @@ const variantStyles = {
   },
 };
 
-const StatCard = ({ title, value, subtitle, icon: Icon, variant = "primary" }: StatCardProps) => (
-  <Card className={cn(
-    "shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5",
-    variantStyles[variant].border
-  )}>
+const StatCard = ({ title, value, subtitle, icon: Icon, variant = "primary", onClick }: StatCardProps) => (
+  <Card
+    className={cn(
+      "shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5",
+      variantStyles[variant].border,
+      onClick && "cursor-pointer"
+    )}
+    onClick={onClick}
+    role={onClick ? "button" : undefined}
+    aria-label={onClick ? `${title} — view details` : undefined}
+  >
     <CardContent className="flex items-center gap-4 p-5">
       <div className={cn("p-3 rounded-xl", variantStyles[variant].icon)}>
         <Icon size={22} strokeWidth={2} />
