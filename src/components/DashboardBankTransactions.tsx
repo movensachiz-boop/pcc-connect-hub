@@ -4,7 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Landmark } from "lucide-react";
+import { RefreshCw, Landmark, Printer, FileText } from "lucide-react";
+import { generateReceipt, generateThermalReceipt } from "@/lib/generateReceipt";
+import { generateInventoryReceipt, generateInventoryThermalReceipt } from "@/lib/generateInventoryReceipt";
 import { supabase } from "@/integrations/supabase/client";
 import { buildBankCollections, matchesBankCollection, type BankCollection } from "@/lib/bankTransactions";
 
@@ -24,13 +26,13 @@ const DashboardBankTransactions = () => {
     const [{ data: feeRows, error: feeError }, { data: invRows, error: invError }] = await Promise.all([
       supabase
         .from("payments")
-        .select("id, amount, currency, receipt_number, bank_name, status, description, paynow_reference, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .select("id, amount, currency, receipt_number, bank_name, status, description, paynow_reference, verification_hash, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
         .eq("bank_name", "National Building Society")
         .order("created_at", { ascending: false })
         .limit(200),
       supabase
         .from("inventory_sales")
-        .select("id, total_amount, currency, receipt_number, status, notes, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .select("id, total_amount, currency, receipt_number, status, notes, items, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
         .ilike("notes", "NBS %")
         .order("created_at", { ascending: false })
         .limit(200),
@@ -49,6 +51,21 @@ const DashboardBankTransactions = () => {
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, []);
+
+  const printRow = async (c: BankCollection, kind: "a4" | "thermal") => {
+    const receiptNo = c.receipt || c.id;
+    const date = new Date(c.created_at).toLocaleDateString("en-GB");
+    if (c.category === "Uniforms" || c.category === "Trip") {
+      const items = c.items?.length ? c.items : [{ name: c.category, quantity: 1, unit_price: c.amount, subtotal: c.amount }];
+      const data = { receiptNo, studentName: c.student, regNo: c.registration || "—", studentClass: c.className, date, method: "Bank (NBS)", items, total: c.amount, currency: c.currency };
+      if (kind === "thermal") await generateInventoryThermalReceipt(data);
+      else await generateInventoryReceipt(data);
+      return;
+    }
+    const data = { receiptNo, studentName: c.student, regNo: c.registration || "N/A", studentClass: c.className, date, amount: `$${c.amount.toFixed(2)}`, method: "Bank (NBS)", description: c.description || `${c.category} — bank ref ${c.reference || ""}`, verificationHash: c.verificationHash || undefined };
+    if (kind === "thermal") await generateThermalReceipt(data, "print");
+    else await generateReceipt(data);
+  };
 
   const visible = collections.filter(row => matchesBankCollection(row, search, category));
   const total = collections.reduce((s, c) => s + c.amount, 0);
@@ -124,7 +141,8 @@ const DashboardBankTransactions = () => {
                   <th className="py-2 pr-3 font-medium">Bank reference</th>
                   <th className="py-2 pr-3 font-medium">Receipt</th>
                   <th className="py-2 pr-3 font-medium">Status</th>
-                  <th className="py-2 text-right font-medium">Amount</th>
+                  <th className="py-2 pr-3 text-right font-medium">Amount</th>
+                  <th className="py-2 text-right font-medium">Print</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,7 +159,11 @@ const DashboardBankTransactions = () => {
                     <td className="py-2 pr-3">{c.reference || "—"}</td>
                     <td className="py-2 pr-3">{c.receipt || "—"}</td>
                     <td className="py-2 pr-3 capitalize">{c.status}</td>
-                    <td className="py-2 text-right font-semibold">{c.currency === "USD" ? "$" : `${c.currency} `}{c.amount.toFixed(2)}</td>
+                    <td className="py-2 pr-3 text-right font-semibold">{c.currency === "USD" ? "$" : `${c.currency} `}{c.amount.toFixed(2)}</td>
+                    <td className="py-2 text-right whitespace-nowrap">
+                      <Button size="icon" variant="ghost" title="A4 receipt" aria-label="Print A4 receipt" onClick={() => void printRow(c, "a4")}><FileText className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" title="Thermal 80mm receipt" aria-label="Print thermal receipt" onClick={() => void printRow(c, "thermal")}><Printer className="h-4 w-4" /></Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

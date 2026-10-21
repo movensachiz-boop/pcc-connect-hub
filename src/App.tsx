@@ -78,7 +78,7 @@ const App = () => (
             <Route path="/student/announcements" element={<StudentProfileGate><AnnouncementsPage role="student" /></StudentProfileGate>} />
             <Route path="/student/requirements" element={<StudentProfileGate><StudentRequirements /></StudentProfileGate>} />
             <Route path="/student/shop" element={<StudentProfileGate><StudentInventory /></StudentProfileGate>} />
-            <Route path="/admin" element={<StaffGuard deny={DENY_TM_AND_CASHIER}><AdminDashboard /></StaffGuard>} />
+            <Route path="/admin" element={<StaffGuard deny={DENY_TM}><AdminDashboard /></StaffGuard>} />
             <Route path="/admin/students" element={<StaffGuard deny={DENY_TM}><AdminStudents /></StaffGuard>} />
             <Route path="/admin/vacation-school" element={<StaffGuard deny={DENY_TM}><AdminVacationSchool /></StaffGuard>} />
             <Route path="/admin/payments" element={<StaffGuard deny={DENY_TM}><AdminPayments /></StaffGuard>} />
