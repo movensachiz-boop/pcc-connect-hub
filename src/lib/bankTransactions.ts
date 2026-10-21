@@ -13,6 +13,9 @@ export type BankCollection = {
   created_at: string;
   status: string;
   payer: string;
+  description?: string | null;
+  verificationHash?: string | null;
+  items?: { name: string; quantity: number; unit_price: number; subtotal: number }[];
 };
 
 type Student = {
@@ -33,6 +36,7 @@ export type BankFeeRow = {
   description: string | null;
   created_at: string;
   status: string;
+  verification_hash?: string | null;
   profiles: Student | null;
 };
 
@@ -44,6 +48,7 @@ export type BankInventoryRow = {
   notes: string | null;
   created_at: string;
   status: string;
+  items?: any;
   profiles: Student | null;
 };
 
@@ -64,6 +69,7 @@ export function buildBankCollections(fees: BankFeeRow[], inventory: BankInventor
       receipt: row.receipt_number, reference: row.paynow_reference,
       created_at: row.created_at, status: row.status,
       payer: row.description?.match(/ — NBS \((.*)\)$/)?.[1] || "",
+      description: row.description, verificationHash: row.verification_hash ?? null,
       ...identity(row.profiles),
     }));
   const inventoryCollections: BankCollection[] = inventory
@@ -76,6 +82,7 @@ export function buildBankCollections(fees: BankFeeRow[], inventory: BankInventor
       reference: row.notes?.match(/ — bank reference (.*?)(?: \(.*\))?$/)?.[1] || null,
       created_at: row.created_at, status: row.status,
       payer: row.notes?.match(/ \((.*)\)$/)?.[1] || "",
+      items: Array.isArray(row.items) ? row.items.map((i: any) => ({ name: String(i.name ?? ""), quantity: Number(i.quantity ?? 1), unit_price: Number(i.unit_price ?? 0), subtotal: Number(i.subtotal ?? 0) })) : undefined,
       ...identity(row.profiles),
     }));
   return [...feeCollections, ...inventoryCollections].sort((a, b) => b.created_at.localeCompare(a.created_at));
