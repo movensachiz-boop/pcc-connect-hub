@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { supabase } from "@/integrations/supabase/client";
 import { generateBankApiDocs } from "@/lib/generateBankApiDocs";
 import { toast } from "sonner";
+import { buildBankCollections, matchesBankCollection, type BankCollection } from "@/lib/bankTransactions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const STORAGE_KEY = "dataplex-bank-api-details";
 const BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bank-api`;
@@ -62,19 +64,6 @@ const describeLog = (log: ApiLog) => {
   return `${what} — failed${log.error ? ` (${log.error.replace(/_/g, " ")})` : ""}`;
 };
 
-type BankCollection = {
-  id: string;
-  category: "Tuition" | "Levy" | "Uniforms" | "Trip";
-  amount: number;
-  currency: string;
-  receipt: string | null;
-  reference: string | null;
-  student: string;
-  registration: string;
-  className: string;
-  created_at: string;
-};
-
 const sha256 = async (value: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -85,6 +74,10 @@ const BankApiTab = () => {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [logs, setLogs] = useState<ApiLog[]>([]);
   const [collections, setCollections] = useState<BankCollection[]>([]);
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const [collectionCategory, setCollectionCategory] = useState("all");
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [collectionsError, setCollectionsError] = useState(false);
   const [label, setLabel] = useState("NBS Production");
   const [newKey, setNewKey] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState(0);
@@ -94,19 +87,20 @@ const BankApiTab = () => {
   const [testResult, setTestResult] = useState<{ ok: boolean; lines: string[] } | null>(null);
 
   const load = async () => {
-    const [{ data: keyRows }, { data: logRows }, { count }, { data: feeRows }, { data: invRows }] = await Promise.all([
+    setCollectionsLoading(true);
+    const [{ data: keyRows }, { data: logRows }, { count }, { data: feeRows, error: feeError }, { data: invRows, error: invError }] = await Promise.all([
       supabase.from("bank_api_keys").select("id, label, key_prefix, is_active, last_used_at, created_at").order("created_at", { ascending: false }),
       supabase.from("bank_api_logs").select("id, endpoint, method, status_code, registration_number, bank_reference, error, created_at").order("created_at", { ascending: false }).limit(25),
       supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase
         .from("payments")
-        .select("id, amount, currency, receipt_number, description, paynow_reference, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .select("id, amount, currency, receipt_number, bank_name, status, description, paynow_reference, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
         .eq("bank_name", "National Building Society")
         .order("created_at", { ascending: false })
         .limit(200),
       supabase
         .from("inventory_sales")
-        .select("id, total_amount, currency, receipt_number, notes, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
+        .select("id, total_amount, currency, receipt_number, status, notes, created_at, profiles:student_profile_id (first_name, last_name, registration_number, form, stream)")
         .ilike("notes", "NBS %")
         .order("created_at", { ascending: false })
         .limit(200),
@@ -115,37 +109,9 @@ const BankApiTab = () => {
     setLogs((logRows as ApiLog[]) || []);
     setStudentCount(count || 0);
 
-    const named = (p: any) =>
-      p ? `${p.first_name || ""} ${p.last_name || ""}`.trim() || "Unknown learner" : "Unknown learner";
-    const classOf = (p: any) => (p ? [p.form, p.stream].filter(Boolean).join(" ") : "");
-
-    const fees: BankCollection[] = ((feeRows as any[]) || []).map(r => ({
-      id: r.id,
-      category: /levy/i.test(r.description || "") ? "Levy" : "Tuition",
-      amount: Number(r.amount) || 0,
-      currency: r.currency || "USD",
-      receipt: r.receipt_number,
-      reference: r.paynow_reference,
-      student: named(r.profiles),
-      registration: r.profiles?.registration_number || "",
-      className: classOf(r.profiles),
-      created_at: r.created_at,
-    }));
-
-    const inv: BankCollection[] = ((invRows as any[]) || []).map(r => ({
-      id: r.id,
-      category: /trip/i.test(r.notes || "") ? "Trip" : "Uniforms",
-      amount: Number(r.total_amount) || 0,
-      currency: r.currency || "USD",
-      receipt: r.receipt_number,
-      reference: (r.notes || "").match(/bank reference\s+([^\s(]+)/i)?.[1] || null,
-      student: named(r.profiles),
-      registration: r.profiles?.registration_number || "",
-      className: classOf(r.profiles),
-      created_at: r.created_at,
-    }));
-
-    setCollections([...fees, ...inv].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    setCollectionsError(!!feeError || !!invError);
+    if (!feeError && !invError) setCollections(buildBankCollections(feeRows || [], invRows || []));
+    setCollectionsLoading(false);
   };
 
   useEffect(() => {
@@ -161,7 +127,15 @@ const BankApiTab = () => {
     setDetails(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     load();
+    const channel = supabase.channel("bank-transaction-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => { void load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "inventory_sales" }, () => { void load(); })
+      .subscribe();
+    const timer = window.setInterval(() => { void load(); }, 30000);
+    return () => { window.clearInterval(timer); void supabase.removeChannel(channel); };
   }, []);
+
+  const visibleCollections = collections.filter(row => matchesBankCollection(row, collectionSearch, collectionCategory));
 
   const setField = (key: keyof typeof defaults, value: string) => {
     const next = { ...details, [key]: value };
@@ -307,7 +281,7 @@ const BankApiTab = () => {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Money received through the bank</CardTitle>
+          <CardTitle className="text-base">NBS bank transactions</CardTitle>
           <Button size="icon" variant="ghost" onClick={load} aria-label="Refresh collections"><RefreshCw className="h-4 w-4" /></Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -332,9 +306,20 @@ const BankApiTab = () => {
             </div>
           </div>
 
-          {collections.length === 0 ? (
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input aria-label="Search bank transactions" placeholder="Student name, registration number, bank reference or receipt" value={collectionSearch} onChange={e => setCollectionSearch(e.target.value)} className="sm:flex-1" />
+            <Select value={collectionCategory} onValueChange={setCollectionCategory}>
+              <SelectTrigger aria-label="Bank transaction category" className="sm:w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {["Tuition", "Levy", "Uniforms", "Trip"].map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-xs text-muted-foreground">{visibleCollections.length} bank transaction{visibleCollections.length === 1 ? "" : "s"} · Latest 200 fee and 200 inventory transactions</p>
+          {collectionsError ? <p role="alert" className="text-sm text-destructive">Bank transactions could not be loaded. Please refresh.</p> : collectionsLoading && collections.length === 0 ? <p className="text-sm text-muted-foreground">Loading bank transactions…</p> : visibleCollections.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nothing yet — every payment the bank sends will be listed here with the learner's name, what it was for and the receipt number.
+              {collections.length ? "No bank transactions match this search." : "No NBS bank transactions recorded yet."}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -342,26 +327,30 @@ const BankApiTab = () => {
                 <thead className="text-left text-muted-foreground">
                   <tr className="border-b border-border">
                     <th className="py-2 pr-3 font-medium">Date</th>
-                    <th className="py-2 pr-3 font-medium">Learner</th>
+                    <th className="py-2 pr-3 font-medium">Student name</th>
+                    <th className="py-2 pr-3 font-medium">Registration number</th>
                     <th className="py-2 pr-3 font-medium">Class</th>
                     <th className="py-2 pr-3 font-medium">Paid for</th>
                     <th className="py-2 pr-3 font-medium">Bank reference</th>
                     <th className="py-2 pr-3 font-medium">Receipt</th>
+                    <th className="py-2 pr-3 font-medium">Status</th>
                     <th className="py-2 text-right font-medium">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {collections.map(c => (
+                  {visibleCollections.map(c => (
                     <tr key={c.id} className="border-b border-border/60">
                       <td className="py-2 pr-3 whitespace-nowrap">{new Date(c.created_at).toLocaleString("en-GB")}</td>
                       <td className="py-2 pr-3">
                         <span className="font-medium">{c.student}</span>
-                        {c.registration && <span className="ml-1 text-muted-foreground">({c.registration})</span>}
+                        {c.payer && <div className="text-muted-foreground">Payer: {c.payer}</div>}
                       </td>
+                      <td className="py-2 pr-3 font-mono whitespace-nowrap">{c.registration || "Not linked"}</td>
                       <td className="py-2 pr-3">{c.className || "—"}</td>
                       <td className="py-2 pr-3"><Badge variant="secondary">{c.category}</Badge></td>
                       <td className="py-2 pr-3">{c.reference || "—"}</td>
                       <td className="py-2 pr-3">{c.receipt || "—"}</td>
+                      <td className="py-2 pr-3 capitalize">{c.status}</td>
                       <td className="py-2 text-right font-semibold">{c.currency === "USD" ? "$" : `${c.currency} `}{c.amount.toFixed(2)}</td>
                     </tr>
                   ))}
